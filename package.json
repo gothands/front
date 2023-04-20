@@ -37,12 +37,15 @@
     "@vue/cli-plugin-babel": "~4.5.0",
     "@vue/cli-plugin-eslint": "~4.5.0",
     "@vue/cli-service": "~4.5.0",
+    "autoprefixer": "^10.4.14",
     "babel-eslint": "^10.1.0",
     "chai": "^4.2.0",
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^6.2.2",
     "hardhat": "^2.0.7",
     "hardhat-deploy": "^0.7.0-beta.39",
+    "postcss": "^8.4.21",
+    "tailwindcss": "^3.3.1",
     "vite": "^4.2.0",
     "vue-template-compiler": "^2.6.11"
   }

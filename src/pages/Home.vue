@@ -1,27 +1,5 @@
 <script setup>
-const Moves = {
-  None: 0,
-  Rock: 1,
-  Paper: 2,
-  Scissors: 3,
-};
-
-const Outcomes = {
-  None: 0,
-  PlayerA: 1,
-  PlayerB: 2,
-  Draw: 3,
-};
-
-const GameStates = {
-  Initial: 0,
-  Sending: 1,
-  Waiting: 2,
-  Matched: 3,
-  Revealing: 4,
-  Revealed: 5,
-  Finished: 6,
-};
+import { Moves, Outcomes, GameStates } from "../types";
 
 function truncateAddress(address) {
   if (!address || address.length < 10) {
@@ -47,7 +25,9 @@ function moveToString(move) {
 </script>
 <template>
   <div>
-    <h1>Handsy.io</h1>
+    <h2 class="bg-gradient-to-r from-green-300 via-blue-500 to-purple-600 bg-clip-text text-3xl font-extrabold text-transparent sm:text-5xl">
+        Handsy.i
+      </h2>
     <p v-if="isUserConnected">
       <strong>Your balance is: {{ balance }} ETH</strong>
     </p>
@@ -158,6 +138,7 @@ function moveToString(move) {
 </template>
 
 <script>
+import { Moves, Outcomes, GameStates } from "../types";
 import Hands from "../contracts/Hands.json";
 import Web3 from "web3";
 import { mapGetters } from "vuex";
@@ -178,29 +159,6 @@ const CONTRACT_ADDRESS = "0x111C3E89Ce80e62EE88318C2804920D4c96f92bb"
 //   outcome: 2, // 0 = draw, 1 = playerA wins, 2 = playerB wins
 // }
 
-const Moves = {
-  None: 0,
-  Rock: 1,
-  Paper: 2,
-  Scissors: 3,
-};
-
-const Outcomes = {
-  None: 0,
-  PlayerA: 1,
-  PlayerB: 2,
-  Draw: 3,
-};
-
-const GameStates = {
-  Initial: 0,
-  Sending: 1,
-  Waiting: 2,
-  Matched: 3,
-  Revealing: 4,
-  Revealed: 5,
-  Finished: 6,
-};
 
 function generateRandomString() {
   return Math.random().toString(36).substring(2, 15);

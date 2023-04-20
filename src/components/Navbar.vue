@@ -1,25 +1,34 @@
 <template>
-  <header class="navbar sticky-top flex-md-nowrap p-0">
-    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">Handsy.io</a>
-
-    <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-
-    <ul class="navbar-nav px-3">
-      <li class="nav-item text-nowrap">
-        <a  href="#" v-if="!isUserConnected" @click="connectWeb3Modal">Connect your wallet</a>
-        <a  href="#" v-if="isUserConnected" @click="disconnectWeb3Modal">Disconnect {{getActiveAccount.substring(0, 7)}}...</a>
-      </li>
-    </ul>
-
-  </header>
+  <nav class="bg-blue-500 px-6 py-2 shadow-md h-16">
+    <div class="flex justify-between items-center h-full">
+      <div class="flex items-center">
+        <div v-html="logo" class="h-10 w-10 text-white mr-2"></div>
+        <div class="font-bold text-xl">Handsy.io</div>
+      </div>
+      <div class="flex items-center">
+        <Network />
+        <Auth />
+      </div>
+    </div>
+  </nav>
 </template>
 
 <script>
+import logo from "../assets/logo.js";
+import Auth from "./Auth.vue";
+import Network from "./Network.vue";
 import { mapGetters, mapActions } from "vuex";
 
 export default {
+  data() {
+    return {
+      logo,
+    };
+  },
+  components: {
+    Auth,
+    Network,
+  },
   name: "Navbar",
   computed: {
     ...mapGetters("accounts", ["getActiveAccount", "isUserConnected", "getWeb3Modal"]),

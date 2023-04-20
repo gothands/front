@@ -46,6 +46,9 @@ const getters = {
   },
   isUserConnected(state) {
     return state.isConnected;
+  },
+  chainId(state) {
+    return state.chainId;
   }
 };
 
@@ -141,7 +144,19 @@ const actions = {
   async fetchActiveBalance({ commit }) {
     let balance = await state.web3.eth.getBalance(state.activeAccount);
     commit("setActiveBalance", balance);
-  }
+  },
+
+  async switchChainById({ commit }, chainId) {
+    try {
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: `0x${chainId.toString(16)}` }],
+      });
+      commit("setChainData", `0x${chainId.toString(16)}`);
+    } catch (error) {
+      console.error('Error switching to chain:', error);
+    }
+  },
   
 };
 
@@ -189,6 +204,9 @@ const mutations = {
         break;
       case "0x118": // 280 (default in Truffle)
         state.chainName = "ZKSync Testnet";
+        break;
+      case "0x10e":
+        state.chainName = "ZKSync Localhost";
         break;
       case "0x539": // 1337 (often used on localhost)
       case "0x1691": // 5777 (default in Ganache)
