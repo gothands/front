@@ -1,29 +1,29 @@
 <template>
   <div>
-
     <Navbar />
-    <div class="container-fluid">
-      <div class="row">
-        <main class="">
 
-          <keep-alive>
-            <router-view />
-          </keep-alive>
-
-        </main>
-      </div>
-    </div>
-
+    <main class="w-full flex custom-center items-center">
+      <keep-alive>
+        <router-view />
+      </keep-alive>
+    </main>
   </div>
 </template>
 
+<style>
+.custom-center {
+  display: flex;
+  justify-content: center;
+}
+</style>
+
 <script>
-import Navbar from './components/Navbar.vue';
+import Navbar from "./components/Navbar.vue";
 
 export default {
-  name: 'App',
+  name: "App",
   components: {
     Navbar,
-  }
-}
+  },
+};
 </script>

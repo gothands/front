@@ -9,7 +9,6 @@
       </button>
       <div v-if="isUserConnected" class="flex items-center">
         <span class="text-blue-500 mx-2">{{ truncatedActiveAccount }}</span>
-        <span class="text-blue-500 mx-2">{{ activeBalanceEth }} ETH</span>
       </div>
     </div>
   </template>
