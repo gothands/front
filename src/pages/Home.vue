@@ -135,6 +135,7 @@ function moveToString(move) {
 </template>
 
 <script>
+import GameMove from "../components/GameMove.vue";
 import { Moves, Outcomes, GameStates } from "../types";
 import Hands from "../contracts/Hands.json";
 import Web3 from "web3";
