@@ -1,12 +1,10 @@
 <template>
-  <div>
+  <div style="width: 100%; height:100%;">
     <Navbar />
 
-    <main class="w-full flex custom-center items-center">
       <keep-alive>
         <router-view />
       </keep-alive>
-    </main>
   </div>
 </template>
 

@@ -5,27 +5,27 @@ import Paper from '../assets/Paper'
 import Scissors from '../assets/Scissors'
 </script>
 <template>
-    <div class="flex justify-evenly">
+    <div class="flex justify-evenly w-full">
         <div 
             class="p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray"
             :class="{rock: 'border-red-100'}"
             @click="onRock"
         >
-            <GameMove move
+            <GameMove :move="Moves.Rock"/>
         </div>
         <div 
             class="p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray"
             :class="{paper: 'border-red-100'}" 
             @click="onPaper"
         >
-            <div v-html="Paper"></div>
+            <GameMove :move="Moves.Paper"/>
         </div>
         <div 
             class="p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray"
             :class="{Scissors: 'border-red-100'}" 
             @click="onScissors"
         >
-            <div v-html="Scissors"></div>
+            <GameMove :move="Moves.Scissors"/>
         </div>
     </div>
 </template>

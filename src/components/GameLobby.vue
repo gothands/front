@@ -22,7 +22,7 @@ function gameStateToString(state) {
 }
 </script>
 <template>
-    <div class="flex justify-evenly">
+    <div class="flex justify-evenly w-full">
         <div class="p-20 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray">
             <div class="flex flex-column">
                 <p>{{ gameStateToString(state) }}</p>
