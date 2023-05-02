@@ -83,6 +83,8 @@ function opponentGameStateToString(state) {
             v-if="selectedMove != Moves.None && gameState != GameStates.Initial"
             style="flex-direction: column; width: 500px; align-items: center; gap: 50px;"
             >
+                  <p> {{ truncateAddress(yourAddress) }}</p>
+                  <p> {{ yourCurrentPoints }} / 3 </p>
                   <p>{{ gameStateToString(gameState) }}</p>
                   <GameMove v-if="gameState != GameStates.Initial" :move="selectedMove"/>
                   <GameMove v-else :move="Moves.None"/>
@@ -144,6 +146,7 @@ function opponentGameStateToString(state) {
           >
               <div class="flex flex-column">
                   <p> {{ truncateAddress(opponentAddress) }}</p>
+                  <p> {{ previousGameOpponentPoints }} / 3 </p>
                   <p>{{ gameStateToString(opponentState) }}</p>
                   <GameMove v-if="opponentMove" :move="opponentMove"/>
                   <GameMove v-else :move="Moves.None"/>
@@ -195,7 +198,7 @@ function opponentGameStateToString(state) {
     
     
 
-    <div v-if="isUserConnected">
+    <!-- <div v-if="isUserConnected">
 
       <div v-if="pastGames && pastGames.length">
         <h2>Past games</h2>
@@ -218,7 +221,7 @@ function opponentGameStateToString(state) {
           </tbody>
         </table>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -237,7 +240,7 @@ import Web3 from "web3";
 import { mapGetters } from "vuex";
 import { sha256 } from "js-sha256";
 
-const CONTRACT_ADDRESS = "0x111C3E89Ce80e62EE88318C2804920D4c96f92bb"
+const CONTRACT_ADDRESS = "0x4B5DF730c2e6b28E17013A1485E5d9BC41Efe021"
 
 //EXAMPLE Game.
 // {
@@ -309,11 +312,9 @@ export default {
     isScissors() { return this.selectedMove === Moves.Scissors;},
     gameState() {
       console.log("gameState", this.currentGameId, this.games);
-      //make sure everything exists, else default to GameStates.Initial
       if (!this.games[this.currentGameId ?? "0"]) {
         return GameStates.Initial;
       }
-      //return game state
       return this.games[this.currentGameId ?? "0"].states[this.getActiveAccount];
     },
     isRegistering() { return this.gameState == GameStates.Registering },
@@ -324,7 +325,8 @@ export default {
     previousGame() { return this.games[this._lastGameId ?? undefined]},
     previousGameWager() { return this.previousGame?.bet ?? 0},
     previousGamePoints() { return this.previousGame?.points[this.getActiveAccount] ?? 0},
-    previousGameOpponentPoints() { return this.previousGame?.points[this.opponentAddress] ?? 0},
+    yourCurrentPoints() { return this.games[this.currentGameId]?.points[this.getActiveAccount?.toLowerCase()] ?? 0},
+    previousGameOpponentPoints() { return this.previousGame?.points[this.opponentAddress?.toLowerCase()] ?? 0},
     wonLastGame() { return this.previousGamePoints > this.previousGameOpponentPoints},
     yourAddress() { return this.getActiveAccount},
     yourMove() { return this.selectedMove },
@@ -342,6 +344,19 @@ export default {
       const opponentAddress = this.opponentAddress?.toLowerCase()
       const currentGameId = this?.currentGameId
       return this.games[currentGameId?.toLowerCase()]?.states[opponentAddress?.toLowerCase()] ?? GameStates.Initial
+    },
+
+
+    //Seamless transaction handler
+    //Reveal move when both players have successfully sent their move
+    //And not revealing move yet
+    shouldReveal(){
+      return  this.gameState == GameStates.Sent && 
+              this.opponentState == GameStates.Sent &&
+              this.selectedMove != "" &&
+              this.randomString != "" &&
+              this.opponentMove != Moves.None &&
+              this.isInGame
     }
   },
   mounted() {
@@ -372,7 +387,15 @@ export default {
         console.log("games changed", newValue);
       },
       deep: true
-    }
+    },
+    shouldReveal: {
+      handler(newValue, oldValue) {
+        if (newValue) {
+          this.revealMove();
+        }
+      },
+      deep: true
+    },
   },
   methods: {
     onRock() {
