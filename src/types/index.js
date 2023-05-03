@@ -17,9 +17,9 @@ export const GameStates = {
     Registering: 1, //Searching for a match
     Waiting: 2, //Waiting to be matched
     Matched: 3, //Matched with another player
-    Sending: 1, //Sending move
-    Sent: 4, //Sent move
-    Revealing: 5, //Revealing move to opponent
-    Revealed: 6, //Revealed move to opponent
-    Finished: 7, //Both players have revealed their moves. Game over
+    Sending: 4, //Sending move
+    Sent: 5, //Sent move
+    Revealing: 6, //Revealing move to opponent
+    Revealed: 7, //Revealed move to opponent
+    Finished: 8, //Both players have revealed their moves. Game over
 };

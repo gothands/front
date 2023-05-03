@@ -38,6 +38,8 @@ function gameStateToString(state) {
         return ""
     if(state == GameStates.Finished)
         return "Game complete"
+    if(state == GameStates.Registering)
+        return "Registering"
     
     return ""
     
@@ -80,7 +82,7 @@ function opponentGameStateToString(state) {
       <div class="flex justify-center gap-4" style="width: 100%; height: 100%; align-items: center;">
           <!-- Selected move-->
           <div 
-            v-if="selectedMove != Moves.None && gameState != GameStates.Initial"
+            v-if="shouldMove"
             style="flex-direction: column; width: 500px; align-items: center; gap: 50px;"
             >
                   <p> {{ truncateAddress(yourAddress) }}</p>
@@ -96,7 +98,8 @@ function opponentGameStateToString(state) {
             style="flex-direction: column; width: 500px; align-items: center; gap: 50px;"
           >
             <p>{{  truncateAddress(yourAddress) }}</p>
-            <p>Select a move</p>
+            <p> {{ yourCurrentPoints }} / 3 </p>
+            <p>{{ gameStateToString(gameState) }}</p>
             <div 
               class="flex justify-evenly gap-4"
               style="width: 100%;"
@@ -130,7 +133,7 @@ function opponentGameStateToString(state) {
             <!--red button-->
             <button
               style="background-color: #e53e3e; color: white; border: 1px solid #e53e3e;"
-              @click="registerGame"
+              @click="sendMove"
             >   
               Submit
             </button>
@@ -233,6 +236,25 @@ body {
 </style>
 
 <script>
+function gameStateToString(state) {
+    if(state == GameStates.Waiting)
+        return "Waiting"
+    if(state == GameStates.Sending)
+        return "Sending move"
+    if(state == GameStates.Revealing)
+        return "Revealing move"
+    if(state == GameStates.Revealed)
+        return "Revealed move"
+    if(state == GameStates.Matched)
+        return "Matched with opponent"
+    if(state == GameStates.Initial)
+        return ""
+    if(state == GameStates.Finished)
+        return "Game complete"
+    
+    return ""
+    
+}
 import GameMove from "../components/GameMove.vue";
 import { Moves, Outcomes, GameStates } from "../types";
 import Hands from "../contracts/Hands.json";
@@ -240,7 +262,7 @@ import Web3 from "web3";
 import { mapGetters } from "vuex";
 import { sha256 } from "js-sha256";
 
-const CONTRACT_ADDRESS = "0x4B5DF730c2e6b28E17013A1485E5d9BC41Efe021"
+const CONTRACT_ADDRESS = "0xA1B809005E589f81dE6EF9F48D67e35606c05fC3"
 
 //EXAMPLE Game.
 // {
@@ -266,6 +288,7 @@ export default {
   },
   data() {
     return {
+      initialized: false,
       games: {},
       lastBlockSearched: 0,
       currentGameId: "0",
@@ -315,14 +338,20 @@ export default {
       if (!this.games[this.currentGameId ?? "0"]) {
         return GameStates.Initial;
       }
-      return this.games[this.currentGameId ?? "0"].states[this.getActiveAccount];
+      const currentRound = this.games[this.currentGameId ?? "0"].round;
+      return this.games[this.currentGameId ?? "0"].states[currentRound][this.getActiveAccount] ?? GameStates.Matched
     },
     isRegistering() { return this.gameState == GameStates.Registering },
     isWaiting() { return this.gameState == GameStates.Waiting },
+    isRevealing() { return this.gameState == GameStates.Revealing },
+    isRevealed() { return this.gameState == GameStates.Revealed },
+    isOpponentMoveRevealed() { return this.opponentState == GameStates.Revealed },
     isInGame() { return this.gameState == GameStates.Sending || this.gameState == GameStates.Revealing || this.gameState == GameStates.Revealed || this.gameState == GameStates.Matched || this.gameState == GameStates.Sent },
+    isMoveSent() { return this.gameState == GameStates.Sent || this.gameState == GameStates.Revealing || this.gameState == GameStates.Revealed},
+    isOpponentMoveSent() { return this.opponentState == GameStates.Sent || this.opponentState == GameStates.Revealing || this.opponentState == GameStates.Revealed},
     isGameFinished() { return this.gameState == GameStates.Finished},
-    currentRound() { return this.games[this.currentGameId ?? "0"].round ?? 0},
-    previousGame() { return this.games[this._lastGameId ?? undefined]},
+    currentRound() { return this.games[this.currentGameId ?? "0"].round },
+    previousGame() { return this._lastGameId != -1 ? this.games[this._lastGameId] : null},
     previousGameWager() { return this.previousGame?.bet ?? 0},
     previousGamePoints() { return this.previousGame?.points[this.getActiveAccount] ?? 0},
     yourCurrentPoints() { return this.games[this.currentGameId]?.points[this.getActiveAccount?.toLowerCase()] ?? 0},
@@ -343,7 +372,8 @@ export default {
     opponentState() {
       const opponentAddress = this.opponentAddress?.toLowerCase()
       const currentGameId = this?.currentGameId
-      return this.games[currentGameId?.toLowerCase()]?.states[opponentAddress?.toLowerCase()] ?? GameStates.Initial
+      const currentRound = this.games[this.currentGameId ?? "0"]?.round ?? 0
+      return this.games[currentGameId?.toLowerCase()]?.states[currentRound][opponentAddress?.toLowerCase()] ?? GameStates.Initial
     },
 
 
@@ -351,15 +381,16 @@ export default {
     //Reveal move when both players have successfully sent their move
     //And not revealing move yet
     shouldReveal(){
-      return  this.gameState == GameStates.Sent && 
-              this.opponentState == GameStates.Sent &&
-              this.selectedMove != "" &&
-              this.randomString != "" &&
-              this.opponentMove != Moves.None &&
-              this.isInGame
+      console.log("shouldReveal", this.isMoveSent, this.isOpponentMoveSent, this.isGameFinished, this.isRevealing)
+      return this.isMoveSent && this.isOpponentMoveSent && !this.isGameFinished && !this.isRevealing && this.initialized && !this.isRevealed
+    },
+    //should move when in a game and has not sent move yet
+    shouldMove(){
+      return this.isMoveSent && this.isInGame
     }
   },
   mounted() {
+    this.initialized = false
     this.fetchPastGames();
     this.subscribeToEvents();
 
@@ -380,17 +411,22 @@ export default {
     if (lastRandomString) {
       this.randomString = lastRandomString;
     }
+
+    this.initialized = true
+    
   },
   watch:{
     games: {
       handler(newValue, oldValue) {
-        console.log("games changed", newValue);
+        console.log("yourGameState", gameStateToString(this.gameState));
+        console.log("games changed", this.games[this.currentGameId]);
       },
       deep: true
     },
     shouldReveal: {
       handler(newValue, oldValue) {
         if (newValue) {
+          console.log("is calling revealMove");
           this.revealMove();
         }
       },
@@ -434,11 +470,15 @@ export default {
         playerA: playerA.toLowerCase(),
         playerB: "",
         states: {
-          [playerA.toLowerCase()]: GameStates.Initial,
+            [0]: {
+                [playerA.toLowerCase()]: GameStates.Initial,
+            }
         },
         bet: 0,
         moves: {
-          [playerA.toLowerCase()]: Moves.None,
+          [0]: {
+            [playerA.toLowerCase()]: Moves.None,
+          },
         },
         outcome: Outcomes.None,
         points: {
@@ -455,6 +495,14 @@ export default {
     isNewestGameId(gameId) {
       return parseInt(gameId) >= this._lastGameId;
     },
+
+    getGame(gameId) {
+      return this.games[gameId]
+    },
+
+    getGameCurrentRound(gameId) {
+      return this.games[gameId].length - 1;
+    },
     
     //Whenever a new game is registered
     async handleRegisterEvent(event, userAddress) {
@@ -462,11 +510,11 @@ export default {
       const { gameId, playerAddress } = event.returnValues;
       
       //check if gameId is in games
-      if (!this.games[gameId]) 
+      if (!this.getGame(gameId, 0)) 
         this.createGame(gameId, playerAddress);
       
       //set players state to waiting
-      this.games[gameId].states[playerAddress.toLowerCase()] = GameStates.Waiting;    
+      this.getGame(gameId).states[0][playerAddress.toLowerCase()] = GameStates.Waiting;    
       
       //set currentGameId if user is in game
       if (playerAddress.toLowerCase() === userAddress.toLowerCase()) {
@@ -485,15 +533,15 @@ export default {
       const { gameId, bet } = event.returnValues;
 
       //check if gameId is in games
-      if (!this.games[gameId])
+      if (!this.getGame(gameId, 0))
         this.createGame(gameId);
       
       //set players state to waiting
-      const playerA = this.games[gameId].playerA.toLowerCase()
-      this.games[gameId].states[playerA] = GameStates.Waiting;
+      const playerA = this.getGame(gameId).playerA.toLowerCase()
+      this.getGame(gameId).states[0][playerA] = GameStates.Waiting;
 
       //set bet amount
-      this.games[gameId].bet = bet;
+      this.getGame(gameId).bet = bet;
     },
 
 
@@ -502,46 +550,59 @@ export default {
       const { gameId, playerA, playerB } = event.returnValues;
 
       //check if gameId is in games
-      if (!this.games[gameId])
+      if (!this.getGame(gameId))
         this.createGame(gameId, playerA);
       
       //set player values
-      this.games[gameId].playerA = playerA.toLowerCase()
-      this.games[gameId].playerB = playerB.toLowerCase()
+      this.getGame(gameId).playerA = playerA.toLowerCase()
+      this.getGame(gameId).playerB = playerB.toLowerCase()
 
       //set player states
-      this.games[gameId].states[playerA.toLowerCase()] = GameStates.Matched;
-      this.games[gameId].states[playerB.toLowerCase()] = GameStates.Matched;
+      this.getGame(gameId).states[0][playerA.toLowerCase()] = GameStates.Matched;
+      this.getGame(gameId).states[0][playerB.toLowerCase()] = GameStates.Matched;
     },
 
     handleMoveSentEvent(event) {
       console.log("MoveSent event:", event.returnValues);
-      const { gameId, playerAddress } = event.returnValues;
+      const { gameId, round, playerAddress } = event.returnValues;
 
       //check if gameId is in games
-      if (!this.games[gameId])
+      if (!this.getGame(gameId))
         this.createGame(gameId, playerAddress);
 
+      //Check if round is in moves
+      if (!this.getGame(gameId).moves[round])
+        this.getGame(gameId).moves[round] = {};
+      
+      //Check if round is in states
+      if (!this.getGame(gameId).states[round])
+        this.getGame(gameId).states[round] = {};
+
       //set player state
-      this.games[gameId].states[playerAddress.toLowerCase()] = GameStates.Sent;
+      this.getGame(gameId).states[round][playerAddress.toLowerCase()] = GameStates.Sent;
     },
 
     handleRevealedEvent(event) {
       console.log("MoveRevealed event:", event.returnValues);
-      const { gameId, playerAddress, move } = event.returnValues;
+      const { gameId, round, playerAddress, move } = event.returnValues;
       
       //check if gameId is in games
-      if (!this.games[gameId])
+      if (!this.getGame(gameId))
         this.createGame(gameId, playerAddress);
+      
+      //Check if round is in moves
+      if (!this.getGame(gameId).moves[round])
+        this.getGame(gameId).moves[round] = {};
 
-      //get round of game
-      const round = this.games[gameId].round;
+      //Check if round is in states
+      if (!this.getGame(gameId).states[round])
+        this.getGame(gameId).states[round] = {};
 
       //set player move
       this.games[gameId].moves[round][playerAddress.toLowerCase()] = move;
 
       //set player state
-      this.games[gameId].states[playerAddress.toLowerCase()] = GameStates.Revealed;
+      this.games[gameId].states[round][playerAddress.toLowerCase()] = GameStates.Revealed;
     },
 
     //Handle new round event
@@ -553,12 +614,27 @@ export default {
       if (!this.games[gameId])
         this.createGame(gameId);
 
+      //Check if round is in states
+      if (!this.games[gameId].states[round])
+        this.games[gameId].states[round] = {};
+
+      //Check if round is in moves
+      if (!this.games[gameId].moves[round])
+        this.games[gameId].moves[round] = {};
+
       //set round
       this.games[gameId].round = round;
 
       //set points
       this.games[gameId].points[this.games[gameId].playerA.toLowerCase()] = pointsA;
       this.games[gameId].points[this.games[gameId].playerB.toLowerCase()] = pointsB;
+
+      //reset game state to matched if not revealed or sent
+      // this.games[gameId].states[round][this.games[gameId].playerA.toLowerCase()] = GameStates.Matched;
+      
+      // this.games[gameId].states[round][this.games[gameId].playerB.toLowerCase()] = GameStates.Matched;
+      
+      
     },
     
     handleOutcomeEvent(event) {
@@ -618,6 +694,7 @@ export default {
 
       //Listen to move sent events
       contract.events.MoveCommitted({}, (error, event) => {
+        console.log("MoveCommitted event:", event.returnValues);
         if (error) {
           console.error("Error in MoveSent event:", error);
           return;
@@ -694,13 +771,13 @@ export default {
         console.log("Registering game...", this.currentGameId);
         if (!this.games[this.currentGameId ?? "0"]) 
           this.createGame(this.currentGameId ?? "0")
-        this.games[this.currentGameId ?? "0"].states[this.getActiveAccount] = GameStates.Registering;
+        this.games[this.currentGameId ?? "0"].states[0][this.getActiveAccount] = GameStates.Registering;
 
         const accounts = await this.getWeb3.eth.getAccounts();
         const gasPrice = this.getWeb3.utils.toWei("5", "gwei");
         const gasLimit = 3000000;
 
-        const betInWei = this.getWeb3.utils.toWei(this.selectedBet, "ether");
+        const betInWei = this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether");
 
         const result = await this.contractInstance.methods
           .register()
@@ -715,7 +792,7 @@ export default {
         //set back to initial state
         if (!this.games[this.currentGameId ?? "0"]) 
           this.createGame(this.currentGameId ?? "0");
-        this.games[this.currentGameId ?? "0"].states[this.getActiveAccount] = GameStates.Initial;
+        this.games[this.currentGameId ?? "0"].states[0][this.getActiveAccount] = GameStates.Initial;
 
         //revert selected move
         console.error("Error registering game:", error);
@@ -724,6 +801,7 @@ export default {
 
     //Send move to the contract
     async sendMove(){
+      const prevState = this.gameState;
       if (!this.contractInstance) {
         this.contractInstance = new this.getWeb3.eth.Contract(
           Hands.abi,
@@ -740,7 +818,7 @@ export default {
         console.log("Sending game...", this.currentGameId);
         if (!this.games[this.currentGameId ?? "0"]) 
           this.createGame(this.currentGameId ?? "0")
-        this.games[this.currentGameId ?? "0"].states[this.getActiveAccount] = GameStates.Sending;
+        this.games[this.currentGameId ?? "0"].states[this.currentRound][this.getActiveAccount] = GameStates.Sending;
         //console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
         this.randomString = generateRandomString(); // Save randomString
         const encryptedMove =
@@ -751,9 +829,9 @@ export default {
         const gasLimit = 3000000;
 
         const result = await this.contractInstance.methods
-          .commit(encryptedMove)
+          .commit(parseInt(this.currentGameId), encryptedMove)
           .send({ from: accounts[0], gasPrice, gasLimit });
-        //console.log("Game registered:", result);
+        console.log("Game registered:", result);
 
         // Store the last sentMove and betAmount in the localStorage
         localStorage.setItem("lastSentMove", this.selectedMove);
@@ -765,7 +843,7 @@ export default {
         //set back to initial state
         if (!this.games[this.currentGameId ?? "0"]) 
           this.createGame(this.currentGameId ?? "0");
-        this.games[this.currentGameId ?? "0"].states[this.getActiveAccount] = GameStates.Initial;
+        this.games[this.currentGameId ?? "0"].states[this.getActiveAccount] = prevState
 
         //revert selected move
         this.selectedMove = "";
@@ -774,6 +852,7 @@ export default {
     },
 
     async revealMove() {
+      const prevState = this.gameState;
       if (!this.contractInstance) {
         this.contractInstance = new this.getWeb3.eth.Contract(
           Hands.abi,
@@ -805,7 +884,7 @@ export default {
         //Update the gameState to Matched
         if (!this.games[this.currentGameId]) 
           this.createGame(this.currentGameId)
-        this.games[this.currentGameId].states[this.getActiveAccount] = GameStates.Matched;
+        this.games[this.currentGameId].states[this.getActiveAccount] = prevState
         console.error("Error revealing move:", error);
       }
     },
@@ -947,9 +1026,13 @@ export default {
       const fromBlock = 0;
 
       await this.fetchPlayerRegisteredEvents(fromBlock);
+      await this.fetchPlayerWaitingEvents(fromBlock);
       await this.fetchPlayersMatchedEvents(fromBlock);
+      await this.fetchPlayersMoveCommittedEvents(fromBlock);
       await this.fetchMoveRevealedEvents(fromBlock);
+      await this.fetchNewRoundEvents(fromBlock);
       await this.fetchGameOutcomeEvents(fromBlock);
+
 
       this.processEvents();
     },
