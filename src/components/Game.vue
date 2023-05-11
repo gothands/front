@@ -253,7 +253,7 @@ import Hands from "../contracts/Hands.json";
 import Web3 from "web3";
 import { sha256 } from "js-sha256";
 
-const CONTRACT_ADDRESS = "0x4B5DF730c2e6b28E17013A1485E5d9BC41Efe021"
+const CONTRACT_ADDRESS = "0x06ba8F4057BaFaB404FBAc95490cC1299B2dfc8B"
 
 //EXAMPLE Game.
 // {

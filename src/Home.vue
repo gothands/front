@@ -48,7 +48,7 @@ const CHAIN_ID_LOCALHOST = "0x10e"
 
 const RPC_URLS = {
   [CHAIN_ID_MAINNET]: "https://rpc.ankr.com/eth",
-  [CHAIN_ID_TESTNET]: "https://rpc.ankr.com/eth",
+  [CHAIN_ID_TESTNET]: "https://testnet.era.zksync.dev",
   [CHAIN_ID_LOCALHOST]: "http://localhost:3050/"
 };
 
@@ -78,8 +78,8 @@ export default {
       clientId,
       chainConfig: {
         chainNamespace: CHAIN_NAMESPACES.EIP155,
-        chainId: CHAIN_ID_LOCALHOST,
-        rpcTarget: RPC_URLS[CHAIN_ID_LOCALHOST] // This is the public RPC we have added, please pass on your own endpoint while creating an app
+        chainId: CHAIN_ID_TESTNET,
+        rpcTarget: RPC_URLS[CHAIN_ID_TESTNET] // This is the public RPC we have added, please pass on your own endpoint while creating an app
       },
       uiConfig: {
         defaultLanguage: "en",
@@ -129,16 +129,16 @@ export default {
       web3AuthNetwork: "testnet",
       chainConfig: {
         chainNamespace: CHAIN_NAMESPACES.EIP155,
-        chainId: CHAIN_ID_LOCALHOST,
-        rpcTarget: RPC_URLS[CHAIN_ID_LOCALHOST]      },
+        chainId: CHAIN_ID_TESTNET,
+        rpcTarget: RPC_URLS[CHAIN_ID_TESTNET]      },
     });
     // we can change the above settings using this function
     metamaskAdapter.setAdapterSettings({
       sessionTime: 86400, // 1 day in seconds
       chainConfig: {
         chainNamespace: CHAIN_NAMESPACES.EIP155,
-        chainId: CHAIN_ID_LOCALHOST,
-        rpcTarget: RPC_URLS[CHAIN_ID_LOCALHOST]      },
+        chainId: CHAIN_ID_TESTNET,
+        rpcTarget: RPC_URLS[CHAIN_ID_TESTNET]      },
       web3AuthNetwork: "testnet",
     });
 
