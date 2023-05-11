@@ -1,10 +1,10 @@
 <template>
   <div id="app">
+    <h1>
+      Handsy.io
+    </h1>
     <h2>
-      <a target="_blank" href="http://web3auth.io/" rel="noreferrer">
-        Web3Auth
-      </a>
-      Vue.js Ethereum Example
+      Rock Paper Scissors for <a>real money</a>
     </h2>
 
     <button
@@ -17,80 +17,17 @@
     </button>
 
     <div v-if="loggedin">
-      <div class="flex-container">
-        <div>
-          <button class="card" @click="getUserInfo" style="cursor: pointer">
-            Get User Info
-          </button>
-        </div>
-        <div>
-          <button
-            class="card"
-            @click="authenticateUser"
-            style="cursor: pointer"
-          >
-            Get ID Token
-          </button>
-        </div>
-        <div>
-          <button class="card" @click="getChainId" style="cursor: pointer">
-            Get Chain ID
-          </button>
-        </div>
-        <div>
-          <button class="card" @click="addChain" style="cursor: pointer">
-            Add Chain
-          </button>
-        </div>
-        <div>
-          <button class="card" @click="switchChain" style="cursor: pointer">
-            Switch Chain
-          </button>
-        </div>
-        <div>
-          <button class="card" @click="getAccounts" style="cursor: pointer">
-            Get Accounts
-          </button>
-        </div>
-        <div>
-          <button class="card" @click="getBalance" style="cursor: pointer">
-            Get Balance
-          </button>
-        </div>
-        <div>
-          <button class="card" @click="sendTransaction" style="cursor: pointer">
-            Send Transaction
-          </button>
-        </div>
-        <div>
-          <button class="card" @click="signMessage" style="cursor: pointer">
-            Sign Message
-          </button>
-        </div>
-        <div>
-          <button class="card" @click="getPrivateKey" style="cursor: pointer">
-            Get Private Key
-          </button>
-        </div>
-        <div>
-          <button class="card" @click="logout" style="cursor: pointer">
-            Logout
-          </button>
-        </div>
-      </div>
-      <div id="console" style="white-space: pre-line">
-        <p style="white-space: pre-line"></p>
-      </div>
-      <div v-if="provider" @beforeMount="console.log('Provider:', provider)">
-    <Game :provider="provider" />
-  </div>
+      <div>Logged in as {{ activeAccount }}</div>
+      <div>Balance: {{ balance }} ETH</div>
+      <Game :provider="provider" />
     </div>
   </div>
 </template>
 
 <script lang="ts">
 import Game from "./components/Game.vue";
-import web3 from "web3";
+import Web3 from "web3";
+
 
 import { ref, onMounted, watch } from "vue";
 import { Web3Auth } from "@web3auth/modal";
@@ -129,7 +66,10 @@ export default {
     const loading = ref<boolean>(false);
     const loginButtonStatus = ref<string>("");
     const connecting = ref<boolean>(false);
+
     const activeAccount = ref<string>("");
+    const balance = ref<string>("0");
+
     const provider = ref<SafeEventEmitterProvider | any>(false);
     const clientId =
       "BEglQSgt4cUWcj6SKRdu5QkOXTsePmMcusG5EAoyjyOYKlVRjIF1iCNnMOTfpzCiunHRrMui8TIwQPXdkQ8Yxuk"; // get from https://dashboard.web3auth.io
@@ -230,17 +170,37 @@ export default {
         loading.value = false;
       }
     });
+    const fetchBalance = async () => {
+      if (!provider.value || !activeAccount.value) {
+        return;
+      }
 
-    watch(
-      provider,
-      (newValue, oldValue) => {
-        if (newValue) {
-          // The provider value has changed, perform any necessary actions here
-          console.log("provider updated:", newValue);
-        }
-      },
-      { immediate: true } // This option triggers the watch callback immediately with the current value
-    );
+      const rpc = new RPC(provider.value);
+      const balanceEth = await rpc.getBalance();
+
+      console.log("balanceEth", balanceEth);
+
+      balance.value = balanceEth;
+    };
+
+    const pollBalance = async () => {
+      await fetchBalance();
+      setTimeout(pollBalance, 5000); // Poll every 5000 milliseconds (5 seconds)
+    };
+
+
+    
+watch(
+  provider,
+  (newValue, oldValue) => {
+    if (newValue) {
+      // The provider value has changed, start polling the balance
+      pollBalance();
+      getAccounts();
+    }
+  },
+  { immediate: true } // This option triggers the watch callback immediately with the current value
+);
 
     const login = async () => {
       if (!web3auth) {
@@ -336,7 +296,8 @@ export default {
         return;
       }
       const rpc = new RPC(provider.value);
-      const address = await rpc.getAccounts();
+      const address = await rpc.getAccounts()
+      activeAccount.value = address[0]
       uiConsole(address);
     };
 
@@ -393,6 +354,8 @@ export default {
       loginButtonStatus,
       connecting,
       provider,
+      balance,
+      activeAccount,
       getWeb3: 
       web3auth,
       login,
@@ -407,7 +370,6 @@ export default {
       sendTransaction,
       signMessage,
       getPrivateKey,
-      activeAccount,
     };
   },
 };
@@ -415,65 +377,5 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-#app {
-  width: 80%;
-  margin: auto;
-  padding: 0 2rem;
-}
-h3 {
-  margin: 40px 0 0;
-}
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-a {
-  color: #42b983;
-}
-.card {
-  margin: 0.5rem;
-  padding: 0.7rem;
-  text-align: center;
-  color: #0070f3;
-  background-color: #fafafa;
-  text-decoration: none;
-  border: 1px solid #0070f3;
-  border-radius: 10px;
-  transition: color 0.15s ease, border-color 0.15s ease;
-  width: 100%;
-}
 
-.card:hover,
-.card:focus,
-.card:active {
-  cursor: pointer;
-  background-color: #f1f1f1;
-}
-
-.flex-container {
-  display: flex;
-  flex-flow: row wrap;
-}
-
-.flex-container > div {
-  width: 100px;
-  margin: 10px;
-  text-align: center;
-  line-height: 75px;
-  font-size: 30px;
-}
-
-#console {
-  width: 100%;
-  height: 100%;
-  overflow: auto;
-  word-wrap: break-word;
-  font-size: 16px;
-  font-family: monospace;
-  text-align: left;
-}
 </style>

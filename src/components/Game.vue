@@ -45,86 +45,52 @@ function gameStateToString(state) {
     
 }
 
-function opponentGameStateToString(state) {
-  if(state == GameStates.Waiting)
-        return "Waiting"
-    if(state == GameStates.Sending)
-        return "Sending move"
-    if(state == GameStates.Revealing)
-        return "Revealing move"
-    if(state == GameStates.Revealed)
-        return "Revealed move"
-    if(state == GameStates.Matched)
-        return "Matched with opponent"
-    if(state == GameStates.Initial)
-        return "Waiting for opponent"
-    if(state == GameStates.Finished)
-        return "Game complete"
-    
-    return ""
-}
+
 
 </script>
 <template>
-  <div style="height:90vh; display: flex; flex-direction: column; justify-content: center ;">
-    <!-- <p v-if="isUserConnected">
-      <strong>Your balance is: {{ balance }} ETH</strong>
-    </p> -->
-
-    <!-- If not connected -->
-    <Auth />
-
+  <div>
     <!-- If in game-->
     <div v-if="isInGame">
       <!-- Round Id-->
-      <div class="flex justify-center" style="justify-content: center;">
+      <div style="justify-content: center;">
         Round {{ currentRound }}
       </div>
       <!-- Game view -->
-      <div class="flex justify-center gap-4" style="width: 100%; height: 100%; align-items: center;">
+      <div style="display:grid; grid-template-columns: 1fr auto 1fr;">
           <!-- Selected move-->
           <div 
             v-if="shouldMove"
-            style="flex-direction: column; width: 500px; align-items: center; gap: 50px;"
             >
                   <p> {{ truncateAddress(yourAddress) }}</p>
                   <p> {{ yourCurrentPoints }} / 3 </p>
-                  <p>{{ gameStateToString(gameState) }}</p>
+                  <p>{{ yourGameStateToString }}</p>
                   <GameMove v-if="gameState != GameStates.Initial" :move="selectedMove"/>
                   <GameMove v-else :move="Moves.None"/>
           </div>
           <!-- Choose move-->
           <div
             v-else
-            class="flex flex-col"
-            style="flex-direction: column; width: 500px; align-items: center; gap: 50px;"
           >
             <p>{{  truncateAddress(yourAddress) }}</p>
             <p> {{ yourCurrentPoints }} / 3 </p>
-            <p>{{ gameStateToString(gameState) }}</p>
+            <p>{{ yourGameStateToString }}</p>
             <div 
-              class="flex justify-evenly gap-4"
-              style="width: 100%;"
+              style="display: flex; justify-content: center; gap: 10px;"
             >
               <div 
-                  class="p-6 bg-white border-2 border-rose-600 rounded-lg shadow hover:bg-gray"
-                  style="border: 1px solid #e53e3e;"
                   :style="{ 'border-color': isRock ? 'yellow' : 'inherit' }" 
                   @click="onRock"
               >
                   <GameMove :move="Moves.Rock"/>
               </div>
               <div 
-                  class="p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray"
-                  style="border: 1px solid #e53e3e;"
                   :style="{ 'border-color': isPaper ? 'yellow' : 'inherit' }" 
                   @click="onPaper"
               >
                   <GameMove :move="Moves.Paper"/>
               </div>
               <div 
-                  class="p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray"
-                  style="border: 1px solid #e53e3e;"
                   :style="{ 'border-color': isScissors ? 'yellow' : 'inherit' }" 
                   @click="onScissors"
               >
@@ -134,7 +100,7 @@ function opponentGameStateToString(state) {
 
             <!--red button-->
             <button
-              style="background-color: #e53e3e; color: white; border: 1px solid #e53e3e;"
+              class="card"
               @click="sendMove"
             >   
               Submit
@@ -142,19 +108,19 @@ function opponentGameStateToString(state) {
 
           </div>
 
-          <h1>VS</h1>
+          <div style="display:flex; height: 100%; align-items: center;">VS</div>
 
           <!-- Opponent move-->
           <div 
-            class="p-20 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray"
-            style="width: 50%;"
           >
               <div class="flex flex-column">
                   <p> {{ truncateAddress(opponentAddress) }}</p>
                   <p> {{ previousGameOpponentPoints }} / 3 </p>
-                  <p>{{ gameStateToString(opponentState) }}</p>
-                  <GameMove v-if="opponentMove" :move="opponentMove"/>
-                  <GameMove v-else :move="Moves.None"/>
+                  <p>{{ opponentStateToString }}</p>
+                  <GameMove v-if="bothRevealed" :move="opponentMove"/>
+                  <GameMove v-else-if="isOpponentMoveSent" :move="Moves.CheckMark"/>
+                  <GameMove v-else :move="Moves.LoadingMark"/>
+                  
               </div>
               
           </div>
@@ -164,7 +130,7 @@ function opponentGameStateToString(state) {
 
     <!-- Should find game-->
     <div v-else>
-      <div class="flex justify-center">
+      <div>
         <!-- Previous Game Result -->
         <div v-if="previousGame">
           <!-- You won text-->
@@ -173,25 +139,28 @@ function opponentGameStateToString(state) {
           <!-- Points-->
           <h1> {{ previousGamePoints }} : {{ previousGameOpponentPoints }} </h1>
         </div>
-        <!-- Game slider -->
-        <div class="w-full">
-          <div class="flex justify-between text-gray-800">
-            <div v-for="step in wagerSteps" :key="step">{{ step }} ETH</div>
+        
+        <!-- Game buttons -->
+        <div v-if="!isRegistering && !isWaiting">
+          <div>
+            <button v-for="(step, index) in wagerSteps"
+                    class="select"
+                    :key="step"
+                    :class="{ 'highlight-select': index === sliderIndex }"
+                    @click="buttonClicked(index)">
+              {{ step }} ETH
+            </button>
           </div>
-            <input type="range"
-                  :min="0"
-                  :max="wagerSteps.length - 1"
-                  v-model="sliderIndex"
-                  @input="sliderValueChanged"
-                  class="slider w-100" />
         </div>
 
+
         <button
-          style="background-color: #e53e3e; color: white; border: 1px solid #e53e3e;"
+          class="card"
           @click="registerGame"
           :disabled="isRegistering || isWaiting"
         >   
           {{ isRegistering ? "Registering" : isWaiting ? "Waiting for opponent" : previousGame ? "Play again" : "Find game" }}
+          <a>{{ this.wagerSteps[this.sliderIndex] }} ETH</a>
         </button>
       </div>
     </div>
@@ -256,6 +225,25 @@ function gameStateToString(state) {
     
     return ""
     
+}
+
+function opponentGameStateToString(state) {
+  if(state == GameStates.Waiting)
+        return "Waiting"
+    if(state == GameStates.Sending)
+        return "Sending move"
+    if(state == GameStates.Revealing)
+        return "Revealing move"
+    if(state == GameStates.Revealed)
+        return "Revealed move"
+    if(state == GameStates.Matched)
+        return "Matched with opponent"
+    if(state == GameStates.Initial)
+        return "Waiting for opponent"
+    if(state == GameStates.Finished)
+        return "Game complete"
+    
+    return ""
 }
 import RPC from "../web3RPC";
 
@@ -342,17 +330,43 @@ export default {
       const currentRound = this.games[this.currentGameId ?? "0"].round;
       return this.games[this.currentGameId ?? "0"].states[currentRound][this.getActiveAccount] ?? GameStates.Matched
     },
+    yourGameStateToString() { 
+      switch(this.gameState) {
+        case GameStates.Initial:
+          return "Waiting for opponent"
+        case GameStates.Waiting:
+          return "Waiting for opponent"
+        case GameStates.Sending:
+          return "Sending move"
+        case GameStates.Sent:
+          return "Sent move"
+        case GameStates.Revealing:
+          return "Revealing move"
+        case GameStates.Revealed:
+          return "Revealed move"
+        case GameStates.Matched:
+          return "Send your move"
+        case GameStates.Finished:
+          return "Game complete"
+        default:
+          return ""
+      }
+    },
     isRegistering() { return this.gameState == GameStates.Registering },
     isWaiting() { return this.gameState == GameStates.Waiting },
     isRevealing() { return this.gameState == GameStates.Revealing },
     isRevealed() { return this.gameState == GameStates.Revealed },
     isOpponentMoveRevealed() { return this.opponentState == GameStates.Revealed },
+    bothRevealed() { return this.isRevealed && this.isOpponentMoveRevealed },
     isInGame() { return this.gameState == GameStates.Sending || this.gameState == GameStates.Revealing || this.gameState == GameStates.Revealed || this.gameState == GameStates.Matched || this.gameState == GameStates.Sent },
     isMoveSent() { return this.gameState == GameStates.Sent || this.gameState == GameStates.Revealing || this.gameState == GameStates.Revealed},
     isOpponentMoveSent() { return this.opponentState == GameStates.Sent || this.opponentState == GameStates.Revealing || this.opponentState == GameStates.Revealed},
     isGameFinished() { return this.gameState == GameStates.Finished},
     currentRound() { return this.games[this.currentGameId ?? "0"].round },
-    previousGame() { return this._lastGameId != -1 ? this.games[this._lastGameId] : null},
+    previousGame() { 
+      console.log("previousGame", this._lastGameId, this.games)
+      return this._lastGameId != -1 ? this.games[this._lastGameId] : null
+    },
     previousGameWager() { return this.previousGame?.bet ?? 0},
     previousGamePoints() { return this.previousGame?.points[this.getActiveAccount] ?? 0},
     yourCurrentPoints() { return this.games[this.currentGameId]?.points[this.getActiveAccount?.toLowerCase()] ?? 0},
@@ -374,7 +388,33 @@ export default {
       const opponentAddress = this.opponentAddress?.toLowerCase()
       const currentGameId = this?.currentGameId
       const currentRound = this.games[this.currentGameId ?? "0"]?.round ?? 0
+      console.log("opponentState", this.games[currentGameId?.toLowerCase()]?.states[currentRound][opponentAddress?.toLowerCase()])
       return this.games[currentGameId?.toLowerCase()]?.states[currentRound][opponentAddress?.toLowerCase()] ?? GameStates.Initial
+    },
+
+    opponentStateToString() { 
+      switch(this.opponentState) {
+        case GameStates.Initial:
+          return "Choosing move"
+        case GameStates.Registering:
+          return "Registering"
+        case GameStates.Waiting:
+          return "Waiting"
+        case GameStates.Matched:
+          return "Choosing move"
+        case GameStates.Sending:
+          return "Sending"
+        case GameStates.Sent:
+          return "Sent"
+        case GameStates.Revealing:
+          return "Revealing"
+        case GameStates.Revealed:
+          return "Revealed"
+        case GameStates.Finished:
+          return "Finished"
+        default:
+          return "Unknown"
+      }
     },
 
 
@@ -447,6 +487,10 @@ export default {
     },
     onScissors() {
       this.selectedMove = Moves.Scissors;
+    },
+    buttonClicked(index) {
+      this.sliderIndex = index;
+      this.sliderValueChanged();
     },
     sliderValueChanged() {
       this.selectedBet = this.wagerSteps[this.sliderIndex];
