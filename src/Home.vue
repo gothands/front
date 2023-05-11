@@ -72,7 +72,7 @@ export default {
 
     const provider = ref<SafeEventEmitterProvider | any>(false);
     const clientId =
-      "BEglQSgt4cUWcj6SKRdu5QkOXTsePmMcusG5EAoyjyOYKlVRjIF1iCNnMOTfpzCiunHRrMui8TIwQPXdkQ8Yxuk"; // get from https://dashboard.web3auth.io
+      "BNXP4nqNQ7AgD-kFeqeLjvBNM9RVVJJmhOgd1DVZw89SY7UzYGh_RwXK-YVIVFn8qFU6BbL3krmslFNJPpu71Bs"; // get from https://dashboard.web3auth.io
 
     const web3auth = new Web3Auth({
       clientId,
