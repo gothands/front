@@ -84,7 +84,7 @@ export default {
       uiConfig: {
         defaultLanguage: "en",
       },
-      web3AuthNetwork: "cyan",
+      web3AuthNetwork: "testnet",
       //provider: new web3.providers.WebsocketProvider("ws://localhost:8545"),
     });
 
@@ -126,7 +126,7 @@ export default {
     const metamaskAdapter = new MetamaskAdapter({
       clientId,
       sessionTime: 3600, // 1 hour in seconds
-      web3AuthNetwork: "cyan",
+      web3AuthNetwork: "testnet",
       chainConfig: {
         chainNamespace: CHAIN_NAMESPACES.EIP155,
         chainId: CHAIN_ID_LOCALHOST,
@@ -139,7 +139,7 @@ export default {
         chainNamespace: CHAIN_NAMESPACES.EIP155,
         chainId: CHAIN_ID_LOCALHOST,
         rpcTarget: RPC_URLS[CHAIN_ID_LOCALHOST]      },
-      web3AuthNetwork: "cyan",
+      web3AuthNetwork: "testnet",
     });
 
     // it will add/update  the metamask adapter in to web3auth class
