@@ -1,53 +1,3 @@
-<script setup>
-import { Moves, Outcomes, GameStates } from "../types";
-
-function truncateAddress(address) {
-  if (!address || address.length < 10) {
-    return address;
-  }
-  const prefix = address.slice(0, 6);
-  const suffix = address.slice(-4);
-  return `${prefix}...${suffix}`;
-}
-
-function moveToString(move) {
-  switch (parseInt(move)) {
-    case Moves.Rock:
-      return "Rock";
-    case Moves.Paper:
-      return "Paper";
-    case Moves.Scissors:
-      return "Scissors";
-    default:
-      return "None";
-  }
-}
-
-function gameStateToString(state) {
-    if(state == GameStates.Waiting)
-        return "Waiting"
-    if(state == GameStates.Sending)
-        return "Sending move"
-    if(state == GameStates.Revealing)
-        return "Revealing move"
-    if(state == GameStates.Revealed)
-        return "Revealed move"
-    if(state == GameStates.Matched)
-        return "Matched with opponent"
-    if(state == GameStates.Initial)
-        return ""
-    if(state == GameStates.Finished)
-        return "Game complete"
-    if(state == GameStates.Registering)
-        return "Registering"
-    
-    return ""
-    
-}
-
-
-
-</script>
 <template>
   <div>
     <!-- If in game-->
@@ -62,17 +12,17 @@ function gameStateToString(state) {
           <div 
             v-if="shouldMove"
             >
-                  <p> {{ truncateAddress(yourAddress) }}</p>
+                  <p> {{ yourAddress }}</p>
                   <p> {{ yourCurrentPoints }} / 3 </p>
                   <p>{{ yourGameStateToString }}</p>
                   <GameMove v-if="gameState != GameStates.Initial" :move="selectedMove"/>
-                  <GameMove v-else :move="Moves.None"/>
+                  <GameMove v-else :move="0"/>
           </div>
           <!-- Choose move-->
           <div
             v-else
           >
-            <p>{{  truncateAddress(yourAddress) }}</p>
+            <p>{{  yourAddress }}</p>
             <p> {{ yourCurrentPoints }} / 3 </p>
             <p>{{ yourGameStateToString }}</p>
             <div 
@@ -82,19 +32,19 @@ function gameStateToString(state) {
                   :style="{ 'border-color': isRock ? 'yellow' : 'inherit' }" 
                   @click="onRock"
               >
-                  <GameMove :move="Moves.Rock"/>
+                  <GameMove :move="1"/>
               </div>
               <div 
                   :style="{ 'border-color': isPaper ? 'yellow' : 'inherit' }" 
                   @click="onPaper"
               >
-                  <GameMove :move="Moves.Paper"/>
+                  <GameMove :move="2"/>
               </div>
               <div 
                   :style="{ 'border-color': isScissors ? 'yellow' : 'inherit' }" 
                   @click="onScissors"
               >
-                  <GameMove :move="Moves.Scissors"/>
+                  <GameMove :move="3"/>
               </div>
             </div>
 
@@ -114,12 +64,12 @@ function gameStateToString(state) {
           <div 
           >
               <div class="flex flex-column">
-                  <p> {{ truncateAddress(opponentAddress) }}</p>
+                  <p> {{ opponentAddress }}</p>
                   <p> {{ previousGameOpponentPoints }} / 3 </p>
                   <p>{{ opponentStateToString }}</p>
                   <GameMove v-if="bothRevealed" :move="opponentMove"/>
-                  <GameMove v-else-if="isOpponentMoveSent" :move="Moves.CheckMark"/>
-                  <GameMove v-else :move="Moves.LoadingMark"/>
+                  <GameMove v-else-if="isOpponentMoveSent" :move="5"/>
+                  <GameMove v-else :move="4"/>
                   
               </div>
               
