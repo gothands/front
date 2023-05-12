@@ -15,7 +15,7 @@
                   <p> {{ yourAddress }}</p>
                   <p> {{ yourCurrentPoints }} / 3 </p>
                   <p>{{ yourGameStateToString }}</p>
-                  <GameMove v-if="gameState != GameStates.Initial" :move="selectedMove"/>
+                  <GameMove v-if="gameState != 0" :move="selectedMove"/>
                   <GameMove v-else :move="0"/>
           </div>
           <!-- Choose move-->
