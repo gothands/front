@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div >
     <h1>
       Handsy.io
     </h1>
@@ -17,15 +17,42 @@
     </button>
 
     <div v-if="loggedin">
+      <!-- Staking and Game screen tabs-->
+
+      <button
+        class="card"
+        @click="staking = false"
+        style="cursor: pointer"
+      >
+        Game
+      </button>
+
+      <button
+        class="card"
+        @click="staking = true"
+        style="cursor: pointer"
+      >
+        Staking
+      </button>
+
+      
       <div>Logged in as {{ activeAccount }}</div>
       <div>Balance: {{ balance }} ETH</div>
-      <Game :provider="provider" />
+      <Game
+        v-if="!staking"
+       :provider="provider" 
+      />
+      <Staking
+        v-if="staking"
+        :provider="provider"
+      />
     </div>
   </div>
 </template>
 
 <script lang="ts">
 import Game from "./components/Game.vue";
+import Staking from "./components/Staking.vue";
 import Web3 from "web3";
 
 
@@ -52,6 +79,8 @@ const RPC_URLS = {
   [CHAIN_ID_LOCALHOST]: "http://localhost:3050/"
 };
 
+const CURRENT_CHAIN_ID = CHAIN_ID_LOCALHOST;
+
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
   name: "Home",
@@ -60,8 +89,10 @@ export default {
   },
   components: {
     Game,
+    Staking,
   },
   setup() {
+    const staking = ref<boolean>(false);
     const loggedin = ref<boolean>(false);
     const loading = ref<boolean>(false);
     const loginButtonStatus = ref<string>("");
@@ -78,8 +109,8 @@ export default {
       clientId,
       chainConfig: {
         chainNamespace: CHAIN_NAMESPACES.EIP155,
-        chainId: CHAIN_ID_TESTNET,
-        rpcTarget: RPC_URLS[CHAIN_ID_TESTNET] // This is the public RPC we have added, please pass on your own endpoint while creating an app
+        chainId: CURRENT_CHAIN_ID,
+        rpcTarget: RPC_URLS[CURRENT_CHAIN_ID] // This is the public RPC we have added, please pass on your own endpoint while creating an app
       },
       uiConfig: {
         defaultLanguage: "en",
@@ -129,16 +160,16 @@ export default {
       web3AuthNetwork: "testnet",
       chainConfig: {
         chainNamespace: CHAIN_NAMESPACES.EIP155,
-        chainId: CHAIN_ID_TESTNET,
-        rpcTarget: RPC_URLS[CHAIN_ID_TESTNET]      },
+        chainId: CURRENT_CHAIN_ID,
+        rpcTarget: RPC_URLS[CURRENT_CHAIN_ID]      },
     });
     // we can change the above settings using this function
     metamaskAdapter.setAdapterSettings({
       sessionTime: 86400, // 1 day in seconds
       chainConfig: {
         chainNamespace: CHAIN_NAMESPACES.EIP155,
-        chainId: CHAIN_ID_TESTNET,
-        rpcTarget: RPC_URLS[CHAIN_ID_TESTNET]      },
+        chainId: CURRENT_CHAIN_ID,
+        rpcTarget: RPC_URLS[CURRENT_CHAIN_ID]      },
       web3AuthNetwork: "testnet",
     });
 
@@ -348,7 +379,16 @@ watch(
       }
     }
 
+    function setStakingTrue () {
+      staking.value = true
+    }
+
+    function setStakingFalse () {
+      staking.value = false
+    }
+
     return {
+      staking,
       loggedin,
       loading,
       loginButtonStatus,

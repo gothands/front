@@ -4,8 +4,9 @@
     <div v-if="isInGame">
       <!-- Round Id-->
       <div style="justify-content: center;">
-        Round {{ currentRound }}
+        Round {{ currentRound }} for <a>{{ currentWager }} ETH</a>
       </div>
+      <div> {{ roundStateString }}</div>
       <!-- Game view -->
       <div style="display:grid; grid-template-columns: 1fr auto 1fr;">
           <!-- Selected move-->
@@ -48,13 +49,13 @@
               </div>
             </div>
 
-            <!--red button-->
+            <!-- red button
             <button
               class="card"
               @click="sendMove"
             >   
               Submit
-            </button>
+            </button> -->
 
           </div>
 
@@ -65,7 +66,7 @@
           >
               <div class="flex flex-column">
                   <p> {{ opponentAddress }}</p>
-                  <p> {{ previousGameOpponentPoints }} / 3 </p>
+                  <p> {{ opponentCurrentPoints }} / 3 </p>
                   <p>{{ opponentStateToString }}</p>
                   <GameMove v-if="bothRevealed" :move="opponentMove"/>
                   <GameMove v-else-if="isOpponentMoveSent" :move="5"/>
@@ -84,8 +85,8 @@
         <!-- Previous Game Result -->
         <div v-if="previousGame">
           <!-- You won text-->
-          <h1 v-if="wonLastGame">You won {{ previousGameWager }} ETH</h1>
-          <h1 v-else>You lost {{ previousGameWager }} ETH</h1>
+          <h1 v-if="wonLastGame">You won {{ previousGameWager }} ETH against {{ previousGameOpponent }}</h1>
+          <h1 v-else>You lost {{ previousGameWager }} ETH against {{ previousGameOpponent }}</h1>
           <!-- Points-->
           <h1> {{ previousGamePoints }} : {{ previousGameOpponentPoints }} </h1>
         </div>
@@ -203,7 +204,7 @@ import Hands from "../contracts/Hands.json";
 import Web3 from "web3";
 import { sha256 } from "js-sha256";
 
-const CONTRACT_ADDRESS = "0x06ba8F4057BaFaB404FBAc95490cC1299B2dfc8B"
+const CONTRACT_ADDRESS = "0x0a67078A35745947A37A552174aFe724D8180c25"
 
 //EXAMPLE Game.
 // {
@@ -221,6 +222,36 @@ const CONTRACT_ADDRESS = "0x06ba8F4057BaFaB404FBAc95490cC1299B2dfc8B"
 
 function generateRandomString() {
   return Math.random().toString(36).substring(2, 15);
+}
+
+function calcWinner(moveA, moveB) {
+  if (moveA == moveB) {
+    return Outcomes.Draw;
+  }
+
+  if (moveA == Moves.Rock) {
+    if (moveB == Moves.Paper) {
+      return Outcomes.PlayerB;
+    } else {
+      return Outcomes.PlayerA;
+    }
+  }
+
+  if (moveA == Moves.Paper) {
+    if (moveB == Moves.Scissors) {
+      return Outcomes.PlayerB;
+    } else {
+      return Outcomes.PlayerA;
+    }
+  }
+
+  if (moveA == Moves.Scissors) {
+    if (moveB == Moves.Rock) {
+      return Outcomes.PlayerB;
+    } else {
+      return Outcomes.PlayerA;
+    }
+  }
 }
 
 export default {
@@ -306,6 +337,20 @@ export default {
     isWaiting() { return this.gameState == GameStates.Waiting },
     isRevealing() { return this.gameState == GameStates.Revealing },
     isRevealed() { return this.gameState == GameStates.Revealed },
+    
+    roundStateString() {
+      if(this.bothRevealed){
+        if(this.isWinner){
+          return "You won!"
+        } else if(this.isLoser){
+          return "You lost!"
+        } else {
+          return "Draw!"
+        }
+      } 
+      return null
+      
+    },
     isOpponentMoveRevealed() { return this.opponentState == GameStates.Revealed },
     bothRevealed() { return this.isRevealed && this.isOpponentMoveRevealed },
     isInGame() { return this.gameState == GameStates.Sending || this.gameState == GameStates.Revealing || this.gameState == GameStates.Revealed || this.gameState == GameStates.Matched || this.gameState == GameStates.Sent },
@@ -313,14 +358,43 @@ export default {
     isOpponentMoveSent() { return this.opponentState == GameStates.Sent || this.opponentState == GameStates.Revealing || this.opponentState == GameStates.Revealed},
     isGameFinished() { return this.gameState == GameStates.Finished},
     currentRound() { return this.games[this.currentGameId ?? "0"].round },
+    opponentMove() { return this.games[this.currentGameId ?? "0"].moves[this.currentRound][this.getOpponentAccount] },
+    isWinner() {
+      //just compare opponentMove to selectedMove
+      return calcWinner(this.selectedMove, this.opponentMove) == Outcomes.PlayerA
+    },
+    isLoser() {
+      //just compare opponentMove to selectedMove
+      return calcWinner(this.selectedMove, this.opponentMove) == Outcomes.PlayerB
+    },
+
     previousGame() { 
-      console.log("previousGame", this._lastGameId, this.games)
-      return this._lastGameId != -1 ? this.games[this._lastGameId] : null
+      //get previous game by searching for the last game that is not the current game
+      //that has a state of finished
+      //that the current player is a part of
+      //search through all of the games by order of greatest gameId to least
+      //find the first game that is not the current game and has a state of finished
+      //that the current player is a part of
+      const games = Object.values(this.games).sort((a, b) => b.gameId - a.gameId)
+      const previousGame = games.find(game => game.gameId !== this.currentGameId && game.outcome != Outcomes.None)
+      console.log("games ordered by gameId", games)
+      console.log("previous game", previousGame)
+      return previousGame
     },
     previousGameWager() { return this.previousGame?.bet ?? 0},
-    previousGamePoints() { return this.previousGame?.points[this.getActiveAccount] ?? 0},
+    currentWager() { return this.games[this.currentGameId]?.bet ?? 0},
+    previousGamePoints() { 
+      console.log("previousGamePoints", this.previousGame?.points[this.getActiveAccount.toLowerCase()])
+      return this.previousGame?.points[this.getActiveAccount.toLowerCase()] ?? 0
+    },
+    previousGameOpponent() { 
+      const playerA = this.previousGame?.playerA?.toLowerCase()
+      const playerB = this.previousGame?.playerB?.toLowerCase()
+      return playerA === this?.getActiveAccount?.toLowerCase() ? playerB : playerA
+    },
     yourCurrentPoints() { return this.games[this.currentGameId]?.points[this.getActiveAccount?.toLowerCase()] ?? 0},
-    previousGameOpponentPoints() { return this.previousGame?.points[this.opponentAddress?.toLowerCase()] ?? 0},
+    opponentCurrentPoints() { return this.games[this.currentGameId]?.points[this.opponentAddress?.toLowerCase()] ?? 0},
+    previousGameOpponentPoints() { return this.previousGame?.points[this.previousGameOpponent?.toLowerCase()] ?? 0},
     wonLastGame() { return this.previousGamePoints > this.previousGameOpponentPoints},
     yourAddress() { return this.getActiveAccount},
     yourMove() { return this.selectedMove },
@@ -366,6 +440,7 @@ export default {
           return "Unknown"
       }
     },
+    isMoveSending() { return this.gameState == GameStates.Sending },
 
 
     //Seamless transaction handler
@@ -377,7 +452,7 @@ export default {
     },
     //should move when in a game and has not sent move yet
     shouldMove(){
-      return this.isMoveSent && this.isInGame
+      return (this.isMoveSent || this.isMoveSending) && this.isInGame
     }
   },
   mounted() {
@@ -431,12 +506,15 @@ export default {
   methods: {
     onRock() {
       this.selectedMove = Moves.Rock;
+      this.sendMove();
     },
     onPaper() {
       this.selectedMove = Moves.Paper;
+      this.sendMove();
     },
     onScissors() {
       this.selectedMove = Moves.Scissors;
+      this.sendMove();
     },
     buttonClicked(index) {
       this.sliderIndex = index;
@@ -546,7 +624,7 @@ export default {
       this.getGame(gameId).states[0][playerA] = GameStates.Waiting;
 
       //set bet amount
-      this.getGame(gameId).bet = bet;
+      this.getGame(gameId).bet = bet * 10 ** -18;
     },
 
 
@@ -634,6 +712,8 @@ export default {
       this.games[gameId].points[this.games[gameId].playerA.toLowerCase()] = pointsA;
       this.games[gameId].points[this.games[gameId].playerB.toLowerCase()] = pointsB;
 
+      console.log("setting new points for gameId", gameId, pointsA, pointsB);
+
       //reset game state to matched if not revealed or sent
       // this.games[gameId].states[round][this.games[gameId].playerA.toLowerCase()] = GameStates.Matched;
       
@@ -658,60 +738,64 @@ export default {
         this.currentGameId = "0";
         this.createGame("0");
         this.setLastGameId(gameId);
-      }
-``
-      
+      }      
     },
 
     async subscribeToEvents() {
-  const contract = await this.getContract();
-  const userAddress = await this.getAccount();
+      const contract = await this.getContract();
+      const userAddress = await this.getAccount();
 
-  console.log("Polling for events...");
-  console.log("contract:", contract);
+      console.log("Polling for events...");
+      console.log("contract:", contract);
 
-  const eventNames = [
-    "PlayerRegistered",
-    "PlayerWaiting",
-    "PlayersMatched",
-    "MoveCommitted",
-    "MoveRevealed",
-    "NewRound",
-    "GameOutcome",
-  ];
+      const eventNames = [
+        "PlayerRegistered",
+        "PlayerWaiting",
+        "PlayersMatched",
+        "MoveCommitted",
+        "MoveRevealed",
+        "NewRound",
+        "GameOutcome",
+      ];
 
-  const eventHandlers = {
-    PlayerRegistered: this.handleRegisterEvent,
-    PlayerWaiting: this.handleWaitingEvent,
-    PlayersMatched: this.handlePlayersMatchedEvent,
-    MoveCommitted: this.handleMoveSentEvent,
-    MoveRevealed: this.handleRevealedEvent,
-    NewRound: this.handleNewRoundEvent,
-    GameOutcome: this.handleOutcomeEvent,
-  };
+      const eventHandlers = {
+        PlayerRegistered: this.handleRegisterEvent,
+        PlayerWaiting: this.handleWaitingEvent,
+        PlayersMatched: this.handlePlayersMatchedEvent,
+        MoveCommitted: this.handleMoveSentEvent,
+        MoveRevealed: this.handleRevealedEvent,
+        NewRound: this.handleNewRoundEvent,
+        GameOutcome: this.handleOutcomeEvent,
+      };
 
-  const pollingInterval = 1000; // Poll every 5 seconds
+      const pollingInterval = 1000; // Poll every 5 seconds
 
-  let lastBlockChecked = await this.getBlockNumber()
+      let lastBlockChecked = await this.getBlockNumber()
 
-  setInterval(async () => {
-    const currentBlock = await this.getBlockNumber();
+      setInterval(async () => {
+        const currentBlock = await this.getBlockNumber();
 
-    for (const eventName of eventNames) {
-      const events = await contract.getPastEvents(eventName, {
-        fromBlock: lastBlockChecked + 1,
-        toBlock: currentBlock,
-      });
+        for (const eventName of eventNames) {
+          const events = await contract.getPastEvents(eventName, {
+            fromBlock: lastBlockChecked + 1,
+            toBlock: currentBlock,
+          });
 
-      events.forEach((event) => {
-        console.log(`New ${eventName} event detected:`, event);
-        eventHandlers[eventName].call(this, event, userAddress);
-      });
-    }
+          events.forEach((event) => {
+            console.log(`New ${eventName} event detected:`, event);
+            if (eventName === "NewRound" || eventName === "GameOutcome") {
+              setTimeout(() => {
+                eventHandlers[eventName].call(this, event, userAddress);
+              }, 3000); // Add a 1-second delay before handling the NewRound event
+            } else {
+              eventHandlers[eventName].call(this, event, userAddress);
+            }
+          });
+        }
 
-    lastBlockChecked = currentBlock;
-  }, pollingInterval);
-},
+        lastBlockChecked = currentBlock;
+      }, pollingInterval);
+    },
 
 
     async getActiveGameId() {
@@ -864,7 +948,7 @@ export default {
         //Update the gameState to Matched
         if (!this.games[this.currentGameId]) 
           this.createGame(this.currentGameId)
-        this.games[this.currentGameId].states[this.getActiveAccount] = prevState
+        this.games[this.currentGameId].states[this.getActiveAccount] = GameStates.Sent
         console.error("Error revealing move:", error);
       }
     },
