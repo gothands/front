@@ -158,6 +158,8 @@ body {
 </style>
 
 <script>
+import mainContracts from "../../../contracts/local-contracts.json"
+
 function gameStateToString(state) {
     if(state == GameStates.Waiting)
         return "Waiting"
@@ -203,8 +205,9 @@ import { Moves, Outcomes, GameStates } from "../types";
 import Hands from "../contracts/Hands.json";
 import Web3 from "web3";
 import { sha256 } from "js-sha256";
+import RampInstantSDK from "@ramp-network/ramp-instant-sdk";
 
-const CONTRACT_ADDRESS = "0x0a67078A35745947A37A552174aFe724D8180c25"
+const CONTRACT_ADDRESS = mainContracts.deployedContracts.Hands
 
 //EXAMPLE Game.
 // {
@@ -266,6 +269,7 @@ export default {
   },
   data() {
     return {
+      stripeClientSecret: null,
       initialized: false,
       games: {},
       lastBlockSearched: 0,
@@ -291,6 +295,8 @@ export default {
 
       _lastGameId: -1,
       activeAccount: null,
+
+      rampSdk: null,
     };
   },
   computed: {
@@ -461,6 +467,8 @@ export default {
     this.fetchPastGames();
     this.subscribeToEvents();
 
+    console.log("ramp sdk", RampInstantSDK)
+
     // Load the last sentMove and betAmount from the localStorage
     const lastSentMove = localStorage.getItem("lastSentMove");
     const lastRandomString = localStorage.getItem("lastRandomString");
@@ -522,6 +530,21 @@ export default {
     },
     sliderValueChanged() {
       this.selectedBet = this.wagerSteps[this.sliderIndex];
+    },
+    async getStripeClientSecret(){
+      if(this.activeAccount){
+        fetch("/api/stripe_intent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            address,
+          }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            setClientSecret(data.client_secret);
+          });
+      }
     },
     async getAccount() {
       const accounts = await this.getWeb3.eth.getAccounts();

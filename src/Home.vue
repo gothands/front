@@ -19,7 +19,7 @@
     <div v-if="loggedin">
       <!-- Staking and Game screen tabs-->
 
-      <button
+      <!-- <button
         class="card"
         @click="staking = false"
         style="cursor: pointer"
@@ -32,8 +32,8 @@
         @click="staking = true"
         style="cursor: pointer"
       >
-        Staking
-      </button>
+        Staking coming soon
+      </button> -->
 
       
       <div>Logged in as {{ activeAccount }}</div>
@@ -42,10 +42,12 @@
         v-if="!staking"
        :provider="provider" 
       />
-      <Staking
+
+      <button @click="buyEth">Buy ETH</button>
+      <!-- <Staking
         v-if="staking"
         :provider="provider"
-      />
+      /> -->
     </div>
   </div>
 </template>
@@ -97,6 +99,7 @@ export default {
     const loading = ref<boolean>(false);
     const loginButtonStatus = ref<string>("");
     const connecting = ref<boolean>(false);
+    const rampInstantSdk = ref<any>(null);
 
     const activeAccount = ref<string>("");
     const balance = ref<string>("0");
@@ -183,15 +186,19 @@ export default {
     // it will add/update  the torus-evm adapter in to web3auth class
     web3auth.configureAdapter(torusWalletAdapter);
 
+
     onMounted(async () => {
       try {
         loading.value = true;
         loggedin.value = false;
         await web3auth.initModal();
+        const userInfo: any = await web3auth.getUserInfo();
         await web3auth.addPlugin(torusPlugin);
         if (web3auth.provider) {
           provider.value = web3auth.provider;
+          await torusPlugin.initWithProvider(provider, userInfo);
           loggedin.value = true;
+
         }
 
         console.log("provider", provider.value);
@@ -243,6 +250,21 @@ watch(
       loggedin.value = true;
       uiConsole("Logged in Successfully!");
     };
+
+    const buyEth = async () => {
+      console.log("torusPlugin", torusPlugin);
+      if (!web3auth) {
+        uiConsole("web3auth not initialized yet");
+        return;
+      }
+      await torusPlugin.initiateTopup("rampnetwork", {
+        selectedAddress: activeAccount.value, // User's wallet address
+        //selectedCurrency: "USD", // Fiat currency
+        fiatValue: 100, // Fiat Value
+        chainNetwork: "mainnet", // Blockchain network
+      });
+    }
+
 
     const authenticateUser = async () => {
       if (!web3auth) {
@@ -399,6 +421,7 @@ watch(
       getWeb3: 
       web3auth,
       login,
+      buyEth,
       authenticateUser,
       logout,
       getUserInfo,

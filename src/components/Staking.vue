@@ -4,22 +4,38 @@
       Staking screen
 
       <div>
-        Hands token balance : {{handsTokenBalance}}
-        WETH balance : {{wethBalance}}
+        <div>Hands token balance : {{handsTokenBalance}}</div>
+        <div>WETH balance : {{wethBalance}}</div>
 
-        You LP token balance : {{poolTokenBalance}}
-        Your LP staked balance : {{lpStakedBalance}}
-        Total LP staked balance : {{totalLpStakedBalance}}
+        <div>You LP token balance : {{poolTokenBalance}}</div>
+        <div>Your LP staked balance : {{lpStakedBalance}}</div>
+        <div>Total LP staked balance : {{totalLpStakedBalance}}</div>
 
-        You claimable ETH for staking : {{claimableEthForStaking}}
+        <div>You claimable ETH for staking : {{claimableEthForStaking}}</div>
 
-        Your claimable ETH for LP staking : {{claimableEthForLpStaking}}
-        Your claimable Hands for LP staking : {{claimableHandsForLpStaking}}
+        <div>Your claimable ETH for LP staking : {{claimableEthForLpStaking}}</div>
+        <div>Your claimable Hands for LP staking : {{claimableHandsForLpStaking}}</div>
 
-        You hands staked balance : {{handsStakedBalance}}
-        Total hands staked balance : {{totalHandsStakedBalance}}
+        <div>You hands staked balance : {{handsStakedBalance}}</div>
+        <div>Total hands staked balance : {{totalHandsStakedBalance}}</div>
 
+        <div> WETH address {{ wethAddress }}</div>
+
+        <div> Token0 address {{ token0Address }}</div>
+        <div> Token1 address {{ token1Address }}</div>
+
+        <div> Reserve0 {{ reserve0 }}</div>
+        <div> Reserve1 {{ reserve1 }}</div>
+
+        <div> Vault Address {{ vaultAddress }}</div>
       </div>
+
+      <button @click="addLiquidity">Add Liquidity 10 WETH - 10 HANDS</button>
+      <!-- <button @click="removeLiquidity">Remove Liquidity 10 WETH - 10 HANDS</button> -->
+      <!-- <button @click="stakeLiquidity">Stake Liquidity</button> -->
+      <!-- <button @click="stakeHands">Stake 100 Hands</button> -->
+      <!-- <button @click="unstakeHands">Unstake Hands</button> -->
+
   </div>
 </template>
   
@@ -100,6 +116,8 @@
         lpStakingContract: null,
         handsTokenContract: null,
         poolTokenAddress: null,
+        classicPoolAddress: null,
+        wethAddress: null,
 
         activeAccount: null,
 
@@ -116,6 +134,12 @@
         claimableEthForStaking: 0,
         claimableEthForLpStaking: 0,
         claimableHandsForLpStaking: 0,
+
+        token0Address: null,
+        token1Address: null,
+        reserve0: 110,
+        reserve1: 110,
+        vaultAddress: null,
 
       };
     },
@@ -135,16 +159,22 @@
         async init(){
             await this.setAccount();
             await this.setContracts();
+            await this.getVaultAddress();
             this.setHandsTokenBalance();
             this.setWethBalance();
             this.setPoolTokenBalance();
             this.setLpStakedBalance();
             this.setHandsStakedBalance();
-            this.setTotalLpStakedBalance();
-            this.setTotalHandsStakedBalance();
+            this.setTotalLpStakedAmount();
+            this.setTotalHandsStakedAmount();
             this.setClaimableEthForStaking();
-            this.setClaimableEthForLpStaking();
-            this.setClaimableHandsForLpStaking();
+            this.setClaimableETHandHandsForLpStaking();
+
+            this.getWETHAddress();
+            this.getToken0Address();
+            this.getToken1Address();
+            this.getReserve0();
+            this.getReserve1();
         },
         async setAccount() {
             const accounts = await this.getWeb3.eth.getAccounts();
@@ -186,10 +216,9 @@
           //Set Pool ERC20 contract
           this.poolTokenAddress = mainContracts.deployedContracts.Pool;
           this.poolTokenContract = new this.getWeb3.eth.Contract(
-              mainContracts.dependencyAbis.wETH,
+              mainContracts.dependencyAbis.classicPool,
               this.poolTokenAddress
           );
-
         },
 
         async setHandsTokenBalance() {
@@ -286,12 +315,12 @@
         async setClaimableEthForStaking(){
           if(!this.stakingContract) return 0;
 
-          const balance = await this.stakingContract.methods.viewClaimableEth(this.activeAccount).call();
+          const balance = await this.stakingContract.methods.viewClaimableRewards(this.activeAccount).call();
           this.claimableEthForStaking = balance / 10 ** 18;
 
           //Poll for balance every 5 seconds
           setInterval(async () => {
-            const balance = await this.stakingContract.methods.viewClaimableEth(this.activeAccount).call();
+            const balance = await this.stakingContract.methods.viewClaimableRewards(this.activeAccount).call();
             this.claimableEthForStaking = balance / 10 ** 18;
           }, 5000);
         },
@@ -299,49 +328,139 @@
         async setClaimableETHandHandsForLpStaking(){
           if(!this.lpStakingContract) return 0;
 
-          const [balanceEth, balanceHands] = await this.lpStakingContract.methods.viewClaimableEth(this.activeAccount).call();
-          this.claimableEthForLpStaking = balance / 10 ** 18;
-          this.claimableHandsForLpStaking = balance / 10 ** 18;
+          const returned = await this.lpStakingContract.methods.getClaimableRewards().call();
+          const balanceEth = returned.bankRollRewards;
+          const balanceHands = returned.rewardTokenAmount;
+          this.claimableEthForLpStaking = balanceEth / 10 ** 18;
+          this.claimableHandsForLpStaking = balanceHands / 10 ** 18;
 
           //Poll for balance every 5 seconds
           setInterval(async () => {
-            const [balanceEth, balanceHands] = await this.lpStakingContract.methods.viewClaimableEth(this.activeAccount).call();
-            this.claimableEthForLpStaking = balance / 10 ** 18;
-            this.claimableHandsForLpStaking = balance / 10 ** 18;
+            const returned = await this.lpStakingContract.methods.getClaimableRewards().call();
+            const balanceEth = returned.bankRollRewards;
+            const balanceHands = returned.rewardTokenAmount;
+            this.claimableEthForLpStaking = balanceEth / 10 ** 18;
+            this.claimableHandsForLpStaking = balanceHands / 10 ** 18;
           }, 5000);
         },
+
+        async getWETHAddress() {
+            // Assumes that 'this.routerContract' is the instance of SyncSwapRouter contract
+            try {
+                const wethAddress = await this.routerContract.methods.wETH().call();
+                console.log('wETH address:', wethAddress);
+                this.wethAddress = wethAddress;
+            } catch (error) {
+                console.error('Error getting wETH address:', error);
+                throw error;
+            }
+        },
+
+        async getToken0Address() {
+            // Assumes that 'this.routerContract' is the instance of SyncSwapRouter contract
+            try {
+                const token0Address = await this.poolTokenContract.methods.token0().call();
+                console.log('token0 address:', token0Address);
+                this.token0Address = token0Address;
+            } catch (error) {
+                console.error('Error getting token0 address:', error);
+                throw error;
+            }
+        },
+
+        async getToken1Address() {
+            // Assumes that 'this.routerContract' is the instance of SyncSwapRouter contract
+            try {
+                const token1Address = await this.poolTokenContract.methods.token1().call();
+                console.log('token1 address:', token1Address);
+                this.token1Address = token1Address;
+            } catch (error) {
+                console.error('Error getting token1 address:', error);
+                throw error;
+            }
+        },
+
+        async getReserve0() {
+            // Assumes that 'this.routerContract' is the instance of SyncSwapRouter contract
+            try {
+                const reserve0 = await this.poolTokenContract.methods.reserve0().call();
+                console.log('reserve0:', reserve0);
+                this.reserve0 = reserve0;
+            } catch (error) {
+                console.error('Error getting reserve0:', error);
+                throw error;
+            }
+        },
+
+        async getReserve1() {
+            // Assumes that 'this.routerContract' is the instance of SyncSwapRouter contract
+            try {
+                const reserve1 = await this.poolTokenContract.methods.reserve1().call();
+                console.log('reserve1:', reserve1);
+                this.reserve1 = reserve1;
+            } catch (error) {
+                console.error('Error getting reserve1:', error);
+                throw error;
+            }
+        },
+
+        async getVaultAddress() {
+            // Assumes that 'this.routerContract' is the instance of SyncSwapRouter contract
+            try {
+                const vaultAddress = await this.routerContract.methods.vault().call();
+                console.log('vault address:', vaultAddress);
+                this.vaultAddress = vaultAddress;
+            } catch (error) {
+                console.error('Error getting vault address:', error);
+                throw error;
+            }
+        },
+        
+
+ 
         
         
 
         async addLiquidity() {
           const poolAddress = this.poolTokenAddress;
-          const amountWeth = 10
-          const amountHands = 10
-
+          const amountToApprove = 1000;
+          const amountWeth = 10;
+          const amountHands = 10;
+        
           // Define token inputs
           const inputs = [
             {
               token: mainContracts.dependencyContracts.wETH,
-              amount: this.getWeb3.utils.toWei(amountWeth, 'ether')  // Convert to wei
+              amount: this.getWeb3.utils.toWei(amountToApprove.toString(), 'ether')  // Convert to wei
             },
             {
               token: mainContracts.deployedContracts.HandsToken,
-              amount: this.getWeb3.utils.toWei(amountHands, 'ether')  // Convert to wei
+              amount: this.getWeb3.utils.toWei(amountToApprove.toString(), 'ether')  // Convert to wei
             }
           ];
-
+        
+          // Approve router to spend tokens
+          for (let i = 0; i < inputs.length; i++) {
+            const tokenContract = new this.getWeb3.eth.Contract(mainContracts.dependencyAbis.wETH, inputs[i].token);
+            const reciept = await tokenContract.methods.approve(mainContracts.dependencyContracts.vault, inputs[i].amount).send({ from: this.activeAccount });
+            console.log("reciept of approval", reciept)
+          }
+        
           // Use an empty bytes data
           const data = '0x';
-
+        
           // Define the minimum liquidity you want to receive
           const minLiquidity = this.getWeb3.utils.toWei('1', 'ether');  // Minimum 1 LP token
-
+        
           // No callback
           const callback = '0x0000000000000000000000000000000000000000';
           const callbackData = '0x';
-
+        
           // Call the addLiquidity method
           try {
+            const gasPrice = this.getWeb3.utils.toWei("5", "gwei");
+            const gasLimit = 3000000;
+
             const tx = await this.routerContract.methods.addLiquidity(
               poolAddress,
               inputs,
@@ -349,19 +468,22 @@
               minLiquidity,
               callback,
               callbackData
-            ).send({ from: this.activeAccount });
-
+            ).send({ from: this.activeAccount, gasPrice, gasLimit });
+        
             // Wait for the transaction to be mined
-            const receipt = await tx.wait();
-
+            
+        
             // Transaction was successful if we made it here
-            console.log('Liquidity added successfully');
-            return receipt;
+            console.log('Liquidity added successfully', tx);
+            return tx;
           } catch (error) {
-            console.error('Error adding liquidity:', error);
+            console.log('Error adding liquidity:', error);
             throw error;
           }
         },
+
+
+
 
         
     
