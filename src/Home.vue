@@ -43,6 +43,7 @@
        :provider="provider" 
       />
 
+      <button @click="logout">Logout</button>
       <button @click="buyEth">Buy ETH</button>
       <!-- <Staking
         v-if="staking"
@@ -196,7 +197,8 @@ export default {
         await web3auth.addPlugin(torusPlugin);
         if (web3auth.provider) {
           provider.value = web3auth.provider;
-          await torusPlugin.initWithProvider(provider, userInfo);
+          console.log("userInfo", userInfo)
+          const initVal = await torusPlugin.initWithProvider(provider, userInfo);
           loggedin.value = true;
 
         }
@@ -247,9 +249,11 @@ watch(
       }
       provider.value = await web3auth.connect();
       console.log("provider", provider);
+      const userInfo: any = await web3auth.getUserInfo();
+      await torusPlugin.initWithProvider(provider, userInfo);
       loggedin.value = true;
       uiConsole("Logged in Successfully!");
-    };
+    };    
 
     const buyEth = async () => {
       console.log("torusPlugin", torusPlugin);
