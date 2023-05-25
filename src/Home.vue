@@ -107,7 +107,7 @@ export default {
 
     const provider = ref<SafeEventEmitterProvider | any>(false);
     const clientId =
-      "BNXP4nqNQ7AgD-kFeqeLjvBNM9RVVJJmhOgd1DVZw89SY7UzYGh_RwXK-YVIVFn8qFU6BbL3krmslFNJPpu71Bs"; // get from https://dashboard.web3auth.io
+      "BPskEPAhlqjgenfk3gNE3CM09cpmINBS5wHflAZavWwWp1B4oWWWypVCHRbHpbLYeKPjkPXYNuNhEPXAJfkYijw"; // get from https://dashboard.web3auth.io
 
     const web3auth = new Web3Auth({
       clientId,
@@ -198,7 +198,8 @@ export default {
         if (web3auth.provider) {
           provider.value = web3auth.provider;
           console.log("userInfo", userInfo)
-          const initVal = await torusPlugin.initWithProvider(provider, userInfo);
+          const initVal = await torusPlugin.initWithProvider(provider.value, userInfo);
+          await torusPlugin.connect()
           loggedin.value = true;
 
         }
@@ -251,6 +252,7 @@ watch(
       console.log("provider", provider);
       const userInfo: any = await web3auth.getUserInfo();
       await torusPlugin.initWithProvider(provider, userInfo);
+      await torusPlugin.connect()
       loggedin.value = true;
       uiConsole("Logged in Successfully!");
     };    
