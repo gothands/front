@@ -59,6 +59,9 @@ import Staking from "./components/Staking.vue";
 import Web3 from "web3";
 
 
+import Transak from '@biconomy/transak';
+
+
 import { ref, onMounted, watch } from "vue";
 import { Web3Auth } from "@web3auth/modal";
 import { CHAIN_NAMESPACES, SafeEventEmitterProvider } from "@web3auth/base";
@@ -109,6 +112,8 @@ export default {
     const clientId =
       "BPskEPAhlqjgenfk3gNE3CM09cpmINBS5wHflAZavWwWp1B4oWWWypVCHRbHpbLYeKPjkPXYNuNhEPXAJfkYijw"; // get from https://dashboard.web3auth.io
 
+      
+
     const web3auth = new Web3Auth({
       clientId,
       chainConfig: {
@@ -119,7 +124,7 @@ export default {
       uiConfig: {
         defaultLanguage: "en",
       },
-      web3AuthNetwork: "testnet",
+      web3AuthNetwork: "mainnet",
       //provider: new web3.providers.WebsocketProvider("ws://localhost:8545"),
     });
 
@@ -198,9 +203,9 @@ export default {
         if (web3auth.provider) {
           provider.value = web3auth.provider;
           console.log("userInfo", userInfo)
-          const initVal = await torusPlugin.initWithProvider(provider.value, userInfo);
-          await torusPlugin.connect()
+          //const initVal = await torusPlugin.initWithProvider(provider.value, userInfo);
           loggedin.value = true;
+          await torusPlugin.connect()
 
         }
 
@@ -251,9 +256,10 @@ watch(
       provider.value = await web3auth.connect();
       console.log("provider", provider);
       const userInfo: any = await web3auth.getUserInfo();
-      await torusPlugin.initWithProvider(provider, userInfo);
-      await torusPlugin.connect()
+      //await torusPlugin.initWithProvider(provider, userInfo);
+      
       loggedin.value = true;
+      //await torusPlugin.connect()
       uiConsole("Logged in Successfully!");
     };    
 
@@ -263,12 +269,29 @@ watch(
         uiConsole("web3auth not initialized yet");
         return;
       }
-      await torusPlugin.initiateTopup("rampnetwork", {
-        selectedAddress: activeAccount.value, // User's wallet address
-        //selectedCurrency: "USD", // Fiat currency
-        fiatValue: 100, // Fiat Value
-        chainNetwork: "mainnet", // Blockchain network
-      });
+      // await torusPlugin.initiateTopup("moonpay", {
+      //   selectedAddress: activeAccount.value, // User's wallet address
+      //   selectedCurrency: "USD", // Fiat currency
+      //   fiatValue: 100, // Fiat Value
+      //   selectedCryptoCurrency: "ETH", // Crypto currency
+      //   chainNetwork: "mainnet", // Blockchain network
+      // });
+
+      const userInfo: any = await web3auth.getUserInfo();
+
+      const transak = new Transak('STAGING', {
+        walletAddress: activeAccount,
+        userData: {
+          firstName: userInfo.name || '',
+          email: userInfo.email || '',
+        },
+        fiatCurrency: 'GBP', // INR
+        defaultFiatAmount: 420,
+        network: 'arbitrum',
+        exchangeScreenTitle: 'Buy ETH for your Handsy.io account',
+
+    }); 
+    transak.init();
     }
 
 

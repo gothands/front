@@ -8,6 +8,7 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@biconomy/transak": "^2.0.0",
     "@noble/curves": "^1.0.0",
     "@ramp-network/ramp-instant-sdk": "^4.0.3",
     "@react-native-community/eslint-config": "^3.2.0",
