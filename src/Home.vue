@@ -279,17 +279,17 @@ watch(
 
       const userInfo: any = await web3auth.getUserInfo();
 
-      const transak = new Transak('STAGING', {
+      const transak = new Transak('PRODUCTION', {
 
         walletAddress: activeAccount.value,
         userData: {
           firstName: userInfo.name || '',
           email: userInfo.email || '',
         },
-        fiatCurrency: 'USD', // INR
+        //fiatCurrency: 'USD', // INR
         //defaultCryptoAmount: 100,
-        cryptoCurrencyCode: 'USDC',
-        cryptoAmount: 1000,
+        //cryptoCurrencyCode: 'USDC',
+        //cryptoAmount: 1000,
         network: 'arbitrum',
         exchangeScreenTitle: 'Buy ETH for your Handsy.io account',
 
