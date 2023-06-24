@@ -673,11 +673,12 @@ export default {
     },
 
     setLastGameId(gameId) {
+      console.log("setting last game", gameId);
       this._lastGameId = parseInt(gameId);
     },
 
     isNewestGameId(gameId) {
-      return parseInt(gameId) >= this._lastGameId;
+      return parseInt(gameId) >= this._lastGameId && gameId >= this.currentGameId;
     },
 
     getGame(gameId) {
@@ -722,10 +723,18 @@ export default {
       
       //set players state to waiting
       const playerA = this.getGame(gameId).playerA.toLowerCase()
+      const playerB = this.getGame(gameId).playerB.toLowerCase()
       this.getGame(gameId).states[0][playerA] = GameStates.Waiting;
 
       //set bet amount
       this.getGame(gameId).bet = bet * 10 ** -18;
+
+      //set currentGameId if user is in game
+      if (playerA === this.activeAccount.toLowerCase() || playerB === this.activeAccount.toLowerCase()) {
+        this.currentGameId = gameId;
+        this.setLastGameId(gameId);
+        console.log("setting currentGameId", this.currentGameId);
+      }
     },
 
 
@@ -844,6 +853,7 @@ export default {
       //reset current gameId
       if(this.isNewestGameId(gameId)){
         this.currentGameId = "0";
+        console.log(`resetting current game id from ${gameId} to 0 lastGameId: ${this._lastGameId}`);
         this.createGame("0");
         this.setLastGameId(gameId);
       }      
@@ -859,11 +869,11 @@ export default {
         this.createGame(gameId, playerAddress);
 
       //check if player is in game
-      if (this.games[gameId].playerA.toLowerCase() == playerAddress.toLowerCase() || this.games[gameId].playerB.toLowerCase() == playerAddress.toLowerCase()) {
+      if (this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() || this.games[gameId].playerB.toLowerCase() == this.activeAccount.toLowerCase()) {
         //reset current gameId
         if(this.isNewestGameId(gameId)){
           console.log("resetting current game id ", gameId);
-          this.currentGameId = "0";
+          //this.currentGameId = "0";
           this.createGame("0");
           this.setLastGameId(gameId);
         }
@@ -978,6 +988,8 @@ export default {
       const url = new URL(window.location.href);
       const password = this.getPassword();
       url.searchParams.set("game", password);
+      const bet = this.selectedBet;
+      url.searchParams.set("bet", bet);
       navigator.clipboard.writeText(url.href);
       alert("Copied to clipboard!");
     },
@@ -1127,14 +1139,14 @@ export default {
     },
 
     //Join password match
-    async joinPasswordMatch(password) {
+    async joinPasswordMatch(password, betAmount) {
       if (!this.contractInstance) {
         this.contractInstance = new this.getWeb3.eth.Contract(
           CONTRACT_ABI,
           CONTRACT_ADDRESS
         );
       }
-
+      this.selectedBet = betAmount;
       if (!this.selectedBet) {
         alert("Please select a bet amount.");
         return;
@@ -1522,9 +1534,10 @@ export default {
     async checkJoiningPassword() {
       const urlParams = new URLSearchParams(window.location.search);
       const joiningPassword = urlParams.get('game');
+      const betAmount = urlParams.get('bet');
 
-      if(joiningPassword && !this.isInGame && !this.isJoiningGame) {
-        await this.joinPasswordMatch(joiningPassword)
+      if(joiningPassword && !this.isInGame && !this.isJoiningGame && betAmount) {
+        await this.joinPasswordMatch(joiningPassword, betAmount);
       }
       
     },
