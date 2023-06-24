@@ -1,7 +1,19 @@
 <template>
   <div>
+    <button
+      class="card"
+      @click="copyAffiliateLink"
+    >
+      Copy affiliate link
+    </button>
     <!-- If in game-->
     <div v-if="isInGame">
+      <button
+        class="card"
+        @click="leaveGame"
+      >
+        Leave game
+      </button>
       <!-- Round Id-->
       <div style="justify-content: center;">
         Round {{ currentRound }} for <a>{{ currentWager }} ETH</a>
@@ -104,7 +116,12 @@
           </div>
         </div>
 
-
+        <p 
+          v-if="!isRegistering && !isWaiting"
+          @click="togglePlayWithFriend"
+          >
+          {{ playWithFriend ? "Playing with friends. Switch to play with random": "Playing with random switch to play with friend" }}
+        </p>
         <button
           class="card"
           @click="registerGame"
@@ -112,6 +129,20 @@
         >   
           {{ isRegistering ? "Registering" : isWaiting ? "Waiting for opponent" : previousGame ? "Play again" : "Find game" }}
           <a>{{ this.wagerSteps[this.sliderIndex] }} ETH</a>
+        </button>
+        <button
+          v-if="isWaiting"
+          class="card"
+          @click="cancelGame"
+        >
+          Cancel
+        </button>
+        <button
+          v-if="isWaiting && playWithFriend"
+          class="card"
+          @click="copyPasswordGameLink"
+        >
+          Copy game link
         </button>
       </div>
     </div>
@@ -202,12 +233,13 @@ import RPC from "../web3RPC";
 
 import GameMove from "./GameMove.vue";
 import { Moves, Outcomes, GameStates } from "../types";
-import Hands from "../contracts/Hands.json";
 import Web3 from "web3";
 import { sha256 } from "js-sha256";
 import RampInstantSDK from "@ramp-network/ramp-instant-sdk";
+import { ethers } from 'ethers'
 
 const CONTRACT_ADDRESS = mainContracts.deployedContracts.Hands
+const CONTRACT_ABI = mainContracts.deployedAbis.Hands
 
 //EXAMPLE Game.
 // {
@@ -289,6 +321,7 @@ export default {
       moveRevealedEvents: [],
       newRoundEvents: [],
       gameOutcomeEvents: [],
+      playerCancelledEvents: [],
 
       wagerSteps: [0.01, 0.1, 1, 5, 10],
       sliderIndex: 0,
@@ -297,6 +330,11 @@ export default {
       activeAccount: null,
 
       rampSdk: null,
+
+      affiliateContract: null,
+      affiliateOfUser: null,
+
+      playWithFriend: null,
     };
   },
   computed: {
@@ -459,9 +497,18 @@ export default {
     //should move when in a game and has not sent move yet
     shouldMove(){
       return (this.isMoveSent || this.isMoveSending) && this.isInGame
+    },
+    shouldSetAffiliateCode() {
+      //get affiliate code from local storage
+      const affiliateCode = localStorage.getItem("affiliateCode")
+      
+      return affiliateCode && this.affiliateOfUser != ethers.constants.AddressZero
     }
   },
-  mounted() {
+
+  
+
+  async mounted() {
     console.log("provider", this.provider)
     this.initialized = false
     this.fetchPastGames();
@@ -473,6 +520,7 @@ export default {
     const lastSentMove = localStorage.getItem("lastSentMove");
     const lastRandomString = localStorage.getItem("lastRandomString");
     const lastBetAmount = localStorage.getItem("lastBetAmount");
+    const playWithFriend = localStorage.getItem("playWithFriend");
 
     if (lastSentMove) {
       this.selectedMove = lastSentMove;
@@ -487,10 +535,20 @@ export default {
       this.randomString = lastRandomString;
     }
 
+    this.playWithFriend = playWithFriend === "true" ? true : false;
+    console.log("playWithFriend", this.playWithFriend);
+    console.log("playWithFriend localStorage", localStorage.getItem("playWithFriend"));
+
     this.initialized = true
 
     //set active account
-    this.getAccount()
+    await this.getAccount()
+
+    //check affiliate code
+    await this.checkAffililiateCode()
+
+    //check if joining password match
+    await this.checkJoiningPassword()
     
   },
   watch:{
@@ -531,6 +589,19 @@ export default {
     sliderValueChanged() {
       this.selectedBet = this.wagerSteps[this.sliderIndex];
     },
+    togglePlayWithFriend() {
+      const localStoragePlayWithFriend = localStorage.getItem("playWithFriend");
+      if (localStoragePlayWithFriend == "true") {
+        console.log("setting playWithFriend to false");
+        localStorage.setItem("playWithFriend", false);
+        this.playWithFriend = false;
+      } else {
+        console.log("setting playWithFriend to true");
+        localStorage.setItem("playWithFriend", true);
+        this.playWithFriend = true;
+      }
+      
+    },
     async getStripeClientSecret(){
       if(this.activeAccount){
         fetch("/api/stripe_intent", {
@@ -554,10 +625,17 @@ export default {
     },
     async setContract() {
       this.contractInstance = new this.getWeb3.eth.Contract(
-        Hands.abi,
+        CONTRACT_ABI,
         CONTRACT_ADDRESS,
       );
+
       console.log("contractInstance", this.contractInstance);
+
+      //Set Affiliate contract
+      this.affiliateContract = new this.getWeb3.eth.Contract(
+          mainContracts.deployedAbis.Affiliate,
+          mainContracts.deployedContracts.Affiliate
+      );
     },
 
     async getBlockNumber() {
@@ -666,6 +744,13 @@ export default {
       //set player states
       this.getGame(gameId).states[0][playerA.toLowerCase()] = GameStates.Matched;
       this.getGame(gameId).states[0][playerB.toLowerCase()] = GameStates.Matched;
+
+      //Check if player is in game
+      if (playerA.toLowerCase() == this.activeAccount.toLowerCase() || playerB.toLowerCase() == this.activeAccount.toLowerCase()) {
+        this.currentGameId = gameId;
+        console.log("setting currentGameId", this.currentGameId);
+      }
+      console.log("setting game to matched");
     },
 
     handleMoveSentEvent(event) {
@@ -764,6 +849,27 @@ export default {
       }      
     },
 
+    //If the game id that was cancelled was yours then reset the current game id and remove the game
+    handlePlayerCancelledEvent(event) {
+      console.log("PlayerCancelled event:", event.returnValues);
+      const { gameId, playerAddress } = event.returnValues;
+
+      //check if gameId is in games
+      if (!this.games[gameId])
+        this.createGame(gameId, playerAddress);
+
+      //check if player is in game
+      if (this.games[gameId].playerA.toLowerCase() == playerAddress.toLowerCase() || this.games[gameId].playerB.toLowerCase() == playerAddress.toLowerCase()) {
+        //reset current gameId
+        if(this.isNewestGameId(gameId)){
+          console.log("resetting current game id ", gameId);
+          this.currentGameId = "0";
+          this.createGame("0");
+          this.setLastGameId(gameId);
+        }
+      }
+    },
+
     async subscribeToEvents() {
       const contract = await this.getContract();
       const userAddress = await this.getAccount();
@@ -779,6 +885,7 @@ export default {
         "MoveRevealed",
         "NewRound",
         "GameOutcome",
+        "PlayerCancelled",
       ];
 
       const eventHandlers = {
@@ -789,6 +896,7 @@ export default {
         MoveRevealed: this.handleRevealedEvent,
         NewRound: this.handleNewRoundEvent,
         GameOutcome: this.handleOutcomeEvent,
+        PlayerCancelled: this.handlePlayerCancelledEvent,
       };
 
       const pollingInterval = 1000; // Poll every 5 seconds
@@ -820,11 +928,28 @@ export default {
       }, pollingInterval);
     },
 
+    async setPassword() {
+      const password = await generateRandomString();
+      const passwordHash = "0x" + sha256(password);
+      //store in local storage
+      localStorage.setItem("passwordHash", passwordHash);
+      localStorage.setItem("password", password);
+    },   
+    
+    getPassword() {
+      const password = localStorage.getItem("password");
+      return password;
+    },
+
+    getPasswordHash() {
+      const passwordHash = localStorage.getItem("passwordHash");
+      return passwordHash;
+    },
 
     async getActiveGameId() {
       if (!this.contractInstance) {
         this.contractInstance = new this.getWeb3.eth.Contract(
-          Hands.abi,
+          CONTRACT_ABI,
           CONTRACT_ADDRESS
         );
       }
@@ -840,11 +965,60 @@ export default {
       }
     },
 
+    //copy affiliate link to clipboard
+    //affiliate link is the current url with the user's address appended to the end as a query string
+    copyAffiliateLink() {
+      const url = new URL(window.location.href);
+      url.searchParams.set("ref", this.getActiveAccount);
+      navigator.clipboard.writeText(url.href);
+      alert("Copied to clipboard!");
+    },
+
+    copyPasswordGameLink(){
+      const url = new URL(window.location.href);
+      const password = this.getPassword();
+      url.searchParams.set("game", password);
+      navigator.clipboard.writeText(url.href);
+      alert("Copied to clipboard!");
+    },
+
+    //calls the affiliate contract this.affiliateContract
+    async registerAsConsumer(){
+      console.log("Registering as consumer...")
+      if (this.affiliateContract){
+        try {
+          const accounts = await this.getWeb3.eth.getAccounts();
+          const gasPrice = this.getWeb3.utils.toWei("5", "gwei");
+          const gasLimit = 3000000;
+
+          //get affilaite address from local storage 
+          const affiliateAddress = localStorage.getItem("affiliateCode");
+          console.log("affiliateAddress:", affiliateAddress);
+
+
+          const result = await this.affiliateContract.methods.registerAsConsumer(affiliateAddress).send({
+            from: this.activeAccount,
+            gasPrice,
+            gasLimit,
+          });
+          console.log("registerAsConsumer result:", result);
+        } catch (error) {
+          console.error("Error registering as consumer:", error);
+        }
+      }
+
+    },
+
+
     //Join or create a new game
     async registerGame() {
+      if(this.playWithFriend){
+        await this.createPasswordGame();
+        return;
+      }
       if (!this.contractInstance) {
         this.contractInstance = new this.getWeb3.eth.Contract(
-          Hands.abi,
+          CONTRACT_ABI,
           CONTRACT_ADDRESS
         );
       }
@@ -852,6 +1026,12 @@ export default {
       if (!this.selectedBet) {
         alert("Please select a bet amount.");
         return;
+      }
+
+      if(this.shouldSetAffiliateCode){
+        await this.registerAsConsumer();
+      }else{
+        console.log("Not registering as consumer...")
       }
 
       try {
@@ -866,8 +1046,127 @@ export default {
 
         const betInWei = this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether");
 
+        //get playerGame mapping
+        const gameId = await this.contractInstance.methods
+          .playerGame(accounts[0])
+          .call({ from: accounts[0] });
+        console.log("gameId:", gameId);
         const result = await this.contractInstance.methods
           .register()
+          .send({ from: accounts[0], value: betInWei, gasPrice, gasLimit });
+        
+
+        localStorage.setItem("lastBetAmount", this.selectedBet);
+
+        // Update the gameState to Waiting
+        //console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
+      } catch (error) {
+        //set back to initial state
+        if (!this.games[this.currentGameId ?? "0"]) 
+          this.createGame(this.currentGameId ?? "0");
+        this.games[this.currentGameId ?? "0"].states[0][this.getActiveAccount] = GameStates.Initial;
+
+        //revert selected move
+        console.error("Error registering game:", error);
+      }
+    },
+
+    //Create password game
+    async createPasswordGame() {
+      if (!this.contractInstance) {
+        this.contractInstance = new this.getWeb3.eth.Contract(
+          CONTRACT_ABI,
+          CONTRACT_ADDRESS
+        );
+      }
+
+      if (!this.selectedBet) {
+        alert("Please select a bet amount.");
+        return;
+      }
+
+      try {
+        console.log("Creating password game...", this.currentGameId);
+        if (!this.games[this.currentGameId ?? "0"]) 
+          this.createGame(this.currentGameId ?? "0")
+        this.games[this.currentGameId ?? "0"].states[0][this.getActiveAccount] = GameStates.Registering;
+
+        const accounts = await this.getWeb3.eth.getAccounts();
+        const gasPrice = this.getWeb3.utils.toWei("5", "gwei");
+        const gasLimit = 3000000;
+
+        const betInWei = this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether");
+
+        //get playerGame mapping
+        const gameId = await this.contractInstance.methods
+          .playerGame(accounts[0])
+          .call({ from: accounts[0] });
+
+        //set password
+        await this.setPassword();
+        const passwordHash = this.getPasswordHash();
+        console.log("gameId:", gameId);
+        const result = await this.contractInstance.methods
+          .createPasswordMatch(passwordHash)
+          .send({ from: accounts[0], value: betInWei, gasPrice, gasLimit });
+        
+
+        localStorage.setItem("lastBetAmount", this.selectedBet);
+
+        // Update the gameState to Waiting
+        //console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
+      } catch (error) {
+        //set back to initial state
+        if (!this.games[this.currentGameId ?? "0"]) 
+          this.createGame(this.currentGameId ?? "0");
+        this.games[this.currentGameId ?? "0"].states[0][this.getActiveAccount] = GameStates.Initial;
+
+        //revert selected move
+        console.error("Error registering game:", error);
+      }
+    },
+
+    //Join password match
+    async joinPasswordMatch(password) {
+      if (!this.contractInstance) {
+        this.contractInstance = new this.getWeb3.eth.Contract(
+          CONTRACT_ABI,
+          CONTRACT_ADDRESS
+        );
+      }
+
+      if (!this.selectedBet) {
+        alert("Please select a bet amount.");
+        return;
+      }
+
+      if(this.shouldSetAffiliateCode){
+        await this.registerAsConsumer();
+      }else{
+        console.log("Not registering as consumer...")
+      }
+
+      try {
+        console.log("Joining password match...", this.currentGameId);
+        if (!this.games[this.currentGameId ?? "0"]) 
+          this.createGame(this.currentGameId ?? "0")
+        this.games[this.currentGameId ?? "0"].states[0][this.getActiveAccount] = GameStates.Registering;
+
+        const accounts = await this.getWeb3.eth.getAccounts();
+        const gasPrice = this.getWeb3.utils.toWei("5", "gwei");
+        const gasLimit = 3000000;
+
+        const betInWei = this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether");
+
+        //get playerGame mapping
+        const gameId = await this.contractInstance.methods
+          .playerGame(accounts[0])
+          .call({ from: accounts[0] });
+
+        //set password
+        console.log("gameId:", gameId);
+        const result = await this.contractInstance.methods
+          .joinPasswordMatch(password)
           .send({ from: accounts[0], value: betInWei, gasPrice, gasLimit });
         
 
@@ -891,7 +1190,7 @@ export default {
       const prevState = this.gameState;
       if (!this.contractInstance) {
         this.contractInstance = new this.getWeb3.eth.Contract(
-          Hands.abi,
+          CONTRACT_ABI,
           CONTRACT_ADDRESS
         );
       }
@@ -938,11 +1237,87 @@ export default {
       }
     },
 
+    async cancelGame(){
+      const prevState = this.gameState;
+      if (!this.contractInstance) {
+        this.contractInstance = new this.getWeb3.eth.Contract(
+          CONTRACT_ABI,
+          CONTRACT_ADDRESS
+        );
+      }
+
+      try {
+        console.log("Cancelling game...", this.currentGameId);
+        // if (!this.games[this.currentGameId ?? "0"]) 
+        //   this.createGame(this.currentGameId ?? "0")
+        // this.games[this.currentGameId ?? "0"].states[this.getActiveAccount] = GameStates.Cancelling;
+        //console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
+        const accounts = await this.getWeb3.eth.getAccounts();
+        const gasPrice = this.getWeb3.utils.toWei("5", "gwei");
+        const gasLimit = 3000000;
+
+        const result = await this.contractInstance.methods
+          .cancel(parseInt(this.currentGameId))
+          .send({ from: accounts[0], gasPrice, gasLimit });
+        console.log("Game cancelled:", result);
+
+        // Update the gameState to Waiting
+        //console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
+      } catch (error) {
+        //set back to initial state
+        // if (!this.games[this.currentGameId ?? "0"]) 
+        //   this.createGame(this.currentGameId ?? "0");
+        // this.games[this.currentGameId ?? "0"].states[this.getActiveAccount] = prevState
+
+        // //revert selected move
+        // this.selectedMove = "";
+        console.error("Error cancelling game:", error);
+      }
+    },
+
+    async leaveGame(){
+      const prevState = this.gameState;
+      if (!this.contractInstance) {
+        this.contractInstance = new this.getWeb3.eth.Contract(
+          CONTRACT_ABI,
+          CONTRACT_ADDRESS
+        );
+      }
+
+      try {
+        console.log("Leaving game...", this.currentGameId);
+        // if (!this.games[this.currentGameId ?? "0"]) 
+        //   this.createGame(this.currentGameId ?? "0")
+        // this.games[this.currentGameId ?? "0"].states[this.getActiveAccount] = GameStates.Cancelling;
+        //console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
+        const accounts = await this.getWeb3.eth.getAccounts();
+        const gasPrice = this.getWeb3.utils.toWei("5", "gwei");
+        const gasLimit = 3000000;
+
+        const result = await this.contractInstance.methods
+          .leave(parseInt(this.currentGameId))
+          .send({ from: accounts[0], gasPrice, gasLimit });
+        console.log("Game left:", result);
+
+        // Update the gameState to Waiting
+        //console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
+      } catch (error) {
+        //set back to initial state
+        // if (!this.games[this.currentGameId ?? "0"]) 
+        //   this.createGame(this.currentGameId ?? "0");
+        // this.games[this.currentGameId ?? "0"].states[this.getActiveAccount] = prevState
+
+        // //revert selected move
+        // this.selectedMove = "";
+        console.error("Error cancelling game:", error);
+      }
+    },
+
     async revealMove() {
       const prevState = this.gameState;
       if (!this.contractInstance) {
         this.contractInstance = new this.getWeb3.eth.Contract(
-          Hands.abi,
+          CONTRACT_ABI,
           CONTRACT_ADDRESS
         );
       }
@@ -978,7 +1353,7 @@ export default {
     async getGameOutcome() {
       if (!this.contractInstance) {
         this.contractInstance = new this.getWeb3.eth.Contract(
-          Hands.abi,
+          CONTRACT_ABI,
           CONTRACT_ADDRESS
         );
       }
@@ -1060,6 +1435,15 @@ export default {
       console.log("gameOutcomeEvents:", this.gameOutcomeEvents.map(e => e.returnValues));
     },
 
+    async fetchPlayerCancelledEvents(fromBlock) {
+      const contract = await this.getContract();
+      const events = await contract.getPastEvents("PlayerCancelled", {
+        fromBlock,
+      });
+      this.playerCancelledEvents = events;
+      console.log("playerCancelledEvents:", this.playerCancelledEvents.map(e => e.returnValues));
+    },
+
 
     
     async processEvents() {
@@ -1076,6 +1460,12 @@ export default {
       // Call handlePlayerWaitingEvent for each event
       for (const event of this.playerWaitingEvents) {
         this.handleWaitingEvent(event)
+      }
+
+      // Iterate over the playerCancelledEvents
+      // Call handlePlayerCancelledEvent for each event
+      for (const event of this.playerCancelledEvents) {
+        this.handlePlayerCancelledEvent(event)
       }
 
       // Iterate over the playersMatchedEvents
@@ -1107,6 +1497,36 @@ export default {
       for (const event of this.gameOutcomeEvents) {
         this.handleOutcomeEvent(event)
       }
+
+      
+    },
+
+    //checkAffiliateCode in ref query string
+    async checkAffililiateCode() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const affiliateCode = urlParams.get('ref');
+      if (affiliateCode) {
+        //set local storage affiliate code
+        //if there is no affiliate code in local storage
+        localStorage.setItem("affiliateCode", affiliateCode)
+
+        
+      }
+      //set the affiliate address defined in the affiliate contract
+      this.affiliateOfUser = await this.affiliateContract.methods.getAffiliateOfConsumer(this.activeAccount).call();
+
+      console.log("affiliate of user", this.affiliateOfUser)
+
+    },
+
+    async checkJoiningPassword() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const joiningPassword = urlParams.get('game');
+
+      if(joiningPassword && !this.isInGame && !this.isJoiningGame) {
+        await this.joinPasswordMatch(joiningPassword)
+      }
+      
     },
 
     async fetchPastGames() {
@@ -1119,6 +1539,7 @@ export default {
       await this.fetchMoveRevealedEvents(fromBlock);
       await this.fetchNewRoundEvents(fromBlock);
       await this.fetchGameOutcomeEvents(fromBlock);
+      await this.fetchPlayerCancelledEvents(fromBlock);
 
 
       this.processEvents();

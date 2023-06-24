@@ -19,7 +19,7 @@
     <div v-if="loggedin">
       <!-- Staking and Game screen tabs-->
 
-      <!-- <button
+      <button
         class="card"
         @click="staking = false"
         style="cursor: pointer"
@@ -33,7 +33,7 @@
         style="cursor: pointer"
       >
         Staking coming soon
-      </button> -->
+      </button>
 
       
       <div>Logged in as {{ activeAccount }}</div>
@@ -45,10 +45,10 @@
 
       <button @click="logout">Logout</button>
       <button @click="buyEth">Buy ETH</button>
-      <!-- <Staking
+      <Staking
         v-if="staking"
         :provider="provider"
-      /> -->
+      />
     </div>
   </div>
 </template>
@@ -78,14 +78,17 @@ import { TorusWalletAdapter } from "@web3auth/torus-evm-adapter";
 const CHAIN_ID_MAINNET = "0x1"
 const CHAIN_ID_TESTNET = "0x118"
 const CHAIN_ID_LOCALHOST = "0x10e"
+const CHAIN_ID_LOCALHOST_HARDHAT = "0x7A69"
 
 const RPC_URLS = {
   [CHAIN_ID_MAINNET]: "https://rpc.ankr.com/eth",
   [CHAIN_ID_TESTNET]: "https://testnet.era.zksync.dev",
-  [CHAIN_ID_LOCALHOST]: "http://localhost:3050/"
+  [CHAIN_ID_LOCALHOST]: "http://localhost:3050/",
+  [CHAIN_ID_LOCALHOST_HARDHAT]: "http://localhost:8545",
+
 };
 
-const CURRENT_CHAIN_ID = CHAIN_ID_LOCALHOST;
+const CURRENT_CHAIN_ID = CHAIN_ID_LOCALHOST_HARDHAT;
 
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
@@ -170,7 +173,8 @@ export default {
       chainConfig: {
         chainNamespace: CHAIN_NAMESPACES.EIP155,
         chainId: CURRENT_CHAIN_ID,
-        rpcTarget: RPC_URLS[CURRENT_CHAIN_ID]      },
+        rpcTarget: RPC_URLS[CURRENT_CHAIN_ID]   
+      },
     });
     // we can change the above settings using this function
     metamaskAdapter.setAdapterSettings({
@@ -178,7 +182,10 @@ export default {
       chainConfig: {
         chainNamespace: CHAIN_NAMESPACES.EIP155,
         chainId: CURRENT_CHAIN_ID,
-        rpcTarget: RPC_URLS[CURRENT_CHAIN_ID]      },
+        rpcTarget: RPC_URLS[CURRENT_CHAIN_ID],
+        blockExplorer: "https://rinkeby.etherscan.io/",
+
+      },
       web3AuthNetwork: "testnet",
     });
 

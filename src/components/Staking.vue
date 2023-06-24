@@ -123,6 +123,11 @@
         affiliateLink: null,
         onboardedAddresses: [],
 
+        protocolFeeRevenue: 0,
+
+        //userSharePerBlock: null,
+        totalStakedPerBlock: null,
+
       };
     },
     computed: {
@@ -146,6 +151,7 @@
             this.setTotalHandsStakedAmount();
             this.setClaimableEthForStaking();
             this.setClaimableEthForAffiliate();
+            this.setProtocolFeeRevenue();
 
             // this.getWETHAddress();
             // this.getToken0Address();
@@ -257,31 +263,77 @@
           }, 5000);
         },
 
+        async setProtocolFeeRevenue(){
+          //Get the balance of the Bank contract
+          const balance = await this.getWeb3.eth.getBalance(mainContracts.deployedContracts.Bank);
+          this.protocolFeeRevenue = balance / 10 ** 18;
+
+          //Poll for balance every 5 seconds
+          setInterval(async () => {
+            const balance = await this.getWeb3.eth.getBalance(mainContracts.deployedContracts.Bank);
+            this.protocolFeeRevenue = balance / 10 ** 18;
+          }, 5000);
+        },
+
+        // async setUserSharePerBlock(){
+        //   if(!this.stakingContract) return 0;
+
+          
+        //   const currentBlock = await this.getWeb3.eth.getBlockNumber();
+        //   this.userSharePerBlock = await this.stakingContract.methods.getUserShareAtBlock(this.activeAccount, currentBlock).call();
+        //   console.log(userSharesPerBlock);
+
+        //   //Poll for balance every 5 seconds
+        //   setInterval(async () => {
+        //     const currentBlock = await this.getWeb3.eth.getBlockNumber();
+        //     this.userSharePerBlock = await this.stakingContract.methods.getUserShareAtBlock(this.activeAccount, currentBlock).call();
+        //     console.log(userSharesPerBlock);
+        //   }, 5000);
+        // },
+        
         
 
  
         
-        async stake() {        
+        async stake() {
           // Call the stake method
           try {
             const gasPrice = this.getWeb3.utils.toWei("5", "gwei");
-            const gasLimit = 3000000;
+            const gasLimit = 30000000;
+
+            // give allowance to staking contract
+            const tx1 = await this.handsTokenContract.methods.approve(
+              mainContracts.deployedContracts.Staking,
+              this.getWeb3.utils.toWei("10", "ether")
+            ).send({ from: this.activeAccount, gasPrice, gasLimit });
+            
 
             const tx = await this.stakingContract.methods.stake(
               this.getWeb3.utils.toWei("10", "ether")
             ).send({ from: this.activeAccount, gasPrice, gasLimit });
-        
+            
             // Wait for the transaction to be mined
             await this.getWeb3.eth.getTransactionReceipt(tx.transactionHash);
-        
+            
             // Transaction was successful if we made it here
             console.log('Staked', tx);
             return tx;
           } catch (error) {
-            console.log('Error staking', error);
+            // Log more detailed information about the error
+            console.error('Error staking. Message:', error.message);
+            
+            // Log error reason if available. This can be the error message from a require statement in a smart contract
+            if (error.reason) {
+              console.error('Error reason:', error.reason);
+            }
+            
+            // Log the error stack trace for debugging
+            console.error('Error stack trace:', error.stack);
+            
             return error;
           }
         },
+
 
         async unstake() {
           // Call the unstake method
