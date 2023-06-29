@@ -2,34 +2,41 @@
 import { Moves } from '../types';
 </script>
 <template>
-  <div class="svg" v-if="move == Moves.Rock" v-html="Rock"></div>
-  <div class="svg" v-else-if="move == Moves.Paper" v-html="Paper"></div>
-  <div class="svg" v-else-if="move == Moves.Scissors" v-html="Scissors"></div>
-  <div class="svg" v-else-if="move == Moves.LoadingMark" >
-    <svg version="1.1" id="L9" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-  viewBox="0 0 100 100" enable-background="new 0 0 0 0" xml:space="preserve">
-    <path fill="#000"
-    d="M73,50c0-12.7-10.3-23-23-23S27,37.3,27,50 M30.9,50c0-10.5,8.5-19.1,19.1-19.1S69.1,39.5,69.1,50">
-      <animateTransform 
-         attributeName="transform" 
-         attributeType="XML" 
-         type="rotate"
-         dur="1s" 
-         from="0 50 50"
-         to="360 50 50" 
-         repeatCount="indefinite" />
-  </path>
-</svg>
+  <div :class= "isSmall ? 'small' : isNormal ? 'normal' : 'large'" v-if="move == Moves.Rock" class="Rock"></div>
+  <div :class= "isSmall ? 'small' : isNormal ? 'normal' : 'large'" v-else-if="move == Moves.Paper" class="Paper"></div>
+  <div :class= "isSmall ? 'small' : isNormal ? 'normal' : 'large'" v-else-if="move == Moves.Scissors" class="Scissors"></div>
+  <div :class= "isSmall ? 'small' : isNormal ? 'normal' : 'large'" v-else-if="move == Moves.LoadingMark" class="Rock" >
   </div>
-  <div class="svg" v-else-if="move == Moves.CheckMark" >
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg>
+  <div :class= "isSmall ? 'small' : isNormal ? 'normal' : 'large'" v-else-if="move == Moves.CheckMark" class="Rock" >
   </div>
 </template>
 
 <style>
-  svg {
-    width: 100px;
-    height: 100px;
+  svg  {
+    width: inherit;
+    height: inherit;
+  }
+
+  .small {
+    width: 32px;
+    height: 32px;
+  }
+
+  .normal {
+    cursor: pointer;
+    width: 160px;
+    height: 160px;
+  }
+
+  .normal:hover {
+    cursor: pointer;
+    width: 200px;
+    height: 200px;
+  }
+
+  .large {
+    width: 240px;
+    height: 240px;
   }
 </style>
 
@@ -48,7 +55,13 @@ export default {
     }
   },
   props: {
-    move: Number
+    move: Number,
+    isSmall: {
+      default: false
+    },
+    isNormal: {
+      default: false
+    },
   },
 
   //output the value of move

@@ -1,19 +1,38 @@
 <template>
-  <div>
-    <button
-      class="card"
+  <div class="content">
+    <div v-if="!isInGame && !isWaiting">
+      <p style="margin:0; margin-bottom:6px;">Your balance</p>
+      <h1 style="margin:0; margin-bottom:22px;">
+        <span
+          class="currency-symbol"
+        >$</span>
+        {{this.balance?.toString().split(".")[0]}}
+        <span
+          class="decimals">
+          .{{ this.balance?.toString().split(".")[1]?.substring(0,4)?? "00" }}
+
+        </span>
+      </h1>
+      <div class="address-container">
+        <div class="profile-mini"></div>
+        <p class="address">{{truncateAddress(this.activeAccount)}}</p>
+      </div>
+    </div>
+    
+    <!-- <button
+      class="button-dark"
       @click="copyAffiliateLink"
     >
       Copy affiliate link
-    </button>
+    </button> -->
     <!-- If in game-->
     <div v-if="isInGame">
-      <button
-        class="card"
+      <!-- <button
+        class="button-dark"
         @click="leaveGame"
       >
         Leave game
-      </button>
+      </button> -->
       <!-- Round Id-->
       <div style="justify-content: center;">
         Round {{ currentRound }} for <a>{{ currentWager }} ETH</a>
@@ -23,21 +42,43 @@
       <div style="display:grid; grid-template-columns: 1fr auto 1fr;">
           <!-- Selected move-->
           <div 
+          style="display: flex; flex-direction:column; gap: 35px; align-items: center;"
+
             v-if="shouldMove"
             >
-                  <p> {{ yourAddress }}</p>
-                  <p> {{ yourCurrentPoints }} / 3 </p>
-                  <p>{{ yourGameStateToString }}</p>
-                  <GameMove v-if="gameState != 0" :move="selectedMove"/>
-                  <GameMove v-else :move="0"/>
+            <div style="display:flex;">
+              <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 1 }"></div>
+              <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 2 }"></div>
+              <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 3 }"></div>
+            </div>
+            <GameMove :move="selectedMove"/>
+            <div class="address-container">
+              <div class="profile-mini"></div>
+                <p class="address">{{ truncateAddress(yourAddress) }}</p>
+            </div>
+            <div class="player-balance">
+              $ 156.03
+            </div>
+            
           </div>
           <!-- Choose move-->
           <div
+            style="display: flex; flex-direction:column; gap: 35px; align-items: center;"
             v-else
           >
-            <p>{{  yourAddress }}</p>
-            <p> {{ yourCurrentPoints }} / 3 </p>
-            <p>{{ yourGameStateToString }}</p>
+          <div style="display:flex;">
+            <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 1 }"></div>
+            <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 2 }"></div>
+            <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 3 }"></div>
+          </div>
+          <GameMove :move="selectedMove"/>
+          <div class="address-container">
+            <div class="profile-mini"></div>
+              <p class="address">{{ truncateAddress(yourAddress) }}</p>
+          </div>
+          <div class="player-balance">
+            $ 156.03
+          </div>
             <div 
               style="display: flex; justify-content: center; gap: 10px;"
             >
@@ -45,25 +86,25 @@
                   :style="{ 'border-color': isRock ? 'yellow' : 'inherit' }" 
                   @click="onRock"
               >
-                  <GameMove :move="1"/>
+                  <GameMove :isNormal="true" :move="1"/>
               </div>
               <div 
                   :style="{ 'border-color': isPaper ? 'yellow' : 'inherit' }" 
                   @click="onPaper"
               >
-                  <GameMove :move="2"/>
+                  <GameMove :isNormal="true" :move="2"/>
               </div>
               <div 
                   :style="{ 'border-color': isScissors ? 'yellow' : 'inherit' }" 
                   @click="onScissors"
               >
-                  <GameMove :move="3"/>
+                  <GameMove :isNormal="true" :move="3"/>
               </div>
             </div>
 
             <!-- red button
             <button
-              class="card"
+              class="button-dark"
               @click="sendMove"
             >   
               Submit
@@ -71,18 +112,51 @@
 
           </div>
 
-          <div style="display:flex; height: 100%; align-items: center;">VS</div>
+          <div style="display:flex; flex-direction:column; height: 100%; align-items: center; gap:35px">
+            <p>Your bet is</p>
+            <h1 style="margin:0; margin-bottom:22px;">
+              <span
+                class="currency-symbol"
+              >$</span>
+              {{this.selectedBet?.toString().split(".")[0]}}
+              <span
+                class="decimals">
+                .{{ this.selectedBet?.toString().split(".")[1]?.substring(0,4)?? "00" }}
+      
+              </span>
+            </h1>
+          </div>
 
           <!-- Opponent move-->
           <div 
           >
-              <div class="flex flex-column">
-                  <p> {{ opponentAddress }}</p>
-                  <p> {{ opponentCurrentPoints }} / 3 </p>
-                  <p>{{ opponentStateToString }}</p>
-                  <GameMove v-if="bothRevealed" :move="opponentMove"/>
-                  <GameMove v-else-if="isOpponentMoveSent" :move="5"/>
-                  <GameMove v-else :move="4"/>
+              <div class="flex flex-column"
+                  style="display: flex; flex-direction:column; gap: 35px; align-items: center;"
+              >
+                <div style="display:flex;">
+                  <div :class="{ 'point': true, 'point-active': opponentCurrentPoints >= 1 }"></div>
+                  <div :class="{ 'point': true, 'point-active': opponentCurrentPoints >= 2 }"></div>
+                  <div :class="{ 'point': true, 'point-active': opponentCurrentPoints >= 3 }"></div>
+                </div>
+                <GameMove v-if="bothRevealed" :move="opponentMove"/>
+                  <GameMove class="flip" v-else-if="isOpponentMoveSent" :move="5"/>
+                  <GameMove class="flip" v-else :move="4"/>
+                <div class="address-container">
+                  <div class="profile-mini"></div>
+                   <p class="address">{{ truncateAddress(yourAddress) }}</p>
+                </div>
+                <div class="player-balance">
+                  $ 156.03
+                </div>
+
+                <div v-if="!isOpponentMoveSent"
+                 class="loading"></div>
+                <div v-else
+                  class="checkmark"
+                >
+                  
+                </div>
+                  
                   
               </div>
               
@@ -92,19 +166,16 @@
     </div>
 
     <!-- Should find game-->
-    <div v-else>
-      <div>
+    <div class="content" v-else>
         <!-- Previous Game Result -->
-        <div v-if="previousGame">
-          <!-- You won text-->
+        <!-- <div v-if="previousGame">
           <h1 v-if="wonLastGame">You won {{ previousGameWager }} ETH against {{ previousGameOpponent }}</h1>
           <h1 v-else>You lost {{ previousGameWager }} ETH against {{ previousGameOpponent }}</h1>
-          <!-- Points-->
           <h1> {{ previousGamePoints }} : {{ previousGameOpponentPoints }} </h1>
-        </div>
+        </div> -->
         
         <!-- Game buttons -->
-        <div v-if="!isRegistering && !isWaiting">
+        <!-- <div v-if="!isRegistering && !isWaiting">
           <div>
             <button v-for="(step, index) in wagerSteps"
                     class="select"
@@ -114,37 +185,63 @@
               {{ step }} ETH
             </button>
           </div>
-        </div>
+        </div> -->
 
-        <p 
+        <!-- <p 
           v-if="!isRegistering && !isWaiting"
           @click="togglePlayWithFriend"
           >
           {{ playWithFriend ? "Playing with friends. Switch to play with random": "Playing with random switch to play with friend" }}
-        </p>
-        <button
-          class="card"
+        </p> -->
+        <div style="display:flex;">
+          <button v-if="!isRegistering && !isWaiting" class="button-light" @click="buyEth">
+             <div class="plus-symbol"></div><div>Add Funds</div>
+            </button>
+          <button
+          class="button-dark"
+          v-if="!isWaiting"
           @click="registerGame"
-          :disabled="isRegistering || isWaiting"
         >   
-          {{ isRegistering ? "Registering" : isWaiting ? "Waiting for opponent" : previousGame ? "Play again" : "Find game" }}
-          <a>{{ this.wagerSteps[this.sliderIndex] }} ETH</a>
+          <div>
+            Play match
+            &nbsp; 
+          </div>
+          <!-- <a>{{ this.wagerSteps[this.sliderIndex] }} ETH</a> -->
+          <select 
+          class="selector" 
+          style="margin-right:-25px;"
+          :value="this.selectedBet"
+          @input="event => selectedBet = event.target.value"
+          @click.stop
+          >
+            <option v-for="step in wagerSteps" :key="step" :value="step">
+              <span class="currency-symbol">$</span>
+              {{ step }} &nbsp;
+            </option>
+          </select>
         </button>
-        <button
-          v-if="isWaiting"
-          class="card"
-          @click="cancelGame"
-        >
-          Cancel
-        </button>
+        <div v-if="isWaiting" style="display:flex; flex-direction:column; align-items:center; margin-top:-70px;">
+          <p>You wager is</p>
+          <h1 style="margin:0;"> <span class="currency-symbol">$</span>{{ this.selectedBet }} <span class="decimals">.00</span> </h1>
+          <p style="opacity:0.5;">Waiting for opponent ...</p>
+          <div class="searching"></div>
+          <button
+            class="button-dark"
+            @click="cancelGame"
+          >
+            Cancel
+          </button>
+        </div>
+        
+        </div>
+        
         <button
           v-if="isWaiting && playWithFriend"
-          class="card"
+          class="button-dark"
           @click="copyPasswordGameLink"
         >
           Copy game link
         </button>
-      </div>
     </div>
 
 
@@ -179,6 +276,13 @@
       </div>
     </div> -->
   </div>
+  <game-list
+   v-if="!isInGame"
+   :activeData="activeGames"
+   :completedData="completedGames"
+   :pendingData="pendingGames"
+   ></game-list>
+
 </template>
 
 <style>
@@ -232,11 +336,13 @@ function opponentGameStateToString(state) {
 import RPC from "../web3RPC";
 
 import GameMove from "./GameMove.vue";
+import GameList from "./GameList.vue";
 import { Moves, Outcomes, GameStates } from "../types";
 import Web3 from "web3";
 import { sha256 } from "js-sha256";
 import RampInstantSDK from "@ramp-network/ramp-instant-sdk";
 import { ethers } from 'ethers'
+import GameListVue from './GameList.vue'
 
 const CONTRACT_ADDRESS = mainContracts.deployedContracts.Hands
 const CONTRACT_ABI = mainContracts.deployedAbis.Hands
@@ -292,10 +398,15 @@ function calcWinner(moveA, moveB) {
 export default {
   components: {
       GameMove,
+      GameList,
   },
   props: {
     provider: {
       type: String,
+      default: null,
+    },
+    balance: {
+      type: Number,
       default: null,
     },
   },
@@ -323,7 +434,7 @@ export default {
       gameOutcomeEvents: [],
       playerCancelledEvents: [],
 
-      wagerSteps: [0.01, 0.1, 1, 5, 10],
+      wagerSteps: ["0.01", "0.1", "1", "5", "10"],
       sliderIndex: 0,
 
       _lastGameId: -1,
@@ -503,7 +614,25 @@ export default {
       const affiliateCode = localStorage.getItem("affiliateCode")
       
       return affiliateCode && this.affiliateOfUser != ethers.constants.AddressZero
-    }
+    },
+
+    //Return array of games that are pending. Where a user is waiting for someone to join
+    pendingGames(){
+      const games = Object.values(this.games)
+      return games.filter(game => game.outcome == Outcomes.None && game.playerB == "" && game.gameId != "0")
+    },
+    //Return array of games that are ongoing. Where a users are playing a game
+    activeGames(){
+      const games = Object.values(this.games)
+      return games.filter(game => game.outcome == Outcomes.None && game.playerB != "" && game.gameId != "0")
+    },
+
+    completedGames(){
+      const games = Object.values(this.games)
+      return games.filter(game => game.outcome != Outcomes.None && game.gameId != "0")
+    },
+
+    
   },
 
   
@@ -570,6 +699,9 @@ export default {
     },
   },
   methods: {
+    truncateAddress(address) {
+      return address?.slice(0, 6) + "..." + address?.slice(-4)
+    },
     onRock() {
       this.selectedMove = Moves.Rock;
       this.sendMove();
@@ -688,6 +820,17 @@ export default {
     getGameCurrentRound(gameId) {
       return this.games[gameId].length - 1;
     },
+
+    convertTimestampToTime(timestamp) {
+    const date = new Date(timestamp * 1000); // Convert to milliseconds by multiplying by 1000
+    let hours = date.getHours();
+    const minutes = "0" + date.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    const strTime = hours + ':' + minutes.substr(-2) + ' ' + ampm;
+    return strTime;
+},
     
     //Whenever a new game is registered
     async handleRegisterEvent(event, userAddress) {
@@ -699,7 +842,11 @@ export default {
         this.createGame(gameId, playerAddress);
       
       //set players state to waiting
-      this.getGame(gameId).states[0][playerAddress.toLowerCase()] = GameStates.Waiting;    
+      this.getGame(gameId).states[0][playerAddress.toLowerCase()] = GameStates.Waiting;  
+      
+      const block = await this.getWeb3.eth.getBlock(event.blockNumber);
+      const timestamp = block.timestamp;
+      this.getGame(gameId).time = this.convertTimestampToTime(timestamp)
       
       //set currentGameId if user is in game
       if (playerAddress.toLowerCase() === userAddress.toLowerCase()) {

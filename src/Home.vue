@@ -1,25 +1,34 @@
 <template>
-  <div >
-    <h1>
+  <nav>
+    <div class="title">
       Handsy.io
-    </h1>
-    <h2>
-      Rock Paper Scissors for <a>real money</a>
-    </h2>
-
-    <button
-      v-if="!loggedin"
-      class="card"
-      @click="login"
-      style="cursor: pointer"
+    </div>
+    <div
+     v-if="loggedin"
+     class="profile"
     >
-      Login
-    </button>
+      
+    </div>
+  </nav>
+    <header
+     v-if="!loggedin"
+     class=""
+    >
+      <h1>Welcome to Handsy.io</h1>
+      <p>Play rock paper scissors with your friends or with randome opponents for real money.</p>
+      <button
+        class="button-dark"
+        @click="login"
+        style="cursor: pointer"
+      >
+        Login
+      </button>
+    </header>
 
     <div v-if="loggedin">
       <!-- Staking and Game screen tabs-->
 
-      <button
+      <!-- <button
         class="card"
         @click="staking = false"
         style="cursor: pointer"
@@ -33,24 +42,24 @@
         style="cursor: pointer"
       >
         Staking coming soon
-      </button>
+      </button> -->
 
       
-      <div>Logged in as {{ activeAccount }}</div>
-      <div>Balance: {{ balance }} ETH</div>
+      <!-- <div>Logged in as {{ activeAccount }}</div>
+      <div>Balance: {{ balance }} ETH</div> -->
       <Game
         v-if="!staking"
        :provider="provider" 
+       :balance="balance"
       />
 
-      <button @click="logout">Logout</button>
-      <button @click="buyEth">Buy ETH</button>
+      <!-- <button @click="logout">Logout</button>
+      <button @click="buyEth">Buy ETH</button> -->
       <Staking
         v-if="staking"
         :provider="provider"
       />
     </div>
-  </div>
 </template>
 
 <script lang="ts">
