@@ -12,6 +12,7 @@ export const Outcomes = {
     PlayerA: 1,
     PlayerB: 2,
     Draw: 3,
+    Cancelled: 4,
 };
   
 export const GameStates = {

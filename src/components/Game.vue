@@ -51,7 +51,8 @@
               <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 2 }"></div>
               <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 3 }"></div>
             </div>
-            <GameMove :move="selectedMove"/>
+            <GameMove v-if="bothRevealed" :move="selectedMove"/>
+            <GameMove v-else :move="4"/>
             <div class="address-container">
               <div class="profile-mini"></div>
                 <p class="address">{{ truncateAddress(yourAddress) }}</p>
@@ -59,6 +60,12 @@
             <div class="player-balance">
               $ 156.03
             </div>
+            <div 
+                  style="display: flex; flex-direction:column; gap: 10px; align-items: center;"
+              >
+                  <GameMove :isNormal="true" :move="selectedMove"></GameMove>
+                  <p>{{selectedMove == 1 ? "Rock" : selectedMove == 2 ? "Paper" : "Scissors"}}</p>
+              </div>
             
           </div>
           <!-- Choose move-->
@@ -71,7 +78,8 @@
             <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 2 }"></div>
             <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 3 }"></div>
           </div>
-          <GameMove :move="selectedMove"/>
+          <GameMove v-if="bothRevealed" :move="selectedMove"/>
+            <GameMove v-else :move="4"/>
           <div class="address-container">
             <div class="profile-mini"></div>
               <p class="address">{{ truncateAddress(yourAddress) }}</p>
@@ -83,22 +91,28 @@
               style="display: flex; justify-content: center; gap: 10px;"
             >
               <div 
+                  style="display: flex; flex-direction:column; gap: 10px; align-items: center;"
                   :style="{ 'border-color': isRock ? 'yellow' : 'inherit' }" 
                   @click="onRock"
               >
                   <GameMove :isNormal="true" :move="1"/>
+                  <p>Rock</p>
               </div>
               <div 
+                style="display: flex; flex-direction:column; gap: 10px; align-items: center;"
                   :style="{ 'border-color': isPaper ? 'yellow' : 'inherit' }" 
                   @click="onPaper"
               >
                   <GameMove :isNormal="true" :move="2"/>
+                  <p>Paper</p>
               </div>
               <div 
+              style="display: flex; flex-direction:column; gap: 10px; align-items: center;"
                   :style="{ 'border-color': isScissors ? 'yellow' : 'inherit' }" 
                   @click="onScissors"
               >
                   <GameMove :isNormal="true" :move="3"/>
+                  <p>Scissors</p>
               </div>
             </div>
 
@@ -138,7 +152,7 @@
                   <div :class="{ 'point': true, 'point-active': opponentCurrentPoints >= 2 }"></div>
                   <div :class="{ 'point': true, 'point-active': opponentCurrentPoints >= 3 }"></div>
                 </div>
-                <GameMove v-if="bothRevealed" :move="opponentMove"/>
+                <GameMove v-if="bothRevealed" class="flip" :move="opponentMove"/>
                   <GameMove class="flip" v-else-if="isOpponentMoveSent" :move="5"/>
                   <GameMove class="flip" v-else :move="4"/>
                 <div class="address-container">
@@ -154,7 +168,7 @@
                 <div v-else
                   class="checkmark"
                 >
-                  
+
                 </div>
                   
                   
@@ -416,7 +430,6 @@ export default {
       initialized: false,
       games: {},
       lastBlockSearched: 0,
-      currentGameId: "0",
 
       selectedMove: "",
       selectedBet: "",
@@ -521,6 +534,22 @@ export default {
     isLoser() {
       //just compare opponentMove to selectedMove
       return calcWinner(this.selectedMove, this.opponentMove) == Outcomes.PlayerB
+    },
+
+    //get current game id by checking list of games for the last game that is not finished that the current player is a part of
+    currentGameId() {
+      const games = Object.values(this.games).sort((a, b) => b.gameId - a.gameId)
+      console.log("currentGameId", games)
+      const currentGame = games.find(game => 
+        game.outcome == Outcomes.None && 
+        (game.playerA.toLowerCase() == this.activeAccount.toLowerCase() || 
+        game.playerB == this.getActiveAccount)
+      )
+
+
+      console.log("games ordered by gameId", games)
+      console.log("currentGameId", currentGame)
+      return currentGame?.gameId ?? "0"
     },
 
     previousGame() { 
@@ -849,13 +878,6 @@ export default {
       this.getGame(gameId).time = this.convertTimestampToTime(timestamp)
       
       //set currentGameId if user is in game
-      if (playerAddress.toLowerCase() === userAddress.toLowerCase()) {
-        if (this.isNewestGameId(gameId)){
-          this.currentGameId = gameId;
-          console.log("setting currentGameId", this.currentGameId);
-        }
-        this.setLastGameId(gameId);
-      }
     },
 
     //Whenever has created a match and is waiting for another player to join
@@ -875,13 +897,6 @@ export default {
 
       //set bet amount
       this.getGame(gameId).bet = bet * 10 ** -18;
-
-      //set currentGameId if user is in game
-      if (playerA === this.activeAccount.toLowerCase() || playerB === this.activeAccount.toLowerCase()) {
-        this.currentGameId = gameId;
-        this.setLastGameId(gameId);
-        console.log("setting currentGameId", this.currentGameId);
-      }
     },
 
 
@@ -902,10 +917,6 @@ export default {
       this.getGame(gameId).states[0][playerB.toLowerCase()] = GameStates.Matched;
 
       //Check if player is in game
-      if (playerA.toLowerCase() == this.activeAccount.toLowerCase() || playerB.toLowerCase() == this.activeAccount.toLowerCase()) {
-        this.currentGameId = gameId;
-        console.log("setting currentGameId", this.currentGameId);
-      }
       console.log("setting game to matched");
     },
 
@@ -996,14 +1007,6 @@ export default {
 
       //set outcome
       this.games[gameId].outcome = outcome;
-
-      //reset current gameId
-      if(this.isNewestGameId(gameId)){
-        this.currentGameId = "0";
-        console.log(`resetting current game id from ${gameId} to 0 lastGameId: ${this._lastGameId}`);
-        this.createGame("0");
-        this.setLastGameId(gameId);
-      }      
     },
 
     //If the game id that was cancelled was yours then reset the current game id and remove the game
@@ -1015,16 +1018,8 @@ export default {
       if (!this.games[gameId])
         this.createGame(gameId, playerAddress);
 
-      //check if player is in game
-      if (this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() || this.games[gameId].playerB.toLowerCase() == this.activeAccount.toLowerCase()) {
-        //reset current gameId
-        if(this.isNewestGameId(gameId)){
-          console.log("resetting current game id ", gameId);
-          //this.currentGameId = "0";
-          this.createGame("0");
-          this.setLastGameId(gameId);
-        }
-      }
+      //set game outcome
+      this.games[gameId].outcome = Outcomes.Cancelled;
     },
 
     async subscribeToEvents() {

@@ -20,6 +20,9 @@ import { Moves } from '../types';
   .small {
     width: 32px;
     height: 32px;
+    border: 1px solid #00000010;
+    border-radius: 100px;
+    box-shadow: 0px 0px 1px 0px #00000014;
   }
 
   .normal {
