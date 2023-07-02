@@ -521,7 +521,7 @@ export default {
     },
     isOpponentMoveRevealed() { return this.opponentState == GameStates.Revealed },
     bothRevealed() { return this.isRevealed && this.isOpponentMoveRevealed },
-    isInGame() { return this.gameState == GameStates.Sending || this.gameState == GameStates.Revealing || this.gameState == GameStates.Revealed || this.gameState == GameStates.Matched || this.gameState == GameStates.Sent },
+    isInGame() { return this.currentGameId != "0" },
     isMoveSent() { return this.gameState == GameStates.Sent || this.gameState == GameStates.Revealing || this.gameState == GameStates.Revealed},
     isOpponentMoveSent() { return this.opponentState == GameStates.Sent || this.opponentState == GameStates.Revealing || this.opponentState == GameStates.Revealed},
     isGameFinished() { return this.gameState == GameStates.Finished},
