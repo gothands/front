@@ -166,7 +166,7 @@ export default {
 
     const walletConnectV1Adapter = new WalletConnectV1Adapter({
       adapterSettings: {
-        bridge: "https://bridge.walletconnect.org",
+        //bridge: "https://bridge.walletconnect.org",
       },
       clientId,
     });
