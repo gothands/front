@@ -432,7 +432,7 @@ export default {
     },
     balance: {
       type: Number,
-      default: null,
+      default: null,  
     },
   },
   data() {
