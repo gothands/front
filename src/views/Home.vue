@@ -63,8 +63,8 @@
 </template>
 
 <script lang="ts">
-import Game from "./components/Game.vue";
-import Staking from "./components/Staking.vue";
+import Game from "../components/Game.vue";
+import Staking from "../components/Staking.vue";
 import Web3 from "web3";
 
 
@@ -74,7 +74,7 @@ import Transak from '@biconomy/transak';
 import { ref, onMounted, watch } from "vue";
 import { Web3Auth } from "@web3auth/modal";
 import { CHAIN_NAMESPACES, SafeEventEmitterProvider } from "@web3auth/base";
-import RPC from "./web3RPC";
+import RPC from "../web3RPC";
 
 // Plugins
 import { TorusWalletConnectorPlugin } from "@web3auth/torus-wallet-connector-plugin";
