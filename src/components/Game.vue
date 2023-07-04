@@ -1,4 +1,13 @@
 <template>
+  <Modal 
+    v-model:show="showModal"
+    v-model:winnerPoints="winnerPoints"
+    v-model:loserPoints="loserPoints"
+    v-model:win="winModal"
+    v-model:bet="selectedBet"
+  >
+    Hello world
+  </Modal>
   <div class="content">
     <div v-if="!isInGame && !isWaiting">
       <p style="margin:0; margin-bottom:6px;">Your balance</p>
@@ -157,7 +166,7 @@
                   <GameMove class="flip" v-else :move="4"/>
                 <div class="address-container">
                   <div class="profile-mini"></div>
-                   <p class="address">{{ truncateAddress(yourAddress) }}</p>
+                   <p class="address">{{ truncateAddress(opponentAddress) }}</p>
                 </div>
                 <div class="player-balance">
                   $ 156.03
@@ -217,7 +226,7 @@
           @click="registerGame"
         >   
           <div>
-            Play match
+            {{ isRegistering ? "Registering..." : "Play match" }}
             &nbsp; 
           </div>
           <!-- <a>{{ this.wagerSteps[this.sliderIndex] }} ETH</a> -->
@@ -341,7 +350,7 @@ function opponentGameStateToString(state) {
     if(state == GameStates.Matched)
         return "Matched with opponent"
     if(state == GameStates.Initial)
-        return "Waiting for opponent"
+        return "initial"
     if(state == GameStates.Finished)
         return "Game complete"
     
@@ -351,6 +360,7 @@ import RPC from "../web3RPC";
 
 import GameMove from "./GameMove.vue";
 import GameList from "./GameList.vue";
+import Modal from "./Modal.vue";
 import { Moves, Outcomes, GameStates } from "../types";
 import Web3 from "web3";
 import { sha256 } from "js-sha256";
@@ -413,6 +423,7 @@ export default {
   components: {
       GameMove,
       GameList,
+      Modal,
   },
   props: {
     provider: {
@@ -459,6 +470,14 @@ export default {
       affiliateOfUser: null,
 
       playWithFriend: null,
+
+      showModal: false,
+      winnerPoints: 0,
+      loserPoints: 0,
+      winModal: false,
+
+      handledEventIds: new Set(),
+
     };
   },
   computed: {
@@ -476,13 +495,16 @@ export default {
       if (!this.games[this.currentGameId ?? "0"]) {
         return GameStates.Initial;
       }
+      if(this.games[this.currentGameId ?? "0"].outcome != Outcomes.None) {
+        return GameStates.Initial;
+      }
       const currentRound = this.games[this.currentGameId ?? "0"].round;
       return this.games[this.currentGameId ?? "0"].states[currentRound][this.getActiveAccount] ?? GameStates.Matched
     },
     yourGameStateToString() { 
       switch(this.gameState) {
         case GameStates.Initial:
-          return "Waiting for opponent"
+          return "Initial"
         case GameStates.Waiting:
           return "Waiting for opponent"
         case GameStates.Sending:
@@ -494,7 +516,7 @@ export default {
         case GameStates.Revealed:
           return "Revealed move"
         case GameStates.Matched:
-          return "Send your move"
+          return "Matched"
         case GameStates.Finished:
           return "Game complete"
         default:
@@ -521,7 +543,10 @@ export default {
     },
     isOpponentMoveRevealed() { return this.opponentState == GameStates.Revealed },
     bothRevealed() { return this.isRevealed && this.isOpponentMoveRevealed },
-    isInGame() { return this.currentGameId != "0" },
+    isInGame() {
+
+       return this.currentGameId !="0" && this.gameState != GameStates.Initial && this.gameState != GameStates.Registering && this.gameState != GameStates.Waiting 
+    },
     isMoveSent() { return this.gameState == GameStates.Sent || this.gameState == GameStates.Revealing || this.gameState == GameStates.Revealed},
     isOpponentMoveSent() { return this.opponentState == GameStates.Sent || this.opponentState == GameStates.Revealing || this.opponentState == GameStates.Revealed},
     isGameFinished() { return this.gameState == GameStates.Finished},
@@ -800,7 +825,9 @@ export default {
     },
 
     async getBlockNumber() {
-      return await this.getWeb3.eth.getBlockNumber();
+      const blockNumber = await this.getWeb3.eth.getBlockNumber();
+      //console.log("blockNumber", blockNumber);
+      return blockNumber;
     },
     async getContract() {
       if (!this.contractInstance) {
@@ -870,7 +897,7 @@ export default {
       if (!this.getGame(gameId, 0)) 
         this.createGame(gameId, playerAddress);
       
-      //set players state to waiting
+      //set players state to waiting if hasnt already
       this.getGame(gameId).states[0][playerAddress.toLowerCase()] = GameStates.Waiting;  
       
       const block = await this.getWeb3.eth.getBlock(event.blockNumber);
@@ -997,9 +1024,19 @@ export default {
       
     },
     
-    handleOutcomeEvent(event) {
+    handleOutcomeEvent(event, isSubscription = false) {
       console.log("GameOutcome event:", event.returnValues);
       const { gameId, outcome } = event.returnValues;
+
+      //if subscription then set modal and make sure isSubscription is a boolean
+      if (isSubscription === true && typeof isSubscription === "boolean") {
+        console.log("setting modal");
+        //get winner and loser points from yourCurrentPoints and opponentCurrentPoints
+        this.winnerPoints = this.yourCurrentPoints > this.opponentCurrentPoints ? this.yourCurrentPoints : this.opponentCurrentPoints;
+        this.loserPoints = this.yourCurrentPoints < this.opponentCurrentPoints ? this.yourCurrentPoints : this.opponentCurrentPoints;
+        this.winModal = this.yourCurrentPoints > this.opponentCurrentPoints;
+        this.showModal = true;
+      }
 
       //check if gameId is in games
       if (!this.games[gameId])
@@ -1007,6 +1044,11 @@ export default {
 
       //set outcome
       this.games[gameId].outcome = outcome;
+
+      //check if user is in game, if so reset game "0"
+      if (this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() || this.games[gameId].playerB.toLowerCase() == this.activeAccount.toLowerCase()) {
+        this.createGame("0");
+      }
     },
 
     //If the game id that was cancelled was yours then reset the current game id and remove the game
@@ -1020,6 +1062,10 @@ export default {
 
       //set game outcome
       this.games[gameId].outcome = Outcomes.Cancelled;
+
+      if (this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() || this.games[gameId].playerB.toLowerCase() == this.activeAccount.toLowerCase()) {
+        this.createGame("0");
+      }
     },
 
     async subscribeToEvents() {
@@ -1055,6 +1101,8 @@ export default {
 
       let lastBlockChecked = await this.getBlockNumber()
 
+      // Create a new set for keeping track of handled event ids
+
       setInterval(async () => {
         const currentBlock = await this.getBlockNumber();
 
@@ -1065,18 +1113,31 @@ export default {
           });
 
           events.forEach((event) => {
+            const eventId = `${event.transactionHash}-${eventName}-${event.logIndex}`;
+
+            if (this.handledEventIds.has(eventId)) {
+              return;
+            }
+
             console.log(`New ${eventName} event detected:`, event);
-            if (eventName === "NewRound" || eventName === "GameOutcome") {
+            if(eventName == "GameOutcome") {
+                eventHandlers[eventName].call(this, event, true);
+            }
+            if (eventName === "NewRound") {
               setTimeout(() => {
                 eventHandlers[eventName].call(this, event, userAddress);
-              }, 3000); // Add a 1-second delay before handling the NewRound event
+
+              }, 1000); // Add a 1-second delay before handling the NewRound event
             } else {
               eventHandlers[eventName].call(this, event, userAddress);
             }
+
+            this.handledEventIds.add(eventId);
           });
         }
 
         lastBlockChecked = currentBlock;
+        console.log("lastBlockChecked:", lastBlockChecked);
       }, pollingInterval);
     },
 
@@ -1598,7 +1659,10 @@ export default {
       console.log("playerCancelledEvents:", this.playerCancelledEvents.map(e => e.returnValues));
     },
 
-
+    addToHandledEvents(event, eventName) {
+      const eventId = `${event.transactionHash}-${eventName}-${event.logIndex}`;
+      this.handledEventIds.add(eventId);
+    },
     
     async processEvents() {
       // Get the current user's address
@@ -1608,48 +1672,57 @@ export default {
       // Call handlePlayerRegisteredEvent for each event
       for (const event of this.playerRegisteredEvents) {
         this.handleRegisterEvent(event, userAddress);
+        this.addToHandledEvents(event, "PlayerRegistered");
       }
 
       // Iterate over the playerWaitingEvents
       // Call handlePlayerWaitingEvent for each event
       for (const event of this.playerWaitingEvents) {
         this.handleWaitingEvent(event)
+        this.addToHandledEvents(event, "PlayerWaiting");
+
       }
 
       // Iterate over the playerCancelledEvents
       // Call handlePlayerCancelledEvent for each event
       for (const event of this.playerCancelledEvents) {
         this.handlePlayerCancelledEvent(event)
+        this.addToHandledEvents(event, "PlayerCancelled");
       }
 
       // Iterate over the playersMatchedEvents
       // Call handlePlayersMatchedEvent for each event
       for (const event of this.playersMatchedEvents) {
         this.handlePlayersMatchedEvent(event)
+        this.addToHandledEvents(event, "PlayersMatched");
       }
 
       // Iterate over the moveCommittedEvents
       // Call handleMoveSentEvent for each event
       for (const event of this.moveCommittedEvents) {
         this.handleMoveSentEvent(event)
+        this.addToHandledEvents(event, "MoveCommitted");
       }
 
       // Iterate over the moveRevealedEvents
       // Call handleMoveRevealedEvent for each event
       for (const event of this.moveRevealedEvents) {
         this.handleRevealedEvent(event)
+        this.addToHandledEvents(event, "MoveRevealed");
       }
 
       // Iterate over the newRoundEvents
       // Call handleNewRoundEvent for each event
       for (const event of this.newRoundEvents) {
         this.handleNewRoundEvent(event)
+        this.addToHandledEvents(event, "NewRound");
       }
 
       // Iterate over the gameOutcomeEvents
       // Call handleGameOutcomeEvent for each event
       for (const event of this.gameOutcomeEvents) {
         this.handleOutcomeEvent(event)
+        this.addToHandledEvents(event, "GameOutcome");
       }
 
       
