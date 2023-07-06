@@ -4,7 +4,7 @@ import Web3 from "web3";
 export default class EthereumRpc {
   private provider: SafeEventEmitterProvider;
 
-  constructor(provider: SafeEventEmitterProvider) {
+  constructor(provider: any) {
     this.provider = provider;
   }
 
@@ -40,6 +40,21 @@ export default class EthereumRpc {
 
       // Get user's Ethereum public address
       const address = (await web3.eth.getAccounts())[0];
+
+      // Get user's balance in ether
+      const balance = web3.utils.fromWei(
+        await web3.eth.getBalance(address) // Balance is in wei
+      );
+
+      return balance;
+    } catch (error) {
+      return error as string;
+    }
+  }
+
+  async getBalanceOf(address: string): Promise<string> {
+    try {
+      const web3 = new Web3(this.provider as any);
 
       // Get user's balance in ether
       const balance = web3.utils.fromWei(

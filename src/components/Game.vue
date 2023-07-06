@@ -309,10 +309,7 @@
 </template>
 
 <style>
-body {
-  height: 100%;
-  width: 100%;
-}
+
 </style>
 
 <script>
@@ -367,6 +364,7 @@ import { sha256 } from "js-sha256";
 import RampInstantSDK from "@ramp-network/ramp-instant-sdk";
 import { ethers } from 'ethers'
 import GameListVue from './GameList.vue'
+import store from '@/store'
 
 const CONTRACT_ADDRESS = mainContracts.deployedContracts.Hands
 const CONTRACT_ABI = mainContracts.deployedAbis.Hands
@@ -481,6 +479,7 @@ export default {
     };
   },
   computed: {
+    //Game state
     getActiveAccount() {        
       return this.activeAccount?.toLowerCase()
     },
@@ -739,6 +738,9 @@ export default {
       handler(newValue, oldValue) {
         console.log("yourGameState", gameStateToString(this.gameState));
         console.log("games changed", this.games[this.currentGameId]);
+        store.dispatch("setGames", this.games);
+
+        console.log("store games", store.state.games);
       },
       deep: true
     },

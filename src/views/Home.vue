@@ -83,6 +83,8 @@ import { TorusWalletConnectorPlugin } from "@web3auth/torus-wallet-connector-plu
 import { WalletConnectV1Adapter } from "@web3auth/wallet-connect-v1-adapter";
 import { MetamaskAdapter } from "@web3auth/metamask-adapter";
 import { TorusWalletAdapter } from "@web3auth/torus-evm-adapter";
+import { mapState } from 'vuex';
+import store from '@/store';
 
 const CHAIN_ID_MAINNET = "0x1"
 const CHAIN_ID_TESTNET = "0x118"
@@ -109,18 +111,21 @@ export default {
     Game,
     Staking,
   },
+  computed: mapState([
+    'loggedin',
+    'loading',
+    'loginButtonStatus',
+    'connecting',
+    'activeAccount',
+    'balance',
+    'provider',
+  ]),
+ 
   setup() {
     const staking = ref<boolean>(false);
-    const loggedin = ref<boolean>(false);
-    const loading = ref<boolean>(false);
-    const loginButtonStatus = ref<string>("");
-    const connecting = ref<boolean>(false);
     const rampInstantSdk = ref<any>(null);
 
-    const activeAccount = ref<string>("");
-    const balance = ref<string>("0");
 
-    const provider = ref<SafeEventEmitterProvider | any>(false);
     const clientId =
       "BPskEPAhlqjgenfk3gNE3CM09cpmINBS5wHflAZavWwWp1B4oWWWypVCHRbHpbLYeKPjkPXYNuNhEPXAJfkYijw"; // get from https://dashboard.web3auth.io
 
@@ -211,38 +216,38 @@ export default {
 
     onMounted(async () => {
       try {
-        loading.value = true;
-        loggedin.value = false;
+        store.dispatch("setLoading", true);
+        store.dispatch("setLoggedIn", false);
         await web3auth.initModal();
         const userInfo: any = await web3auth.getUserInfo();
         await web3auth.addPlugin(torusPlugin);
         if (web3auth.provider) {
-          provider.value = web3auth.provider;
+          store.dispatch("setProvider", web3auth.provider);
           console.log("userInfo", userInfo)
-          //const initVal = await torusPlugin.initWithProvider(provider.value, userInfo);
-          loggedin.value = true;
+          //const initVal = await torusPlugin.initWithProvider(store.state.provider, userInfo);
+          store.dispatch("setLoggedIn", true);
           await torusPlugin.connect()
 
         }
 
-        console.log("provider", provider.value);
+        console.log("provider", store.state.provider);
       } catch (error) {
         uiConsole("error", error);
       } finally {
-        loading.value = false;
+        store.dispatch("setLoading", false);
       }
     });
     const fetchBalance = async () => {
-      if (!provider.value || !activeAccount.value) {
+      if (!store.state.provider || !store.state.activeAccount) {
         return;
       }
 
-      const rpc = new RPC(provider.value);
+      const rpc = new RPC(store.state.provider);
       const balanceEth = await rpc.getBalance();
 
       console.log("balanceEth", balanceEth);
 
-      balance.value = balanceEth;
+      store.dispatch("setBalance", balanceEth);
     };
 
     const pollBalance = async () => {
@@ -253,12 +258,12 @@ export default {
 
     
 watch(
-  provider,
-  (newValue, oldValue) => {
+  () => store.state.provider,
+  async (newValue, oldValue) => {
     if (newValue) {
       // The provider value has changed, start polling the balance
-      pollBalance();
-      getAccounts();
+      await pollBalance();
+      await getAccounts();
     }
   },
   { immediate: true } // This option triggers the watch callback immediately with the current value
@@ -269,12 +274,13 @@ watch(
         uiConsole("web3auth not initialized yet");
         return;
       }
-      provider.value = await web3auth.connect();
-      console.log("provider", provider);
+      const provider = await web3auth.connect();
+      store.dispatch("setProvider", provider);
+      console.log("provider", store.state.provider);
       const userInfo: any = await web3auth.getUserInfo();
       //await torusPlugin.initWithProvider(provider, userInfo);
       
-      loggedin.value = true;
+      store.dispatch("setLoggedIn", true);
       //await torusPlugin.connect()
       uiConsole("Logged in Successfully!");
     };    
@@ -297,7 +303,7 @@ watch(
 
       const transak = new Transak('PRODUCTION', {
 
-        walletAddress: activeAccount.value,
+        walletAddress: store.state.activeAccount,
         userData: {
           firstName: userInfo.name || '',
           email: userInfo.email || '',
@@ -338,22 +344,22 @@ watch(
         return;
       }
       await web3auth.logout();
-      provider.value = null;
-      loggedin.value = false;
+      store.dispatch("setProvider", null);
+      store.dispatch("setLoggedIn", false);
     };
 
     const getChainId = async () => {
-      if (!provider.value) {
+      if (!store.state.provider) {
         uiConsole("provider not initialized yet");
         return;
       }
-      const rpc = new RPC(provider.value);
+      const rpc = new RPC(store.state.provider);
       const chainId = await rpc.getChainId();
       uiConsole(chainId);
     };
 
     const addChain = async () => {
-      if (!provider.value) {
+      if (!store.state.provider) {
         uiConsole("provider not initialized yet");
         return;
       }
@@ -372,7 +378,7 @@ watch(
     };
 
     const switchChain = async () => {
-      if (!provider.value) {
+      if (!store.state.provider) {
         uiConsole("provider not initialized yet");
         return;
       }
@@ -392,52 +398,52 @@ watch(
 
 
     const getAccounts = async () => {
-      if (!provider.value) {
+      if (!store.state.provider) {
         uiConsole("provider not initialized yet");
         return;
       }
-      const rpc = new RPC(provider.value);
+      const rpc = new RPC(store.state.provider);
       const address = await rpc.getAccounts()
-      activeAccount.value = address[0]
+      store.dispatch("setActiveAccount", address[0]);
       uiConsole(address);
     };
 
     const getBalance = async () => {
-      if (!provider.value) {
+      if (!store.state.provider) {
         uiConsole("provider not initialized yet");
         return;
       }
-      const rpc = new RPC(provider.value);
+      const rpc = new RPC(store.state.provider);
       const balance = await rpc.getBalance();
       uiConsole(balance);
     };
 
     const sendTransaction = async () => {
-      if (!provider) {
+      if (!store.state.provider) {
         uiConsole("provider not initialized yet");
         return;
       }
-      const rpc = new RPC(provider.value);
+      const rpc = new RPC(store.state.provider);
       const receipt = await rpc.sendTransaction();
       uiConsole(receipt);
     };
 
     const signMessage = async () => {
-      if (!provider.value) {
+      if (!store.state.provider) {
         uiConsole("provider not initialized yet");
         return;
       }
-      const rpc = new RPC(provider.value);
+      const rpc = new RPC(store.state.provider);
       const signedMessage = await rpc.signMessage();
       uiConsole(signedMessage);
     };
 
     const getPrivateKey = async () => {
-      if (!provider.value) {
+      if (!store.state.provider) {
         uiConsole("provider not initialized yet");
         return;
       }
-      const rpc = new RPC(provider.value);
+      const rpc = new RPC(store.state.provider);
       const privateKey = await rpc.getPrivateKey();
       uiConsole(privateKey);
     };
@@ -459,13 +465,6 @@ watch(
 
     return {
       staking,
-      loggedin,
-      loading,
-      loginButtonStatus,
-      connecting,
-      provider,
-      balance,
-      activeAccount,
       getWeb3: 
       web3auth,
       login,
