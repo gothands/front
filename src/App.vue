@@ -4,15 +4,26 @@
 		  Handsy.io
 		</div>
 
-		<div style="display:flex; justify-content:end; align-items:center; gap:40px">
-			<router-link to="/affiliate">Affiliate</router-link>
-			<router-link to="/staking">Staking</router-link>
+		<div
+			
+		 	style="display:flex; justify-content:end; align-items:center; gap:40px"
+		>
+			<router-link v-if="!isInGame" to="/affiliate">Affiliate</router-link>
+			<router-link v-if="!isInGame" to="/staking">Staking</router-link>
+			<button
+			v-if="isInGame"
+			class="button-light"
+			@click="leaveGame">
+			Leave
+		</button> 
 			<div
 				v-if="loggedin"
 				class="profile"
 			>
 			</div>
 		</div>
+		
+		
 	  </nav>
   <router-view/>
 </template>
@@ -91,7 +102,14 @@ export default {
     'activeAccount',
     'balance',
     'provider',
+	'isInGame',
   ]),
+
+  methods : {
+	async leaveGame() {
+	  await store.state.leaveGame();
+	},
+  },
  
   setup() {
     const staking = ref<boolean>(false);

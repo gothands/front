@@ -26,6 +26,8 @@ export default createStore({
 
       // Game
       games: games,
+      isInGame: false,
+      leaveGame: () => { console.log("leaveGame not set") },
 
     }
   },
@@ -51,6 +53,8 @@ export default createStore({
       state.games = payload;
       localStorage.setItem('games', JSON.stringify(state.games));
     },
+    setIsInGame(state, payload) { state.isInGame = payload },
+    setLeaveGame(state, payload) { state.leaveGame = payload },
   },
   actions: {
     // Auth
@@ -88,7 +92,8 @@ export default createStore({
     },
     // Game
     setGames({ commit }, payload) { commit('setGames', payload) },
-
+    setIsInGame({ commit }, payload) { commit('setIsInGame', payload) },
+    setLeaveGame({ commit }, payload) { commit('setLeaveGame', payload) },
   },
   modules: {
   }

@@ -756,9 +756,14 @@ export default {
         if (newValue) {
           //fetch oppoennt balance
           this.$store.dispatch("setBalanceOf",this.opponentAddress)
+
+          console.log("isInGame", newValue);
         }
+        this.$store.dispatch("setIsInGame",newValue)
+        this.$store.dispatch("setLeaveGame", this.leaveGame)
       },
-      deep: true
+      deep: true,
+      immediate: true,
     },
     shouldReveal: {
       handler(newValue, oldValue) {
@@ -767,7 +772,7 @@ export default {
           this.revealMove();
         }
       },
-      deep: true
+      deep: true,
     },
   },
   methods: {
