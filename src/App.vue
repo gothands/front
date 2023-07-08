@@ -3,18 +3,35 @@
 		<div class="title">
 		  Handsy.io
 		</div>
-		<div
-		 v-if="loggedin"
-		 class="profile"
-		>
-		  
+
+		<div style="display:flex; justify-content:end; align-items:center; gap:40px">
+			<router-link to="/affiliate">Affiliate</router-link>
+			<router-link to="/staking">Staking</router-link>
+			<div
+				v-if="loggedin"
+				class="profile"
+			>
+			</div>
 		</div>
 	  </nav>
   <router-view/>
 </template>
 
 <style>
+a {
+	text-decoration: none;
+	color: #1a1a1a;
+}
 
+a:link {
+	color: #1a1a1a;
+}
+a:hover {
+	text-decoration: underline;
+}
+a:visited {
+	color: #1a1a1a;
+}	
 </style>
 
 <script lang="ts">

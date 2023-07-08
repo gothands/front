@@ -39,14 +39,13 @@
 
   import RPC from "../web3RPC";
   
-  import GameMove from "./GameMove.vue";
   import { Moves, Outcomes, GameStates } from "../types";
   import Hands from "../contracts/Hands.json";
   import Web3 from "web3";
   import { sha256 } from "js-sha256";
   
   import mainContracts from "../../../contracts/local-contracts.json"
-  
+import GameMove from './GameMove.vue';
   //EXAMPLE Game.
   // {
   //   gameId: "0x111C3E89Ce80e62EE88318C2804920D4c96f92bb",
