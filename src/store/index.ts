@@ -22,6 +22,7 @@ export default createStore({
       balance: "0",
       balances: {} as Balances,
       provider: null,
+      web3auth: null as any,
 
       // Game
       games: games,
@@ -29,8 +30,8 @@ export default createStore({
     }
   },
   getters: {
-    balance: (state) => async (address: any) => {
-      return state.balances[address]
+    balance: (state) => (address: any) => {
+      return state.balances[address] || "0"
     }
   },
   mutations: {
@@ -43,6 +44,7 @@ export default createStore({
     setBalance(state, payload) { state.balance = payload },
     setBalances(state, payload) { state.balances = payload },
     setProvider(state, payload) { state.provider = payload },
+    setWeb3Auth(state, payload) { state.web3auth = payload },
 
     // Game
     setGames(state, payload) { 
@@ -58,7 +60,11 @@ export default createStore({
     setConnecting({ commit }, payload) { commit('setConnecting', payload) },
     setActiveAccount({ commit }, payload) { commit('setActiveAccount', payload) },
     setBalance({ commit }, payload) { commit('setBalance', payload) },
-    setProvider({ commit }, payload) { commit('setProvider', payload) },
+    setProvider({ commit }, payload) {
+       commit('setProvider', payload) 
+      console.log("setProvider", payload)
+      },
+    setWeb3Auth({ commit }, payload) { commit('setWeb3Auth', payload) },
     async setBalanceOf({ commit, state }, payload) {
       const rpc = new RPC(state.provider)
       const balance = await rpc.getBalanceOf(payload)
@@ -68,8 +74,21 @@ export default createStore({
       console.log("balances", balances)
       commit('setBalances', balances)
     },
+    async login ({ commit, state }) {
+      if (!state.web3auth) {
+        return;
+      }
+      const provider = await state.web3auth.connect();
+      commit("setProvider", provider);
+      //const userInfo: any = await web3auth.getUserInfo();
+      //await torusPlugin.initWithProvider(provider, userInfo);
+      
+      commit("setLoggedIn", true);
+      //await torusPlugin.connect()
+    },
     // Game
     setGames({ commit }, payload) { commit('setGames', payload) },
+
   },
   modules: {
   }

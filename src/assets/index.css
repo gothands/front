@@ -452,6 +452,23 @@ thead th  {
   text-align: left;
 }
 
+td.result {
+  color: #353535;
+font-size: 24px;
+font-family: Sen;
+font-style: normal;
+font-weight: 800;
+line-height: normal;
+}
+
+td.earned {
+font-size: 24px;
+font-family: Sen;
+font-style: normal;
+font-weight: 800;
+line-height: 160%;
+}
+
 td.score {
   color: #353535;
 font-size: 24px;
@@ -511,6 +528,19 @@ line-height: 160%;
   width: 292px;
   height: 252px;
   background:url(searching.svg)
+}
+.back {
+  position: absolute;
+  left: 80px;
+  top: 160px;
+  background: url(Back.png);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  width: 60px;
+  height: 60px;
+  border-radius: 50px;
+  box-shadow: 20px 20px 60px #d9d9d9, -20px -20px 60px #ffffff;
 }
 
 tr {
@@ -591,8 +621,6 @@ flex-shrink: 0;
 
 .Rock {
   background: url(rock.svg);
-  height: inherit;
-  width: inherit;
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
@@ -600,8 +628,6 @@ flex-shrink: 0;
 
 .Paper {
   background: url(paper.svg);
-  height: inherit;
-  width: inherit;
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
@@ -615,8 +641,7 @@ flex-shrink: 0;
 
 .Scissors {
   background: url(scissors.svg);
-  height: inherit;
-  width: inherit;
+
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;

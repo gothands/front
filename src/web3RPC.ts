@@ -54,6 +54,8 @@ export default class EthereumRpc {
 
   async getBalanceOf(address: string): Promise<string> {
     try {
+      console.log("getting balance of", address)
+      console.log("getting balance of with provider", this.provider)
       const web3 = new Web3(this.provider as any);
 
       // Get user's balance in ether
@@ -63,7 +65,8 @@ export default class EthereumRpc {
 
       return balance;
     } catch (error) {
-      return error as string;
+      console.log("error getting balance of", error)  
+      return "0";
     }
   }
 

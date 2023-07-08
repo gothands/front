@@ -34,17 +34,11 @@
             <td class="score">{{ item.points[item.playerA] }} : {{ item.points[item.playerB] ?? 0 }}</td>
             <td class="time">{{ item.time }}</td>
             <td class="player">
-                <div>
-                    <div class="profile-mini"></div>
-                    <p>{{  item.playerA?.slice(0, 6) + "..." + item.playerA?.slice(-4) }}</p>
-                </div>
+                <profile-item :address="item.playerA"></profile-item>
             </td>
 
             <td class="player">
-                <div>
-                    <div class="profile-mini"></div>
-                    <p>{{ item.playerB?.slice(0, 6) + "..." + item.playerB?.slice(-4) }}</p>
-                </div>
+              <profile-item :address="item.playerB"></profile-item>
             </td>
             <td class="prize">${{ item.bet }}</td>
             <td class="round" colspan="2">
@@ -62,9 +56,11 @@
   
   <script>
 import GameMove from './GameMove.vue'
+import ProfileItem from './ProfileItem.vue'
   export default {
     components: {
-        GameMove
+        GameMove,
+        ProfileItem
     },
     data() {
       return {

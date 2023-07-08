@@ -1,18 +1,15 @@
 <template>
     <div style="margin: 120px 80px;">
-      <table>
+      <table style="table-layout: fixed;">
         <thead>
         
           <tr>
             <th><div class="table-header-item"><div class="star-symbol-table"></div><p>Result</p></div></th>
-            <th><div class="table-header-item"><div class="clock-symbol-table"></div><p>Time</p></div></th>
-            <th><div class="table-header-item"><div class="user1-symbol-table"></div><p>Player 1</p></div></th>
-            <th><div class="table-header-item"><div class="user2-symbol-table"></div><p>Player 2</p></div></th>
-            <th><div class="table-header-item"><div class="prize-symbol-table"></div><p>Prize</p></div></th>
-            <th><div class="table-header-item"><div class="rounds-symbol-table"></div><p>Rounds</p></div></th>
-            <th>
-                
-            </th>
+            <th><div class="table-header-item"><div class="clock-symbol-table"></div><p>Score</p></div></th>
+            <th><div class="table-header-item"><div class="user1-symbol-table"></div><p>Earned</p></div></th>
+            <th><div class="table-header-item"><div class="user2-symbol-table"></div><p>Rounds</p></div></th>
+            <th><div class="table-header-item"><div class="prize-symbol-table"></div><p>Date</p></div></th>
+            <th><div class="table-header-item"><div class="rounds-symbol-table"></div><p>Opponent</p></div></th>
                 
             
             
@@ -20,40 +17,39 @@
         </thead>
         <tbody>
           <tr v-for="(item, index) in selectedData" :key="index">
+            <td class="result"> {{ item.points[item.playerA] > item.points[item.playerB] ? 'Win' : 'Loss' }} </td>
             <td class="score">{{ item.points[item.playerA] }} : {{ item.points[item.playerB] ?? 0 }}</td>
+            <td class="earned"
+                :class="{ 'earned-positive': item.points[item.playerA] > item.points[item.playerB], 'earned-negative': item.points[item.playerA] < item.points[item.playerB] }"
+            >${{ item.bet }}</td>
+            <td class="rounds">{{ Object.keys(item.moves).length }}</td>
             <td class="time">{{ item.time }}</td>
             <td class="player">
-                <div>
-                    <div class="profile-mini"></div>
-                    <p>{{  item.playerA?.slice(0, 6) + "..." + item.playerA?.slice(-4) }}</p>
-                </div>
-            </td>
-
-            <td class="player">
-                <div>
-                    <div class="profile-mini"></div>
-                    <p>{{ item.playerB?.slice(0, 6) + "..." + item.playerB?.slice(-4) }}</p>
-                </div>
-            </td>
-            <td class="prize">${{ item.bet }}</td>
-            <td class="round" colspan="2">
-              <ul class="rounds-container">
-                <div v-for="(round, roundIndex) in item.moves" :key="roundIndex" class="rounds-list">
-                  <game-move :isSmall="true" :move="round[item.playerA]"></game-move> : <game-move :isSmall="true" :move="round[item.playerB]"></game-move>
-                </div>
-              </ul>
+              <profile-item :address="address?.toLowerCase() === item.playerA?.toLowerCase() ? item.playerA : item.playerB"></profile-item>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
   </template>
+
+<style scoped>
+.earned-positive {
+  color: #24B27F;
+}
+
+.earned-negative {
+  color: #FF6969;
+}
+</style>
   
   <script>
 import GameMove from './GameMove.vue'
+import ProfileItem from './ProfileItem.vue'
   export default {
     components: {
-        GameMove
+        GameMove,
+        ProfileItem,
     },
     data() {
       return {
@@ -66,6 +62,7 @@ import GameMove from './GameMove.vue'
     },
     computed: {
       selectedData() {
+        console.log("profile game list", this.games)
         return this.games;
       }
     },
