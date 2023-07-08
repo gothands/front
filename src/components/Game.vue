@@ -55,7 +55,7 @@
 
             v-if="shouldMove"
             >
-            <div style="display:flex;">
+            <div style="display:flex; gap:20px">
               <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 1 }"></div>
               <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 2 }"></div>
               <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 3 }"></div>
@@ -67,7 +67,7 @@
                 <p class="address">{{ truncateAddress(yourAddress) }}</p>
             </div>
             <div class="player-balance">
-              $ 156.03
+              ${{ balance }}
             </div>
             <div 
                   style="display: flex; flex-direction:column; gap: 10px; align-items: center;"
@@ -82,7 +82,7 @@
             style="display: flex; flex-direction:column; gap: 35px; align-items: center;"
             v-else
           >
-          <div style="display:flex;">
+          <div style="display:flex; gap:20px">
             <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 1 }"></div>
             <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 2 }"></div>
             <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 3 }"></div>
@@ -94,7 +94,7 @@
               <p class="address">{{ truncateAddress(yourAddress) }}</p>
           </div>
           <div class="player-balance">
-            $ 156.03
+            ${{ balance }}
           </div>
             <div 
               style="display: flex; justify-content: center; gap: 10px;"
@@ -156,7 +156,7 @@
               <div class="flex flex-column"
                   style="display: flex; flex-direction:column; gap: 35px; align-items: center;"
               >
-                <div style="display:flex;">
+                <div style="display:flex; gap:20px">
                   <div :class="{ 'point': true, 'point-active': opponentCurrentPoints >= 1 }"></div>
                   <div :class="{ 'point': true, 'point-active': opponentCurrentPoints >= 2 }"></div>
                   <div :class="{ 'point': true, 'point-active': opponentCurrentPoints >= 3 }"></div>
@@ -169,7 +169,7 @@
                    <p class="address">{{ truncateAddress(opponentAddress) }}</p>
                 </div>
                 <div class="player-balance">
-                  $ 156.03
+                  ${{ opponentBalance }}
                 </div>
 
                 <div v-if="!isOpponentMoveSent"
@@ -484,7 +484,14 @@ export default {
       return this.activeAccount?.toLowerCase()
     },
     getWeb3() {return new Web3(this.provider);},
-    balance() {return this.getBalance();},
+    balance() {
+      const value =  this.$store.state.balance;
+      return (Math.round(value * 100) / 100).toFixed(2);
+    },
+    opponentBalance() {
+      const value =  this.$store.state.balances[this.opponentAddress.toLowerCase()];
+      return (Math.round(value * 100) / 100).toFixed(2);
+    },
     //Game state
     isRock() { return this.selectedMove === Moves.Rock },
     isPaper() { return this.selectedMove === Moves.Paper },
@@ -741,6 +748,15 @@ export default {
         store.dispatch("setGames", this.games);
 
         console.log("store games", store.state.games);
+      },
+      deep: true
+    },
+    isInGame: {
+      handler(newValue, oldValue) {
+        if (newValue) {
+          //fetch oppoennt balance
+          this.$store.dispatch("setBalanceOf",this.opponentAddress)
+        }
       },
       deep: true
     },

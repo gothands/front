@@ -70,7 +70,7 @@ export default createStore({
       const balance = await rpc.getBalanceOf(payload)
 
       let balances: Balances = {...state.balances}
-      balances[payload] = balance
+      balances[payload.toLowerCase()] = balance
       console.log("balances", balances)
       commit('setBalances', balances)
     },
