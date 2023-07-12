@@ -65,13 +65,22 @@
                 <p>Your rewards</p>
                 <h1>{{claimableEthForStaking}} ETH</h1>
                 <button 
-                    @click="claimStakingRewards" 
+                    @click="claim" 
                     class="button-dark">
                     Claim
                 </button>
             </div>
+
+            
     
       </div>
+      <div>
+        <p>Revenue Events</p>
+        <list-staking 
+            :events="recivedFundsList" 
+            :address="activeAccount"
+        />
+        </div>
     <div>
       
         Staking screen
@@ -202,6 +211,7 @@ align-items: end;
     import mainContracts from "../../../contracts/local-contracts.json"
 import GameMove from '@/components/GameMove.vue';
 import ModalStake from '@/components/ModalStake.vue';
+import ListStaking from '@/components/ListStaking.vue';
     
     //EXAMPLE Game.
     // {
@@ -253,7 +263,8 @@ import ModalStake from '@/components/ModalStake.vue';
     
     export default {
       components: {
-            ModalStake
+            ModalStake,
+            ListStaking
       },
     //   props: {
     //     provider: {
@@ -288,7 +299,16 @@ import ModalStake from '@/components/ModalStake.vue';
 
           showModal:false,
           isStake:false,
-        stakeFunction: ()=>{console.log("stakeFunction")},
+          stakeFunction: ()=>{console.log("stakeFunction")},
+
+          yourStakeAtBlock: {},
+          totalStakeAtBlock: {},
+          recivedFundsList : [],
+
+            stakeEvents: [],
+            unstakeEvents: [],
+            recievedFundsEvents: [],
+            handledEventIds: [],
   
         };
       },
@@ -324,6 +344,11 @@ import ModalStake from '@/components/ModalStake.vue';
               this.setClaimableEthForStaking();
               this.setClaimableEthForAffiliate();
               this.setProtocolFeeRevenue();
+
+              this.fetchPastEvents();
+              this.subscribeToEvents();
+
+
   
               // this.getWETHAddress();
               // this.getToken0Address();
@@ -611,7 +636,188 @@ import ModalStake from '@/components/ModalStake.vue';
             }
           },
   
-  
+          //handle staking event by getting the event and updating the user's staked balance at the current block number
+          // set the value of this.yourStakeAtBlock and this.totalStakedAtBlock. These are both objects with the block number as the key and the staked balance as the value
+          handleStakingEvent(event) {
+            console.log('Staking event stakerman', event);
+
+            const { staker, amount } = event.returnValues;
+            const blockNumber = event.blockNumber;
+
+            if (staker.toLowerCase() === this.activeAccount.toLowerCase()) {
+              //check if the block number is already in the object, if so add the amount to the existing value
+                if (this.yourStakeAtBlock[blockNumber]) {
+                    this.yourStakeAtBlock[blockNumber] += parseInt(amount);
+                } else {
+                    this.yourStakeAtBlock[blockNumber] = parseInt(amount);
+                }
+            }
+
+            //check if the block number is already in the object, if so add the amount to the existing value
+            if (this.totalStakeAtBlock[blockNumber]) {
+              this.totalStakeAtBlock[blockNumber] += parseInt(amount);
+            } else {
+              this.totalStakeAtBlock[blockNumber] = parseInt(amount);
+            }            
+          },
+
+          handleUnstakingEvent(event) {
+            console.log('Unstaking event', event);
+
+            const { staker, amount } = event.returnValues;
+            const blockNumber = event.blockNumber;
+
+            if (staker.toLowerCase() === this.activeAccount.toLowerCase()) {
+              //check if the block number is already in the object, if so add the amount to the existing value
+                if (this.yourStakeAtBlock[blockNumber]) {
+                    this.yourStakeAtBlock[blockNumber] -= parseInt(amount);
+                } else {
+                    this.yourStakeAtBlock[blockNumber] = parseInt(amount);
+                }
+            }
+
+            //check if the block number is already in the object, if so add the amount to the existing value
+            if (this.totalStakedAtBlock[blockNumber]) {
+              this.totalStakedAtBlock[blockNumber] -= parseInt(amount);
+            } else {
+              this.totalStakedAtBlock[blockNumber] = parseInt(amount);
+            }
+          },
+
+          //append the event to the events array
+          //add object with the following attributes to the events array: timestamp, amount, your share, and total staked
+          async handleRecievedFundsForStaking(event){
+            console.log('Recieved funds for staking event', event);
+
+            const { amount } = event.returnValues;
+            const block = await this.getWeb3.eth.getBlock(event.blockNumber);
+            const timestamp = block.timestamp;
+
+            //get total staked at block, get the block number from keys of totalStakedAtBlock that is closest to the event block number and less than or equal to the event block number
+            const blockNumber = Object.keys(this.totalStakeAtBlock)?.reduce((a, b) => {
+              return b <= event.blockNumber && b > a ? b : a;
+            }, 0);
+
+            console.log('Recieved funds blockNumber', blockNumber)
+
+
+            //get the total staked at the block number
+            const totalStaked = this.totalStakeAtBlock[blockNumber];
+
+
+            //get the user's stake at the block number
+            const yourStake = this.yourStakeAtBlock[blockNumber];
+
+            //add object with the following attributes to the events array: timestamp, amount, your share, and total staked
+            this.recivedFundsList.push({
+              timestamp,
+              amount,
+              yourStake,
+              totalStaked
+            });
+          },
+
+          async subscribeToEvents() {
+      const contract = this.stakingContract;
+      const userAddress = this.activeAccount;
+
+      console.log("Polling for events...");
+      console.log("contract:", contract);
+
+      const eventNames = [
+        "Staked",
+        "Unstaked",
+        "ReceivedFundsForStaking",
+      ];
+
+      const eventHandlers = {
+        Staked: this.handleStakingEvent,
+        Unstaked: this.handleUnstakingEvent,
+        ReceivedFundsForStaking: this.handleRecievedFundsForStaking,
+      };
+
+      const pollingInterval = 1000; // Poll every 5 seconds
+
+      let lastBlockChecked = await this.getBlockNumber()
+
+      // Create a new set for keeping track of handled event ids
+
+      setInterval(async () => {
+        const currentBlock = await this.getBlockNumber();
+
+        for (const eventName of eventNames) {
+          const events = await contract.getPastEvents(eventName, {
+            fromBlock: lastBlockChecked + 1,
+            toBlock: currentBlock,
+          });
+
+          events.forEach((event) => {
+            const eventId = `${event.transactionHash}-${eventName}-${event.logIndex}`;
+
+            if (this.handledEventIds.has(eventId)) { return }
+
+            console.log(`New ${eventName} event detected:`, event);
+            eventHandlers[eventName].call(this, event, userAddress);
+
+            this.handledEventIds.add(eventId);
+          });
+        }
+
+        lastBlockChecked = currentBlock;
+        console.log("lastBlockChecked:", lastBlockChecked);
+      }, pollingInterval);
+    },
+
+    async fetchStakeEvents(fromBlock) {
+        const contract = this.stakingContract;
+
+        const events = await contract.getPastEvents("Staked", {
+          fromBlock,
+        });
+        this.stakeEvents = events;
+        },
+
+        async fetchUnstakeEvents(fromBlock) {
+            const contract = this.stakingContract;
+
+            const events = await contract.getPastEvents("Unstaked", {
+              fromBlock,
+            });
+            this.unstakeEvents = events;
+            },
+
+            async fetchRecievedFundsEvents(fromBlock) {
+                const contract = this.stakingContract;
+
+                const events = await contract.getPastEvents("ReceivedFundsForStaking", {
+                  fromBlock,
+                });
+                this.recievedFundsEvents = events;
+                },
+
+                processEvents() {
+                    this.stakeEvents.forEach((event) => {
+                      this.handleStakingEvent(event);
+                    });
+                    this.unstakeEvents.forEach((event) => {
+                      this.handleUnstakingEvent(event);
+                    });
+                    this.recievedFundsEvents.forEach((event) => {
+                      this.handleRecievedFundsForStaking(event);
+                    });
+                  },
+
+        async fetchPastEvents() {
+            const fromBlock = 0;
+
+      await this.fetchStakeEvents(fromBlock);
+      await this.fetchUnstakeEvents(fromBlock);
+      await this.fetchRecievedFundsEvents(fromBlock);
+
+      this.processEvents();
+
+        },
+
   
   
           
