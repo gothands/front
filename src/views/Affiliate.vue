@@ -39,13 +39,13 @@
   
     import RPC from "../web3RPC";
     
-    import GameMove from '@/components/GameMove.vue';
     import { Moves, Outcomes, GameStates } from "../types";
     import Hands from "../contracts/Hands.json";
     import Web3 from "web3";
     import { sha256 } from "js-sha256";
     
     import mainContracts from "../../../contracts/local-contracts.json"
+import GameMove from '@/components/GameMove.vue';
     
     //EXAMPLE Game.
     // {
@@ -98,12 +98,12 @@
     export default {
       components: {
       },
-      props: {
-        provider: {
-          type: String,
-          default: null,
-        },
-      },
+    //   props: {
+    //     provider: {
+    //       type: String,
+    //       default: null,
+    //     },
+    //   },
       data() {
         return {
           stakingContract: null,
@@ -131,17 +131,27 @@
         };
       },
       computed: {
-          getActiveAccount() { return this.activeAccount?.toLowerCase()},
-          getWeb3() {return new Web3(this.provider);},
+        provider() { return this.$store.state.provider },
+        getActiveAccount() { return this.activeAccount?.toLowerCase()},
+        getWeb3() {return new Web3(this.provider);},
       },
       mounted() {
         console.log("provider", this.provider)
         console.log("mainContracts", mainContracts)
-        this.init();
   
       },
-      watch:{
-      },
+      watch: {
+        provider: {
+            handler(newProvider, oldProvider) {
+                console.log('provider changed', newProvider);
+                if(newProvider){
+                    console.log('provider changed', newProvider);
+                    this.init()
+                }
+            },
+            immediate: true
+        }
+    },
       methods: {
           async init(){
               await this.setAccount();
@@ -437,6 +447,7 @@
           },  
           
       },
+        
     };
     </script>
     

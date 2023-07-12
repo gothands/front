@@ -1,4 +1,77 @@
 <template>
+    <div 
+        style="gap:50px"
+        class="content staking-view">
+        <router-link class="back" to="/">
+        </router-link>
+        <div style="margin-bottom:56;" class="profile-big"></div>
+        <p >Your balance</p>
+        <div style="display:flex; justify-content:center; gap:40px; align-items:end;">
+        <h1 style="margin:0; margin-top: -20px; margin-bottom:70px; padding:0; align-items:end; margin-bottom:-20px; font-size: 100px;">
+            {{this.handsTokenBalance?.toString().split(".")[0]}}.{{ this.handsTokenBalance?.toString().split(".")[1]?.substring(0,4)?? "00" }}
+            <span
+                style="font-size: 50px;"
+                class="currency-symbol"
+            >HANDS</span>
+        </h1>
+        </div>
+
+        <button style="margin-top:60px; margin-bottom:90px;" class="button-dark">
+          Buy HANDS
+        </button>
+
+        <div style="width:100%;display:grid; grid-template-columns: 1fr auto 1fr; margin-bottom:70px;">
+            <div style="display:flex; gap:20px; align-items:center; flex-direction:column;">
+                <p>Total staked</p>
+                <h2>{{totalHandsStakedBalance}} HANDS</h2>
+            </div>
+
+            <div style="display:flex; gap:20px; align-items:center; flex-direction:column;">
+                <p>Protocol Revenue</p>
+                <h2>
+                    {{protocolFeeRevenue}} 
+                    <span class="currency-symbol">ETH</span>
+                </h2>
+            </div>
+
+            <div style="display:flex; gap:20px; align-items:center; flex-direction:column;">
+                <p>Stakers</p>
+                <h2>{{stakerAmount}}</h2>
+            </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; gap:40px;">
+            <div class="card">
+                <p>Your stake</p>
+                <h1>
+                    {{handsStakedBalance}}
+                    <span class="currency-symbol">HANDS</span>
+                </h1>
+                <div style="display:flex;">
+                    <button
+                        @click="showStakeModal"
+                        class="button-dark">
+                        Stake
+                    </button>
+                    <button 
+                        @click="showUnstakeModal"
+                        class="button-light">
+                        Unstake
+                    </button>
+                </div>
+            </div>
+
+            <div  class="card">
+                <p>Your rewards</p>
+                <h1>{{claimableEthForStaking}} ETH</h1>
+                <button 
+                    @click="claimStakingRewards" 
+                    class="button-dark">
+                    Claim
+                </button>
+            </div>
+    
+      </div>
     <div>
       
         Staking screen
@@ -32,8 +105,90 @@
         <!-- <button @click="unstakeHands">Unstake Hands</button> -->
   
     </div>
+    </div>
+
+    <modal-stake 
+    v-model:show="showModal"
+    v-model:isStake="isStake"
+    v-modal:stakeFunction="stakeFunction"
+  >
+    Hello world
+    </modal-stake>
   </template>
-    
+
+  <style>
+.profile-big {
+  width: 240px;
+height: 240px;
+flex-shrink: 0;
+  border-radius: 240px;
+background:  #E9E9E9 -105.215px 0px / 149.927% 100% no-repeat;
+box-shadow: 0px 50px 120px 0px rgba(0, 0, 0, 0.08);
+}
+
+.staking-view{
+}
+
+.staking-view p {
+    color: #000;
+text-align: center;
+font-size: 24px;
+font-family: Sen;
+font-style: normal;
+font-weight: 400;
+line-height: 160%;
+}
+
+.staking-view h1 {
+    margin: 0;
+}
+
+.staking-view h2 {
+    color: #353535;
+text-align: center;
+font-size: 60px;
+font-family: Sen;
+font-style: normal;
+font-weight: 10000;
+line-height: normal;
+letter-spacing: -3px;
+margin: 0;
+}
+
+.staking-view p {
+    margin: 0;
+}
+
+
+
+
+.earnings {
+  text-align: center;
+font-size: 32px;
+font-family: Sen;
+font-style: normal;
+font-weight: 800;
+line-height: normal;
+display: flex;
+gap: 0px;
+align-items: end;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+    border-radius: 24px;
+    background: #FFF;
+    padding: 100px;
+    width: 514px;
+
+}
+
+
+</style>
+
     
   <script>
   
@@ -46,6 +201,7 @@
     
     import mainContracts from "../../../contracts/local-contracts.json"
 import GameMove from '@/components/GameMove.vue';
+import ModalStake from '@/components/ModalStake.vue';
     
     //EXAMPLE Game.
     // {
@@ -97,13 +253,14 @@ import GameMove from '@/components/GameMove.vue';
     
     export default {
       components: {
+            ModalStake
       },
-      props: {
-        provider: {
-          type: String,
-          default: null,
-        },
-      },
+    //   props: {
+    //     provider: {
+    //       type: String,
+    //       default: null,
+    //     },
+    //   },
       data() {
         return {
           stakingContract: null,
@@ -116,6 +273,7 @@ import GameMove from '@/components/GameMove.vue';
   
           handsStakedBalance: 0,
           totalHandsStakedBalance: 0,
+          stakerAmount: 0,
   
           claimableEthForStaking: 0,
           claimableEthForAffiliate: 0,
@@ -127,21 +285,35 @@ import GameMove from '@/components/GameMove.vue';
   
           //userSharePerBlock: null,
           totalStakedPerBlock: null,
+
+          showModal:false,
+          isStake:false,
+        stakeFunction: ()=>{console.log("stakeFunction")},
   
         };
       },
       computed: {
-          getActiveAccount() { return this.activeAccount?.toLowerCase()},
-          getWeb3() {return new Web3(this.provider);},
+        provider() { return this.$store.state.provider },
+        getActiveAccount() { return this.activeAccount?.toLowerCase()},
+        getWeb3() {return new Web3(this.provider);},
       },
       mounted() {
         console.log("provider", this.provider)
         console.log("mainContracts", mainContracts)
-        this.init();
   
       },
-      watch:{
-      },
+      watch: {
+        provider: {
+            handler(newProvider, oldProvider) {
+                console.log('provider changed', newProvider);
+                if(newProvider){
+                    console.log('provider changed', newProvider);
+                    this.init()
+                }
+            },
+            immediate: true
+        }
+    },
       methods: {
           async init(){
               await this.setAccount();
@@ -292,7 +464,7 @@ import GameMove from '@/components/GameMove.vue';
           // },
           
           
-  
+            
    
           
           async stake() {
@@ -356,6 +528,18 @@ import GameMove from '@/components/GameMove.vue';
               return error;
             }
           },
+
+          showStakeModal() {
+              this.showModal = true;
+              this.isStake = true;
+              this.stakeFunction = this.stake;
+            },
+
+            showUnstakeModal() {
+              this.showModal = true;
+              this.isStake = false;
+                this.stakeFunction = this.unstake;
+            },
   
           async claim() {
             // Call the claim method
@@ -437,6 +621,7 @@ import GameMove from '@/components/GameMove.vue';
           },  
           
       },
+        
     };
     </script>
     
