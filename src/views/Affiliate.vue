@@ -35,10 +35,10 @@
   
     <div>
       <p>Your Onboarded Users</p>
-      <list-staking 
-          :events="recivedFundsList" 
-          :address="activeAccount"
-      />
+      <list-affiliate
+        :events="onboardedConsumerList"
+        :address="activeAccount"
+      ></list-affiliate>
       </div>
   <div>
     
@@ -170,7 +170,7 @@ align-items: end;
   import mainContracts from "../../../contracts/local-contracts.json"
 import GameMove from '@/components/GameMove.vue';
 import ModalStake from '@/components/ModalStake.vue';
-import ListStaking from '@/components/ListStaking.vue';
+import ListAffiliate from '@/components/ListAffiliate.vue';
   
   //EXAMPLE Game.
   // {
@@ -223,7 +223,7 @@ import ListStaking from '@/components/ListStaking.vue';
   export default {
     components: {
           ModalStake,
-          ListStaking
+          ListAffiliate,
     },
   //   props: {
   //     provider: {
@@ -261,12 +261,13 @@ import ListStaking from '@/components/ListStaking.vue';
         stakeFunction: ()=>{console.log("stakeFunction")},
 
         yourConsumers: [],
+        timeConsumerJoined: {},
         totalRewardsFromConsumer: {},
+        rewardsArrayFromConsumer: {},
         recivedFundsList : [],
 
-          stakeEvents: [],
-          unstakeEvents: [],
-          recievedFundsEvents: [],
+          consumerRegisteredEvents: [],
+          rewardRecievedEvents: [],
           handledEventIds: [],
 
       };
@@ -275,6 +276,16 @@ import ListStaking from '@/components/ListStaking.vue';
       provider() { return this.$store.state.provider },
       getActiveAccount() { return this.activeAccount?.toLowerCase()},
       getWeb3() {return new Web3(this.provider);},
+      onboardedConsumerList(){
+        return this.yourConsumers.map((consumer) => {
+          return {
+            user: consumer,
+            totalRevenue: this.totalRewardsFromConsumer[consumer],
+            revenueTimestamps: this.rewardsArrayFromConsumer[consumer],
+            timestamp: this.timeConsumerJoined[consumer],
+          };
+        });
+      },
     },
     mounted() {
       console.log("provider", this.provider)
@@ -603,79 +614,50 @@ import ListStaking from '@/components/ListStaking.vue';
           }
         },
 
-        //handle staking event by getting the event and updating the user's staked balance at the current block number
-        // set the value of this.yourStakeAtBlock and this.totalStakedAtBlock. These are both objects with the block number as the key and the staked balance as the value
-        handleStakingEvent(event) {
-          console.log('Staking event stakerman', event);
 
-          const { staker, amount } = event.returnValues;
-          const blockNumber = event.blockNumber;
-
-          if (staker.toLowerCase() === this.activeAccount.toLowerCase()) {
-            //check if the block number is already in the object, if so add the amount to the existing value
-              if (this.yourStakeAtBlock[blockNumber]) {
-                  this.yourStakeAtBlock[blockNumber] += parseInt(amount);
-              } else {
-                  this.yourStakeAtBlock[blockNumber] = parseInt(amount);
-              }
-          }
-
-          //check if the block number is already in the object, if so add the amount to the existing value
-          if (this.totalStakeAtBlock[blockNumber]) {
-            this.totalStakeAtBlock[blockNumber] += parseInt(amount);
-          } else {
-            this.totalStakeAtBlock[blockNumber] = parseInt(amount);
-          }            
-        },
-
-        handleRewardRecievedEvent(event) {
-          console.log('Unstaking event', event);
-
-          const { staker, amount } = event.returnValues;
-          const blockNumber = event.blockNumber;
-
-          if (staker.toLowerCase() === this.activeAccount.toLowerCase()) {
-            //check if the block number is already in the object, if so add the amount to the existing value
-              if (this.yourStakeAtBlock[blockNumber]) {
-                  this.yourStakeAtBlock[blockNumber] -= parseInt(amount);
-              } else {
-                  this.yourStakeAtBlock[blockNumber] = parseInt(amount);
-              }
-          }
-
-          //check if the block number is already in the object, if so add the amount to the existing value
-          if (this.totalStakedAtBlock[blockNumber]) {
-            this.totalStakedAtBlock[blockNumber] -= parseInt(amount);
-          } else {
-            this.totalStakedAtBlock[blockNumber] = parseInt(amount);
-          }
-        },
-
-        handleConsumerRegisteredEvent(event) {
+        async handleConsumerRegisteredEvent(event) {
           console.log('Consumer registered event', event);
 
-          const { consumer } = event.returnValues;
-          const blockNumber = event.blockNumber;
+          const { consumer, affilate } = event.returnValues;
+          const block = await this.getWeb3.eth.getBlock(event.blockNumber);
+            const timestamp = block.timestamp;
 
-          if (consumer.toLowerCase() === this.activeAccount.toLowerCase()) {
-            //check if the block number is already in the object, if so add the amount to the existing value
-              if (this.yourStakeAtBlock[blockNumber]) {
-                  this.yourStakeAtBlock[blockNumber] += parseInt(amount);
-              } else {
-                  this.yourStakeAtBlock[blockNumber] = parseInt(amount);
-              }
+          //check if user is affiliate, if so add to consumer list
+          if (affilate.toLowerCase() === this.activeAccount.toLowerCase()) {
+            this.yourConsumers.push(consumer);
+            this.timeConsumerJoined[consumer] = timestamp;
           }
+          
+        },
 
-          //check if the block number is already in the object, if so add the amount to the existing value
-          if (this.totalStakeAtBlock[blockNumber]) {
-            this.totalStakeAtBlock[blockNumber] += parseInt(amount);
+        async handleRewardRecievedEvent(event) {
+          console.log('Reward recieved event', event);
+
+          const { affiliate, consumer, amount } = event.returnValues;
+          const block = await this.getWeb3.eth.getBlock(event.blockNumber);
+          const timestamp = block.timestamp;
+
+          //append reward amount to totalRewardsForConsumer object
+          if (this.totalRewardsFromConsumer[consumer]) {
+            this.totalRewardsFromConsumer[consumer] += parseInt(amount);
           } else {
-            this.totalStakeAtBlock[blockNumber] = parseInt(amount);
+            this.totalRewardsFromConsumer[consumer] = parseInt(amount);
           }
+          
+          //append reward amount to rewardsArrayFromConsumer
+          if (this.rewardsArrayFromConsumer[consumer]) {
+            this.rewardsArrayFromConsumer[consumer].push({
+              amount:parseInt(amount),
+              timestamp,
+            });
+          } else {
+            this.rewardsArrayFromConsumer[consumer] = [parseInt(amount)];
+          }
+          
         },
 
         async subscribeToEvents() {
-    const contract = this.stakingContract;
+    const contract = this.affiliateContract;
     const userAddress = this.activeAccount;
 
     console.log("Polling for events...");
@@ -724,41 +706,40 @@ import ListStaking from '@/components/ListStaking.vue';
   },
 
   async fetchConsumerRegisteredEvents(fromBlock) {
-      const contract = this.stakingContract;
+      const contract = this.affiliateContract;
 
-      const events = await contract.getPastEvents("Staked", {
+      const events = await contract.getPastEvents("ConsumerRegistered", {
         fromBlock,
       });
-      this.stakeEvents = events;
+      this.consumerRegisteredEvents = events;
       },
 
       async fetchRewardRecievedEvents(fromBlock) {
-          const contract = this.stakingContract;
+          const contract = this.affiliateContract;
 
-          const events = await contract.getPastEvents("Unstaked", {
+          const events = await contract.getPastEvents("RewardRecieved", {
             fromBlock,
           });
-          this.unstakeEvents = events;
+          this.rewardRecievedEvents = events;
           },
 
               processEvents() {
-                  this.stakeEvents.forEach((event) => {
-                    this.handleStakingEvent(event);
-                  });
-                  this.unstakeEvents.forEach((event) => {
-                    this.handleUnstakingEvent(event);
-                  });
-                  this.recievedFundsEvents.forEach((event) => {
-                    this.handleRecievedFundsForStaking(event);
-                  });
+          this.consumerRegisteredEvents.forEach((event) => {
+            this.handleConsumerRegisteredEvent(event);
+          });
+
+          this.rewardRecievedEvents.forEach((event) => {
+            this.handleRewardRecievedEvent(event);
+          });
+
                 },
 
       async fetchPastEvents() {
           const fromBlock = 0;
 
-    await this.fetchStakeEvents(fromBlock);
-    await this.fetchUnstakeEvents(fromBlock);
-    await this.fetchRecievedFundsEvents(fromBlock);
+    await this.fetchConsumerRegisteredEvents(fromBlock);
+    await this.fetchRewardRecievedEvents(fromBlock);
+
 
     this.processEvents();
 
