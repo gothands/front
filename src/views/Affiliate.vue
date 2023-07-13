@@ -17,7 +17,7 @@
       </div>
       <div style="display: flex; margin-top:60px; margin-bottom:90px;">
         <button 
-            @click="claimableEthForAffiliate"
+            @click="claimAffiliateRewards"
           class="button-dark"
         >
           Claim Rewards
@@ -618,12 +618,12 @@ import ListAffiliate from '@/components/ListAffiliate.vue';
         async handleConsumerRegisteredEvent(event) {
           console.log('Consumer registered event', event);
 
-          const { consumer, affilate } = event.returnValues;
+          const { consumer, affiliate } = event.returnValues;
           const block = await this.getWeb3.eth.getBlock(event.blockNumber);
             const timestamp = block.timestamp;
 
           //check if user is affiliate, if so add to consumer list
-          if (affilate.toLowerCase() === this.activeAccount.toLowerCase()) {
+          if (affiliate.toLowerCase() === this.activeAccount.toLowerCase()) {
             this.yourConsumers.push(consumer);
             this.timeConsumerJoined[consumer] = timestamp;
           }

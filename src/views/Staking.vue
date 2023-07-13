@@ -491,7 +491,10 @@ import ListStaking from '@/components/ListStaking.vue';
           // },
           
           
-            
+          addToHandledEvents(event, eventName) {
+            const eventId = `${event.transactionHash}-${eventName}-${event.logIndex}`;
+            this.handledEventIds.add(eventId);
+            },
    
           
           async stake() {
@@ -700,7 +703,6 @@ import ListStaking from '@/components/ListStaking.vue';
               return b <= event.blockNumber && b > a ? b : a;
             }, 0);
 
-            console.log('Recieved funds blockNumber', blockNumber)
 
 
             //get the total staked at the block number
@@ -800,12 +802,15 @@ import ListStaking from '@/components/ListStaking.vue';
                 processEvents() {
                     this.stakeEvents.forEach((event) => {
                       this.handleStakingEvent(event);
+                      this.addToHandledEvents(event, "Staked");
                     });
                     this.unstakeEvents.forEach((event) => {
                       this.handleUnstakingEvent(event);
+                        this.addToHandledEvents(event, "Unstaked");
                     });
                     this.recievedFundsEvents.forEach((event) => {
                       this.handleRecievedFundsForStaking(event);
+                        this.addToHandledEvents(event, "ReceivedFundsForStaking");
                     });
                   },
 

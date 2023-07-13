@@ -48,7 +48,7 @@
       </div>
       <div> {{ roundStateString }}</div>
       <!-- Game view -->
-      <div style="display:grid; grid-template-columns: 1fr auto 1fr;">
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr;">
           <!-- Selected move-->
           <div 
           style="display: flex; flex-direction:column; gap: 35px; align-items: center;"
@@ -673,7 +673,7 @@ export default {
       //get affiliate code from local storage
       const affiliateCode = localStorage.getItem("affiliateCode")
       
-      return affiliateCode && this.affiliateOfUser != ethers.constants.AddressZero
+      return affiliateCode && this.affiliateOfUser == ethers.constants.AddressZero
     },
 
     //Return array of games that are pending. Where a user is waiting for someone to join
@@ -1223,6 +1223,7 @@ export default {
     //calls the affiliate contract this.affiliateContract
     async registerAsConsumer(){
       console.log("Registering as consumer...")
+      alert("Registering as consumer...")
       if (this.affiliateContract){
         try {
           const accounts = await this.getWeb3.eth.getAccounts();
