@@ -308,7 +308,7 @@ import ListStaking from '@/components/ListStaking.vue';
             stakeEvents: [],
             unstakeEvents: [],
             recievedFundsEvents: [],
-            handledEventIds: [],
+            handledEventIds: new Set(),
   
         };
       },
@@ -369,12 +369,14 @@ import ListStaking from '@/components/ListStaking.vue';
                 mainContracts.deployedAbis.Staking,
                 mainContracts.deployedContracts.Staking
             );
+            this.$store.commit('setStakeContract', this.stakingContract);
   
             //Set HandsToken contract
             this.handsTokenContract = new this.getWeb3.eth.Contract(
                 mainContracts.deployedAbis.HandsToken,
                 mainContracts.deployedContracts.HandsToken
             );
+            this.$store.commit('setHandsTokenContract', this.handsTokenContract);
   
             //Set Affiliate contract
             this.affiliateContract = new this.getWeb3.eth.Contract(
@@ -677,10 +679,10 @@ import ListStaking from '@/components/ListStaking.vue';
             }
 
             //check if the block number is already in the object, if so add the amount to the existing value
-            if (this.totalStakedAtBlock[blockNumber]) {
-              this.totalStakedAtBlock[blockNumber] -= parseInt(amount);
+            if (this.totalStakeAtBlock[blockNumber]) {
+              this.totalStakeAtBlock[blockNumber] -= parseInt(amount);
             } else {
-              this.totalStakedAtBlock[blockNumber] = parseInt(amount);
+              this.totalStakeAtBlock[blockNumber] = parseInt(amount);
             }
           },
 

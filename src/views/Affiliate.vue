@@ -268,7 +268,7 @@ import ListAffiliate from '@/components/ListAffiliate.vue';
 
           consumerRegisteredEvents: [],
           rewardRecievedEvents: [],
-          handledEventIds: [],
+          handledEventIds: new Set(),
 
       };
     },

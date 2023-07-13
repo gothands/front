@@ -6,20 +6,27 @@
                 <h4 style="margin-top:60px" v-if="isStake">Stake<span style="color:#E19885; font-weight:bold;">HANDS</span> </h4>
                 <h4 style="margin-top:60px" v-else>Unstake<span style="color:#E19885; font-weight:bold;">HANDS</span> </h4>
 
-                <!-- Points ratio -->
+                <!-- Input binded to amount data object -->
+                <input
+                v-model="amount"
+                type="number"
+                placeholder="Amount"
+                style="width: 100%; height: 50px; border-radius: 10px; border: 1px solid #E19885; padding: 10px; font-size: 20px; font-weight: bold; color: #E19885; text-align: center; margin-top: 20px; margin-bottom: 20px;"
+                />
+                
 
                 <!-- Buttons-->
                 <div class="modal-button-holder">
                     <button
                     v-if="isStake"
                     class="button-dark"
-                    @click="stakeFunction">
+                    @click="stake">
                         Stake
                     </button> 
                     <button
                     v-else
                     class="button-dark"
-                    @click="stakeFunction">
+                    @click="unstake">
                         Unstake
                     </button>
                     <button
@@ -118,6 +125,11 @@ line-height: normal;
 
 <script>
 export default {
+    data() {
+        return {
+            amount: 0,
+        }
+    },
     model: {
         prop: 'show',
         event: 'update:show'
@@ -137,9 +149,13 @@ export default {
         }
     },
     methods: {
-        toggleShow() {
-            this.$emit('update:show', !this.show)
-        }
+        toggleShow() { this.$emit('update:show', !this.show) },
+        stake() { this.$store.dispatch('stake', this.amount.toString()) },
+        unstake() { this.$store.dispatch('unstake', this.amount.toString()) },
+    },
+    computed: {
+        isStaking() { return this.$store.state.isStaking },
+        isUnstaking() { return this.$store.state.isUnstaking },
     },
 
     //output the value of move

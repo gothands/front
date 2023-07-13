@@ -1,5 +1,9 @@
 import { createStore } from 'vuex'
 import RPC from '../web3RPC'
+import Web3 from 'web3';
+
+import mainContracts from "../../../contracts/local-contracts.json"
+
 
 interface Balances {
   [address: string]: any;
@@ -21,13 +25,18 @@ export default createStore({
       activeAccount: "",
       balance: "0",
       balances: {} as Balances,
-      provider: null,
+      provider: null as any,
       web3auth: null as any,
 
       // Game
       games: games,
       isInGame: false,
       leaveGame: () => { console.log("leaveGame not set") },
+
+      // Stake
+      stakeContract: null as any,
+      handsTokenContract: null as any
+
 
     }
   },
@@ -55,6 +64,11 @@ export default createStore({
     },
     setIsInGame(state, payload) { state.isInGame = payload },
     setLeaveGame(state, payload) { state.leaveGame = payload },
+
+    // Stake
+    setHandsTokenContract(state, payload) { state.handsTokenContract = payload },
+    setStakeContract(state, payload) { state.stakeContract = payload }
+
   },
   actions: {
     // Auth
@@ -94,6 +108,81 @@ export default createStore({
     setGames({ commit }, payload) { commit('setGames', payload) },
     setIsInGame({ commit }, payload) { commit('setIsInGame', payload) },
     setLeaveGame({ commit }, payload) { commit('setLeaveGame', payload) },
+
+    //Stake
+    setStakeContract({ commit }, payload) { commit('setStakeContract', payload) },
+    setHandsTokenContract({ commit }, payload) { commit('setHandsTokenContract', payload) },
+    async stake({ commit, state }, amount) {
+      try {
+        const web3 = new Web3(state.provider as any);
+        const gasPrice = web3.utils.toWei("5", "gwei");
+        const gasLimit = 30000000;
+
+        // give allowance to staking contract
+        const tx1 = await state.handsTokenContract.methods.approve(
+          mainContracts.deployedContracts.Staking,
+          web3.utils.toWei(amount, "ether")
+        ).send({ from: state.activeAccount, gasPrice, gasLimit });
+        
+
+        const tx = await state.stakeContract.methods.stake(
+          web3.utils.toWei(amount, "ether")
+        ).send({ from: state.activeAccount, gasPrice, gasLimit });
+        
+        // Wait for the transaction to be mined
+        await web3.eth.getTransactionReceipt(tx.transactionHash);
+        
+        // Transaction was successful if we made it here
+        console.log('Staked', tx);
+        return tx;
+      } catch (error) {
+        // Log more detailed information about the error
+        console.error('Error staking. Message:', error);
+        
+        // Log error reason if available. This can be the error message from a require statement in a smart contract
+        if (error) {
+          console.error('Error reason:', error);
+        }
+        
+        // Log the error stack trace for debugging
+        console.error('Error stack trace:', error);
+        
+        return error;
+      }
+    },
+
+    async unstake({ commit, state }, amount) {
+      try {
+        const web3 = new Web3(state.provider as any);
+        const gasPrice = web3.utils.toWei("5", "gwei");
+        const gasLimit = 30000000;
+
+        const tx = await state.stakeContract.methods.unstake(
+          web3.utils.toWei(amount, "ether")
+        ).send({ from: state.activeAccount, gasPrice, gasLimit });
+        
+        // Wait for the transaction to be mined
+        await web3.eth.getTransactionReceipt(tx.transactionHash);
+        
+        // Transaction was successful if we made it here
+        console.log('Unstaked', tx);
+        return tx;
+      } catch (error) {
+        // Log more detailed information about the error
+        console.error('Error unstaking. Message:', error);
+        
+        // Log error reason if available. This can be the error message from a require statement in a smart contract
+        if (error) {
+          console.error('Error reason:', error);
+        }
+        
+        // Log the error stack trace for debugging
+        console.error('Error stack trace:', error);
+        
+        return error;
+      }
+    }
+
   },
   modules: {
   }
