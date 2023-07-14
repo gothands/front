@@ -27,6 +27,7 @@ export default createStore({
       balances: {} as Balances,
       provider: null as any,
       web3auth: null as any,
+      isMetamask: false,
 
       // Game
       games: games,
@@ -56,6 +57,7 @@ export default createStore({
     setBalances(state, payload) { state.balances = payload },
     setProvider(state, payload) { state.provider = payload },
     setWeb3Auth(state, payload) { state.web3auth = payload },
+    setIsMetamask(state, payload) { state.isMetamask = payload },
 
     // Game
     setGames(state, payload) { 
@@ -83,6 +85,7 @@ export default createStore({
       console.log("setProvider", payload)
       },
     setWeb3Auth({ commit }, payload) { commit('setWeb3Auth', payload) },
+    setIsMetamask({ commit }, payload) { commit('setIsMetamask', payload) },
     async setBalanceOf({ commit, state }, payload) {
       const rpc = new RPC(state.provider)
       const balance = await rpc.getBalanceOf(payload)

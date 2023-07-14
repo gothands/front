@@ -14,6 +14,7 @@
     align-items: center;
     gap: 10px;
     color: #353535;
+    text-decoration: underline;
 }
 </style>
 

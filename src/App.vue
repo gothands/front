@@ -221,9 +221,17 @@ export default {
           console.log("userInfo", userInfo)
           //const initVal = await torusPlugin.initWithProvider(store.state.provider, userInfo);
           store.dispatch("setLoggedIn", true);
-          await torusPlugin.connect()
 
         }
+
+		//check if logged in through metamask
+		if (web3auth.connectedAdapterName === "metamask") {
+			store.dispatch("setIsMetamask", true);
+		}
+
+		console.log("adapter", web3auth.connectedAdapterName);
+
+
 
         console.log("provider", store.state.provider);
       } catch (error) {
@@ -276,6 +284,12 @@ watch(
       //await torusPlugin.initWithProvider(provider, userInfo);
       
       store.dispatch("setLoggedIn", true);
+
+	  //check if logged in through metamask
+		if (web3auth.connectedAdapterName === "metamask") {
+			store.dispatch("setIsMetamask", true);
+		}
+
       //await torusPlugin.connect()
       uiConsole("Logged in Successfully!");
     };    

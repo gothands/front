@@ -23,9 +23,12 @@
         </span>
       </h1>
       <div class="address-container">
-        <div class="profile-mini"></div>
-        <p class="address">{{truncateAddress(this.activeAccount)}}</p>
+        <profile-item :address="this.activeAccount" />
       </div>
+      <div v-if="isBurner" class="address-container">
+        <profile-item :address="this.burnerAddress" />
+      </div>
+      
     </div>
     
     <!-- <button
@@ -358,6 +361,7 @@ import RPC from "../web3RPC";
 import GameMove from "./GameMove.vue";
 import GameList from "./GameList.vue";
 import Modal from "./Modal.vue";
+import ProfileItem from "./ProfileItem.vue";
 import { Moves, Outcomes, GameStates } from "../types";
 import Web3 from "web3";
 import { sha256 } from "js-sha256";
@@ -365,6 +369,7 @@ import RampInstantSDK from "@ramp-network/ramp-instant-sdk";
 import { ethers } from 'ethers'
 import GameListVue from './GameList.vue'
 import store from '@/store'
+import { getBurnerWallet, privateKeyToAccount } from '@/utils/burner'
 
 const CONTRACT_ADDRESS = mainContracts.deployedContracts.Hands
 const CONTRACT_ABI = mainContracts.deployedAbis.Hands
@@ -422,6 +427,7 @@ export default {
       GameMove,
       GameList,
       Modal,
+      ProfileItem,
   },
   props: {
     provider: {
@@ -476,9 +482,16 @@ export default {
 
       handledEventIds: new Set(),
 
+      burnerTopUpAmount: 0.01,
+      burnerAddress: null,
+      burnerPrivateKey: null,
+      burnerContractInstance: null,
+
     };
   },
   computed: {
+    isMetamask(){ return this.$store.state.isMetamask },
+    isBurner(){ return this.burnerAddress != null && this.burnerPrivateKey != null && this.burnerContractInstance != null },
     //Game state
     getActiveAccount() {        
       return this.activeAccount?.toLowerCase()
@@ -773,6 +786,23 @@ export default {
         }
       },
       deep: true,
+    },
+    isMetamask: {
+      handler(newValue, oldValue) {
+        if (newValue) {
+          this.burnerPrivateKey = getBurnerWallet().value
+          const account = this.getWeb3.eth.accounts.privateKeyToAccount(this.burnerPrivateKey);
+          this.getWeb3.eth.accounts.wallet.add(account); // Add the account to web3.js's wallet
+          this.burnerAddress = account.address;
+          
+          this.burnerContractInstance = new this.getWeb3.eth.Contract(
+            CONTRACT_ABI,
+            CONTRACT_ADDRESS,
+            { from: this.burnerAddress }
+          );
+        } 
+      },
+      immediate: true,
     },
   },
   methods: {
@@ -1268,7 +1298,7 @@ export default {
       }
 
       if(this.shouldSetAffiliateCode){
-        await this.registerAsConsumer();
+        //await this.registerAsConsumer();
       }else{
         console.log("Not registering as consumer...")
       }
@@ -1290,10 +1320,20 @@ export default {
           .playerGame(accounts[0])
           .call({ from: accounts[0] });
         console.log("gameId:", gameId);
-        const result = await this.contractInstance.methods
+
+        //check if burner
+        if(this.isBurner){
+          const totalValue = this.getWeb3.utils.toWei((this.burnerTopUpAmount + parseInt(this.selectedBet)).toString(), "ether");
+          const result = await this.burnerContractInstance.methods
+          .registerWithBurner(this.burnerAddress, betInWei)
+          .send({ from: accounts[0], value: totalValue, gasPrice, gasLimit });
+
+        }else{
+          const result = await this.contractInstance.methods
           .register()
           .send({ from: accounts[0], value: betInWei, gasPrice, gasLimit });
-        
+        }
+                
 
         localStorage.setItem("lastBetAmount", this.selectedBet);
 
@@ -1345,10 +1385,18 @@ export default {
         await this.setPassword();
         const passwordHash = this.getPasswordHash();
         console.log("gameId:", gameId);
-        const result = await this.contractInstance.methods
+        if(this.isBurner){
+          const totalValue = this.getWeb3.utils.toWei((this.burnerTopUpAmount + this.selectedBet).toString(), "ether");
+          const result = await this.burnerContractInstance.methods
+          .createPasswordMatchWithBurner(this.burnerAddress, betInWei, passwordHash)
+          .send({ from: accounts[0], value: totalValue, gasPrice, gasLimit });
+        }else {
+          const result = await this.contractInstance.methods
           .createPasswordMatch(passwordHash)
           .send({ from: accounts[0], value: betInWei, gasPrice, gasLimit });
-        
+
+        }
+                
 
         localStorage.setItem("lastBetAmount", this.selectedBet);
 
@@ -1397,17 +1445,23 @@ export default {
 
         const betInWei = this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether");
 
-        //get playerGame mapping
+        //get playerGamje mapping
         const gameId = await this.contractInstance.methods
           .playerGame(accounts[0])
           .call({ from: accounts[0] });
 
         //set password
         console.log("gameId:", gameId);
-        const result = await this.contractInstance.methods
+        if(this.isBurner){
+          const totalValue = this.getWeb3.utils.toWei((this.burnerTopUpAmount + this.selectedBet).toString(), "ether");
+          const result = await this.burnerContractInstance.methods
+          .joinPasswordMatchWithBurner(this.burnerAddress, betInWei, password)
+          .send({ from: accounts[0], value: totalValue, gasPrice, gasLimit });ce
+        }else{
+          const result = await this.contractInstance.methods
           .joinPasswordMatch(password)
           .send({ from: accounts[0], value: betInWei, gasPrice, gasLimit });
-        
+        }        
 
         localStorage.setItem("lastBetAmount", this.selectedBet);
 
@@ -1450,14 +1504,20 @@ export default {
           "0x" + sha256(this.selectedMove + this.randomString);
         console.log("clearMove:", this.selectedMove + this.randomString);
         const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = this.getWeb3.utils.toWei("5", "gwei");
+        const gasPrice = this.getWeb3.utils.toWei("0.01", "gwei");
         const gasLimit = 3000000;
 
-        const result = await this.contractInstance.methods
+        if(this.isBurner){
+          const result = await this.burnerContractInstance.methods
+          .commit(parseInt(this.currentGameId), encryptedMove)
+          .send({ from: this.burnerAddress, gasPrice, gasLimit });
+        }else{
+          const result = await this.contractInstance.methods
           .commit(parseInt(this.currentGameId), encryptedMove)
           .send({ from: accounts[0], gasPrice, gasLimit });
-        console.log("Game registered:", result);
-
+          console.log("Game registered:", result);
+        }
+        
         // Store the last sentMove and betAmount in the localStorage
         localStorage.setItem("lastSentMove", this.selectedMove);
         localStorage.setItem("lastRandomString", this.randomString);
@@ -1492,13 +1552,19 @@ export default {
         // this.games[this.currentGameId ?? "0"].states[this.getActiveAccount] = GameStates.Cancelling;
         //console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
         const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = this.getWeb3.utils.toWei("5", "gwei");
+        const gasPrice = this.getWeb3.utils.toWei("0.01", "gwei");
         const gasLimit = 3000000;
 
-        const result = await this.contractInstance.methods
+        if(this.isBurner){
+          const result = await this.burnerContractInstance.methods
           .cancel(parseInt(this.currentGameId))
-          .send({ from: accounts[0], gasPrice, gasLimit });
-        console.log("Game cancelled:", result);
+          .send({ from: this.burnerAddress, gasPrice, gasLimit });
+        }else{
+          const result = await this.contractInstance.methods
+            .cancel(parseInt(this.currentGameId))
+            .send({ from: accounts[0], gasPrice, gasLimit });
+          console.log("Game cancelled:", result);
+        }
 
         // Update the gameState to Waiting
         //console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
@@ -1530,13 +1596,19 @@ export default {
         // this.games[this.currentGameId ?? "0"].states[this.getActiveAccount] = GameStates.Cancelling;
         //console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
         const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = this.getWeb3.utils.toWei("5", "gwei");
+        const gasPrice = this.getWeb3.utils.toWei("0.01", "gwei");
         const gasLimit = 3000000;
 
+        if(this.isBurner){
+          const result = await this.burnerContractInstance.methods
+          .leave(parseInt(this.currentGameId))
+          .send({ from: this.burnerAddress, gasPrice, gasLimit });
+        } else {
         const result = await this.contractInstance.methods
           .leave(parseInt(this.currentGameId))
           .send({ from: accounts[0], gasPrice, gasLimit });
         console.log("Game left:", result);
+        }
 
         // Update the gameState to Waiting
         //console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
@@ -1569,11 +1641,18 @@ export default {
 
         const accounts = await this.getWeb3.eth.getAccounts();
         const clearMove = `${this.selectedMove}${this.randomString}`; // Use saved randomString
-        const gasPrice = this.getWeb3.utils.toWei("5", "gwei");
+        const gasPrice = this.getWeb3.utils.toWei("0.01", "gwei");
         const gasLimit = 3000000;
+
+        if(this.isBurner){
+          const result = await this.burnerContractInstance.methods
+          .reveal(parseInt(this.currentGameId), clearMove)
+          .send({ from: this.burnerAddress, gasPrice, gasLimit });
+        }else{
         const result = await this.contractInstance.methods
           .reveal(this.currentGameId, clearMove)
           .send({ from: accounts[0], gasPrice, gasLimit });
+        }
 
         //console.log("Move revealed:", result);
 
