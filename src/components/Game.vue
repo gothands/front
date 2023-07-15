@@ -26,7 +26,7 @@
         <profile-item :address="this.activeAccount" />
       </div>
       <div v-if="isBurner" class="address-container">
-        <profile-item :address="this.burnerAddress" />
+        <profile-item-burner :address="this.burnerAddress" />
       </div>
       
     </div>
@@ -370,6 +370,7 @@ import { ethers } from 'ethers'
 import GameListVue from './GameList.vue'
 import store from '@/store'
 import { getBurnerWallet, privateKeyToAccount } from '@/utils/burner'
+import ProfileItemBurner from './ProfileItemBurner.vue'
 
 const CONTRACT_ADDRESS = mainContracts.deployedContracts.Hands
 const CONTRACT_ABI = mainContracts.deployedAbis.Hands
@@ -428,6 +429,7 @@ export default {
       GameList,
       Modal,
       ProfileItem,
+    ProfileItemBurner,
   },
   props: {
     provider: {

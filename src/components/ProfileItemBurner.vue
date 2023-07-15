@@ -1,21 +1,22 @@
 <template>
     <div>
-        <router-link class="player-item" :to="'/profile/' + address">
-            <div class="profile-mini"></div>
+        <div class="burner-item" :to="'/profile/' + address">
+            <div class="burner-icon"></div>
             <p>{{ truncateAddress(address) }}</p>
-          </router-link>
+        </div>
     </div>
     
 </template>
 
 <style>
-.player-item {
+
+.burner-item {
     display: flex;
     align-items: center;
+    font-size: 15px;
     gap: 10px;
     color: #353535;
     text-decoration: underline;
-    font-weight: bolder;
 }
 </style>
 

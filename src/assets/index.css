@@ -51,6 +51,12 @@ header {
 .currency-symbol {
   color: #E19885;
 }
+.burner-icon {
+  width: 20px;
+  height: 20px;
+  background: url('burner.png') no-repeat;
+  background-size: contain;
+}
 
 .plus-symbol {
   width: 40px;
