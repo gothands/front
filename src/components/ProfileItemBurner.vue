@@ -2,7 +2,8 @@
     <div>
         <div class="burner-item" :to="'/profile/' + address">
             <div class="burner-icon"></div>
-            <p>{{ truncateAddress(address) }}</p>
+            <p class="burner-address">{{ truncateAddress(address) }}</p>
+            <p class="burner-funds">{{balance}}ETH</p>
         </div>
     </div>
     
@@ -16,7 +17,14 @@
     font-size: 15px;
     gap: 10px;
     color: #353535;
+}
+
+.burner-address {
     text-decoration: underline;
+}
+
+.burner-funds {
+    font-weight: 100;
 }
 </style>
 
@@ -25,6 +33,10 @@ import { Outcomes } from '@/types'
 export default {
     props: {
         address: {
+            type: String,
+            required: true
+        },
+        balance: {
             type: String,
             required: true
         }

@@ -26,7 +26,7 @@
         <profile-item :address="this.activeAccount" />
       </div>
       <div v-if="isBurner" class="address-container">
-        <profile-item-burner :address="this.burnerAddress" />
+        <profile-item-burner :address="this.burnerAddress" :balance="burnerBalance" />
       </div>
       
     </div>
@@ -507,6 +507,10 @@ export default {
       const value =  this.$store.state.balances[this.opponentAddress.toLowerCase()];
       return (Math.round(value * 100) / 100).toFixed(2);
     },
+    burnerBalance() {
+      const value =  this.$store.state.balances[this.burnerAddress.toLowerCase()];
+      return (Math.round(value * 100) / 100).toFixed(2);
+    },
     //Game state
     isRock() { return this.selectedMove === Moves.Rock },
     isPaper() { return this.selectedMove === Moves.Paper },
@@ -802,6 +806,8 @@ export default {
             CONTRACT_ADDRESS,
             { from: this.burnerAddress }
           );
+
+          this.$store.dispatch("setBalanceOf", this.burnerAddress)
         } 
       },
       immediate: true,
