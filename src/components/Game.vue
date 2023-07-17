@@ -24,9 +24,9 @@
       </h1>
       <div class="address-container">
         <profile-item :address="this.activeAccount" />
-      </div>
-      <div v-if="isBurner" class="address-container">
-        <profile-item-burner :address="this.burnerAddress" :balance="burnerBalance" />
+        &nbsp;
+        <profile-item-burner v-if="isBurner" :address="this.burnerAddress" :balance="burnerBalance" />
+
       </div>
       
     </div>
@@ -213,23 +213,20 @@
           </div>
         </div> -->
 
-        <!-- <p 
-          v-if="!isRegistering && !isWaiting"
-          @click="togglePlayWithFriend"
-          >
-          {{ playWithFriend ? "Playing with friends. Switch to play with random": "Playing with random switch to play with friend" }}
-        </p> -->
-        <div style="display:flex;">
+        
+        <div style="display:flex; align-items:start;">
           <button v-if="!isRegistering && !isWaiting" class="button-light" @click="buyEth">
              <div class="plus-symbol"></div><div>Add Funds</div>
             </button>
-          <button
+            <div>
+              
+        <button
           class="button-dark"
           v-if="!isWaiting"
           @click="registerGame"
         >   
           <div>
-            {{ isRegistering ? "Registering..." : "Play match" }}
+            {{ isRegistering ? "Registering..." : playWithFriend ? "Play With Friend" : "Play with random" }}
             &nbsp; 
           </div>
           <!-- <a>{{ this.wagerSteps[this.sliderIndex] }} ETH</a> -->
@@ -246,6 +243,17 @@
             </option>
           </select>
         </button>
+        <p 
+          v-if="!isRegistering && !isWaiting"
+          @click="togglePlayWithFriend"
+          class="toggle-text"
+          style="margin-top: 30px;"
+          >
+          {{ playWithFriend ? "Play with random instead?": "Play with friend instead?" }}
+          <span style="color:#E19885; font-weight:bold; text-decoration:underline;">Switch</span>
+        </p>
+            </div>
+          
         <div v-if="isWaiting" style="display:flex; flex-direction:column; align-items:center; margin-top:-70px;">
           <p>You wager is</p>
           <h1 style="margin:0;"> <span class="currency-symbol">$</span>{{ this.selectedBet }} <span class="decimals">.00</span> </h1>
@@ -508,7 +516,7 @@ export default {
       return (Math.round(value * 100) / 100).toFixed(2);
     },
     burnerBalance() {
-      const value =  this.$store.state.balances[this.burnerAddress.toLowerCase()];
+      const value =  this.$store.state.balances[this.burnerAddress?.toLowerCase()];
       return (Math.round(value * 100) / 100).toFixed(2);
     },
     //Game state
@@ -1394,7 +1402,7 @@ export default {
         const passwordHash = this.getPasswordHash();
         console.log("gameId:", gameId);
         if(this.isBurner){
-          const totalValue = this.getWeb3.utils.toWei((this.burnerTopUpAmount + this.selectedBet).toString(), "ether");
+          const totalValue = this.getWeb3.utils.toWei((this.burnerTopUpAmount + parseInt(this.selectedBet)).toString(), "ether");
           const result = await this.burnerContractInstance.methods
           .createPasswordMatchWithBurner(this.burnerAddress, betInWei, passwordHash)
           .send({ from: accounts[0], value: totalValue, gasPrice, gasLimit });
@@ -1461,7 +1469,7 @@ export default {
         //set password
         console.log("gameId:", gameId);
         if(this.isBurner){
-          const totalValue = this.getWeb3.utils.toWei((this.burnerTopUpAmount + this.selectedBet).toString(), "ether");
+          const totalValue = this.getWeb3.utils.toWei((this.burnerTopUpAmount + parseInt(this.selectedBet)).toString(), "ether");
           const result = await this.burnerContractInstance.methods
           .joinPasswordMatchWithBurner(this.burnerAddress, betInWei, password)
           .send({ from: accounts[0], value: totalValue, gasPrice, gasLimit });ce

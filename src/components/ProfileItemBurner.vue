@@ -15,8 +15,15 @@
     display: flex;
     align-items: center;
     font-size: 15px;
-    gap: 10px;
+    gap: 5px;
     color: #353535;
+}
+
+.toggle-text {
+    font-size: 15px;
+    color: #353535;
+    margin: 0;
+    padding: 0;
 }
 
 .burner-address {
