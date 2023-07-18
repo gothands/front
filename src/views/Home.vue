@@ -31,6 +31,13 @@
       </button>
     </header>
 
+    <img
+      v-if="!loggedin"
+      src="../assets/background.png"
+      alt="Hero"
+      style="width: 100%; position: absolute; bottom: 0; left: 0; z-index: -1;"
+    />
+
     <div v-if="loggedin">
       <!-- Staking and Game screen tabs-->
 
