@@ -3,14 +3,31 @@
      v-if="!loggedin"
      class=""
     >
-      <h1>Welcome to Handsy.io</h1>
-      <p>Play rock paper scissors with your friends or with randome opponents for real money.</p>
+      <h1 style="max-width:525px; margin:24px; color: #353535;
+      text-align: center;
+      font-family: Sen;
+      font-size: 100px;
+      font-style: normal;
+      font-weight: 800;
+      line-height: normal;
+      letter-spacing: -5px;">
+        Welcome to Handsy.io
+      </h1>
+      <p style="max-width:525px; color: #353535;
+      text-align: center;
+      font-family: Sen;
+      font-size: 24px;
+      font-style: normal;
+      font-weight: 400;
+      line-height: 160%; margin:0; margin-bottom:56px;">
+        Play rock paper scissors with your friends or with random opponents for real money.
+      </p>
       <button
         class="button-dark"
         @click="login"
-        style="cursor: pointer"
+        style="cursor: pointer; width: 270px; height:86px;"
       >
-        Login
+        Sign Up
       </button>
     </header>
 
