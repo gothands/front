@@ -8,8 +8,8 @@
 			
 		 	style="display:flex; justify-content:end; align-items:center; gap:40px"
 		>
-			<router-link v-if="!isInGame" to="/affiliate">Affiliate</router-link>
-			<router-link v-if="!isInGame" to="/staking">Staking</router-link>
+			<router-link v-if="!isInGame && loggedin" to="/affiliate">Affiliate</router-link>
+			<router-link v-if="!isInGame && loggedin" to="/staking">Staking</router-link>
 			<button
 			v-if="isInGame"
 			class="button-light"
