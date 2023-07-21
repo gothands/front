@@ -1339,7 +1339,8 @@ export default {
 
         //check if burner
         if(this.isBurner){
-          const totalValue = this.getWeb3.utils.toWei((this.burnerTopUpAmount + parseInt(this.selectedBet)).toString(), "ether");
+          const totalValue = this.getWeb3.utils.toWei((this.burnerTopUpAmount + parseFloat(this.selectedBet)).toString(), "ether");
+          console.log("totalValue:", totalValue);
           const result = await this.burnerContractInstance.methods
           .registerWithBurner(this.burnerAddress, betInWei)
           .send({ from: accounts[0], value: totalValue, gasPrice, gasLimit });
@@ -1402,7 +1403,7 @@ export default {
         const passwordHash = this.getPasswordHash();
         console.log("gameId:", gameId);
         if(this.isBurner){
-          const totalValue = this.getWeb3.utils.toWei((this.burnerTopUpAmount + parseInt(this.selectedBet)).toString(), "ether");
+          const totalValue = this.getWeb3.utils.toWei((this.burnerTopUpAmount + parseFloat(this.selectedBet)).toString(), "ether");
           const result = await this.burnerContractInstance.methods
           .createPasswordMatchWithBurner(this.burnerAddress, betInWei, passwordHash)
           .send({ from: accounts[0], value: totalValue, gasPrice, gasLimit });
@@ -1469,7 +1470,7 @@ export default {
         //set password
         console.log("gameId:", gameId);
         if(this.isBurner){
-          const totalValue = this.getWeb3.utils.toWei((this.burnerTopUpAmount + parseInt(this.selectedBet)).toString(), "ether");
+          const totalValue = this.getWeb3.utils.toWei((this.burnerTopUpAmount + parseFloat(this.selectedBet)).toString(), "ether");
           const result = await this.burnerContractInstance.methods
           .joinPasswordMatchWithBurner(this.burnerAddress, betInWei, password)
           .send({ from: accounts[0], value: totalValue, gasPrice, gasLimit });ce

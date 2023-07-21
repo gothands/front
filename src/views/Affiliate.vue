@@ -647,7 +647,7 @@ import ListAffiliate from '@/components/ListAffiliate.vue';
           //append reward amount to rewardsArrayFromConsumer
           if (this.rewardsArrayFromConsumer[consumer]) {
             this.rewardsArrayFromConsumer[consumer].push({
-              amount:parseInt(amount),
+              amount:parseFloat(amount),
               timestamp,
             });
           } else {
