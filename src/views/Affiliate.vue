@@ -473,7 +473,7 @@ import ListAffiliate from '@/components/ListAffiliate.vue';
         async stake() {
           // Call the stake method
           try {
-            const gasPrice = this.getWeb3.utils.toWei("5", "gwei");
+            const gasPrice = this.getWeb3.utils.toWei("0.1", "gwei");
             const gasLimit = 30000000;
 
             // give allowance to staking contract
@@ -513,7 +513,7 @@ import ListAffiliate from '@/components/ListAffiliate.vue';
         async unstake() {
           // Call the unstake method
           try {
-            const gasPrice = this.getWeb3.utils.toWei("5", "gwei");
+            const gasPrice = this.getWeb3.utils.toWei("0.1", "gwei");
             const gasLimit = 3000000;
 
             const tx = await this.stakingContract.methods.unstake(
@@ -547,7 +547,7 @@ import ListAffiliate from '@/components/ListAffiliate.vue';
         async claim() {
           // Call the claim method
           try {
-            const gasPrice = this.getWeb3.utils.toWei("5", "gwei");
+            const gasPrice = this.getWeb3.utils.toWei("0.1", "gwei");
             const gasLimit = 3000000;
 
             const tx = await this.stakingContract.methods.claimRewards().send({ from: this.activeAccount, gasPrice, gasLimit });
@@ -567,7 +567,7 @@ import ListAffiliate from '@/components/ListAffiliate.vue';
         async claimAffiliateRewards() {
           // Call the claim method
           try {
-            const gasPrice = this.getWeb3.utils.toWei("5", "gwei");
+            const gasPrice = this.getWeb3.utils.toWei("0.1", "gwei");
             const gasLimit = 3000000;
 
             const tx = await this.affiliateContract.methods.claimRewards().send({ from: this.activeAccount, gasPrice, gasLimit });
@@ -595,7 +595,7 @@ import ListAffiliate from '@/components/ListAffiliate.vue';
         
           // Call the addLiquidity method
           try {
-            const gasPrice = this.getWeb3.utils.toWei("5", "gwei");
+            const gasPrice = this.getWeb3.utils.toWei("0.1", "gwei");
             const gasLimit = 3000000;
 
             const tx = await this.affiliateContract.methods.registerAsConsumer(
@@ -735,7 +735,7 @@ import ListAffiliate from '@/components/ListAffiliate.vue';
                 },
 
       async fetchPastEvents() {
-          const fromBlock = 0;
+          const fromBlock = 31290509;
 
     await this.fetchConsumerRegisteredEvents(fromBlock);
     await this.fetchRewardRecievedEvents(fromBlock);

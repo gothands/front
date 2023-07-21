@@ -103,16 +103,18 @@ const CHAIN_ID_MAINNET = "0x1"
 const CHAIN_ID_TESTNET = "0x118"
 const CHAIN_ID_LOCALHOST = "0x10e"
 const CHAIN_ID_LOCALHOST_HARDHAT = "0x7A69"
+const CHAIN_ID_ARBITRUM_GOERLI = "0x66EED"
 
 const RPC_URLS = {
   [CHAIN_ID_MAINNET]: "https://rpc.ankr.com/eth",
   [CHAIN_ID_TESTNET]: "https://testnet.era.zksync.dev",
   [CHAIN_ID_LOCALHOST]: "http://localhost:3050/",
   [CHAIN_ID_LOCALHOST_HARDHAT]: "http://localhost:8545",
+  [CHAIN_ID_ARBITRUM_GOERLI]: "https://goerli-rollup.arbitrum.io/rpc",
 
 };
 
-const CURRENT_CHAIN_ID = CHAIN_ID_LOCALHOST_HARDHAT;
+const CURRENT_CHAIN_ID = CHAIN_ID_ARBITRUM_GOERLI;
 
 export default {
   // eslint-disable-next-line vue/multi-word-component-names

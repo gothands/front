@@ -73,16 +73,18 @@ const CHAIN_ID_MAINNET = "0x1"
 const CHAIN_ID_TESTNET = "0x118"
 const CHAIN_ID_LOCALHOST = "0x10e"
 const CHAIN_ID_LOCALHOST_HARDHAT = "0x7A69"
+const CHAIN_ID_ARBITRUM_GOERLI = "0x66eed"
 
 const RPC_URLS = {
   [CHAIN_ID_MAINNET]: "https://rpc.ankr.com/eth",
   [CHAIN_ID_TESTNET]: "https://testnet.era.zksync.dev",
   [CHAIN_ID_LOCALHOST]: "http://localhost:3050/",
   [CHAIN_ID_LOCALHOST_HARDHAT]: "http://localhost:8545",
+  [CHAIN_ID_ARBITRUM_GOERLI]: "https://goerli-rollup.arbitrum.io/rpc",
 
 };
 
-const CURRENT_CHAIN_ID = CHAIN_ID_LOCALHOST_HARDHAT;
+const CURRENT_CHAIN_ID = CHAIN_ID_ARBITRUM_GOERLI;
 
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
@@ -126,12 +128,14 @@ export default {
       chainConfig: {
         chainNamespace: CHAIN_NAMESPACES.EIP155,
         chainId: CURRENT_CHAIN_ID,
-        rpcTarget: RPC_URLS[CURRENT_CHAIN_ID] // This is the public RPC we have added, please pass on your own endpoint while creating an app
+        rpcTarget: RPC_URLS[CURRENT_CHAIN_ID], // This is the public RPC we have added, please pass on your own endpoint while creating an app
+        displayName: "Arbitrum Testnet",
+
       },
       uiConfig: {
         defaultLanguage: "en",
       },
-      web3AuthNetwork: "mainnet",
+      web3AuthNetwork: "testnet",
       //provider: new web3.providers.WebsocketProvider("ws://localhost:8545"),
     });
 
@@ -189,7 +193,6 @@ export default {
         chainNamespace: CHAIN_NAMESPACES.EIP155,
         chainId: CURRENT_CHAIN_ID,
         rpcTarget: RPC_URLS[CURRENT_CHAIN_ID],
-        blockExplorer: "https://rinkeby.etherscan.io/",
 
       },
       web3AuthNetwork: "testnet",

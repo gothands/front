@@ -492,7 +492,7 @@ export default {
 
       handledEventIds: new Set(),
 
-      burnerTopUpAmount: 0.01,
+      burnerTopUpAmount: 0.001,
       burnerAddress: null,
       burnerPrivateKey: null,
       burnerContractInstance: null,
@@ -1273,7 +1273,7 @@ export default {
       if (this.affiliateContract){
         try {
           const accounts = await this.getWeb3.eth.getAccounts();
-          const gasPrice = this.getWeb3.utils.toWei("5", "gwei");
+          const gasPrice = this.getWeb3.utils.toWei("0.1", "gwei");
           const gasLimit = 3000000;
 
           //get affilaite address from local storage 
@@ -1326,7 +1326,7 @@ export default {
         this.games[this.currentGameId ?? "0"].states[0][this.getActiveAccount] = GameStates.Registering;
 
         const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = this.getWeb3.utils.toWei("5", "gwei");
+        const gasPrice = this.getWeb3.utils.toWei("0.1", "gwei");
         const gasLimit = 3000000;
 
         const betInWei = this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether");
@@ -1387,7 +1387,7 @@ export default {
         this.games[this.currentGameId ?? "0"].states[0][this.getActiveAccount] = GameStates.Registering;
 
         const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = this.getWeb3.utils.toWei("5", "gwei");
+        const gasPrice = this.getWeb3.utils.toWei("0.1", "gwei");
         const gasLimit = 3000000;
 
         const betInWei = this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether");
@@ -1456,7 +1456,7 @@ export default {
         this.games[this.currentGameId ?? "0"].states[0][this.getActiveAccount] = GameStates.Registering;
 
         const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = this.getWeb3.utils.toWei("5", "gwei");
+        const gasPrice = this.getWeb3.utils.toWei("0.1", "gwei");
         const gasLimit = 3000000;
 
         const betInWei = this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether");
@@ -1694,7 +1694,7 @@ export default {
 
       try {
         const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = this.getWeb3.utils.toWei("5", "gwei");
+        const gasPrice = this.getWeb3.utils.toWei("0.1", "gwei");
         const gasLimit = 3000000;
         const result = await this.contractInstance.methods
           .getOutcome(this.currentGameId)
@@ -1877,7 +1877,7 @@ export default {
     },
 
     async fetchPastGames() {
-      const fromBlock = 0;
+      const fromBlock = 31290509;
 
       await this.fetchPlayerRegisteredEvents(fromBlock);
       await this.fetchPlayerWaitingEvents(fromBlock);

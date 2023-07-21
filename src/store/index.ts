@@ -118,7 +118,7 @@ export default createStore({
     async stake({ commit, state }, amount) {
       try {
         const web3 = new Web3(state.provider as any);
-        const gasPrice = web3.utils.toWei("5", "gwei");
+        const gasPrice = web3.utils.toWei("0.1", "gwei");
         const gasLimit = 30000000;
 
         // give allowance to staking contract
@@ -157,7 +157,7 @@ export default createStore({
     async unstake({ commit, state }, amount) {
       try {
         const web3 = new Web3(state.provider as any);
-        const gasPrice = web3.utils.toWei("5", "gwei");
+        const gasPrice = web3.utils.toWei("0.1", "gwei");
         const gasLimit = 30000000;
 
         const tx = await state.stakeContract.methods.unstake(
