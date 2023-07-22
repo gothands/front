@@ -80,7 +80,7 @@ const RPC_URLS = {
   [CHAIN_ID_TESTNET]: "https://testnet.era.zksync.dev",
   [CHAIN_ID_LOCALHOST]: "http://localhost:3050/",
   [CHAIN_ID_LOCALHOST_HARDHAT]: "http://localhost:8545",
-  [CHAIN_ID_ARBITRUM_GOERLI]: "https://goerli-rollup.arbitrum.io/rpc",
+  [CHAIN_ID_ARBITRUM_GOERLI]: "https://arb-goerli.g.alchemy.com/v2/KQNomn7nRHhwJ7SMgTYxI3amRQs9rc7v",
 
 };
 
