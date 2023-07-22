@@ -119,7 +119,7 @@ export default {
 
 
     const clientId =
-      "BPskEPAhlqjgenfk3gNE3CM09cpmINBS5wHflAZavWwWp1B4oWWWypVCHRbHpbLYeKPjkPXYNuNhEPXAJfkYijw"; // get from https://dashboard.web3auth.io
+      "BNXP4nqNQ7AgD-kFeqeLjvBNM9RVVJJmhOgd1DVZw89SY7UzYGh_RwXK-YVIVFn8qFU6BbL3krmslFNJPpu71Bs"; // get from https://dashboard.web3auth.io
 
       
 

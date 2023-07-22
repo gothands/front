@@ -1326,7 +1326,7 @@ export default {
         this.games[this.currentGameId ?? "0"].states[0][this.getActiveAccount] = GameStates.Registering;
 
         const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = this.getWeb3.utils.toWei("0.1", "gwei");
+        const gasPrice = this.getWeb3.utils.toWei("0.3", "gwei");
         const gasLimit = 3000000;
 
         const betInWei = this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether");
@@ -1388,7 +1388,7 @@ export default {
         this.games[this.currentGameId ?? "0"].states[0][this.getActiveAccount] = GameStates.Registering;
 
         const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = this.getWeb3.utils.toWei("0.1", "gwei");
+        const gasPrice = this.getWeb3.utils.toWei("0.3", "gwei");
         const gasLimit = 3000000;
 
         const betInWei = this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether");
@@ -1457,7 +1457,7 @@ export default {
         this.games[this.currentGameId ?? "0"].states[0][this.getActiveAccount] = GameStates.Registering;
 
         const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = this.getWeb3.utils.toWei("0.1", "gwei");
+        const gasPrice = this.getWeb3.utils.toWei("0.3", "gwei");
         const gasLimit = 3000000;
 
         const betInWei = this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether");
@@ -1521,7 +1521,7 @@ export default {
           "0x" + sha256(this.selectedMove + this.randomString);
         console.log("clearMove:", this.selectedMove + this.randomString);
         const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = this.getWeb3.utils.toWei("0.01", "gwei");
+        const gasPrice = this.getWeb3.utils.toWei("0.3", "gwei");
         const gasLimit = 3000000;
 
         if(this.isBurner){
@@ -1569,7 +1569,7 @@ export default {
         // this.games[this.currentGameId ?? "0"].states[this.getActiveAccount] = GameStates.Cancelling;
         //console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
         const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = this.getWeb3.utils.toWei("0.01", "gwei");
+        const gasPrice = this.getWeb3.utils.toWei("0.3", "gwei");
         const gasLimit = 3000000;
 
         if(this.isBurner){
@@ -1613,7 +1613,7 @@ export default {
         // this.games[this.currentGameId ?? "0"].states[this.getActiveAccount] = GameStates.Cancelling;
         //console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
         const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = this.getWeb3.utils.toWei("0.01", "gwei");
+        const gasPrice = this.getWeb3.utils.toWei("0.3", "gwei");
         const gasLimit = 3000000;
 
         if(this.isBurner){
@@ -1658,7 +1658,7 @@ export default {
 
         const accounts = await this.getWeb3.eth.getAccounts();
         const clearMove = `${this.selectedMove}${this.randomString}`; // Use saved randomString
-        const gasPrice = this.getWeb3.utils.toWei("0.01", "gwei");
+        const gasPrice = this.getWeb3.utils.toWei("0.3", "gwei");
         const gasLimit = 3000000;
 
         if(this.isBurner){

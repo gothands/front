@@ -99,12 +99,8 @@ export default createStore({
       if (!state.web3auth) {
         return;
       }
-      const provider = await state.web3auth.connect();
-      commit("setProvider", provider);
-      //const userInfo: any = await web3auth.getUserInfo();
-      //await torusPlugin.initWithProvider(provider, userInfo);
-      
-      commit("setLoggedIn", true);
+      state.web3auth.connect();
+
       //await torusPlugin.connect()
     },
     // Game
