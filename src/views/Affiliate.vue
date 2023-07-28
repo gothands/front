@@ -705,23 +705,53 @@ import ListAffiliate from '@/components/ListAffiliate.vue';
     }, pollingInterval);
   },
 
-  async fetchConsumerRegisteredEvents(fromBlock) {
-      const contract = this.affiliateContract;
+  async fetchConsumerRegisteredEvents(startBlock, endBlock) {
+    const blockLimit = 50000;
+    const contract = this.affiliateContract;
+
+    this.consumerRegisteredEvents = [];
+
+    let fromBlock = startBlock;
+    let toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+    while (fromBlock <= endBlock) {
+      console.log(`Fetching ConsumerRegistered events from blocks ${fromBlock} to ${toBlock}...`);
 
       const events = await contract.getPastEvents("ConsumerRegistered", {
         fromBlock,
+        toBlock,
       });
-      this.consumerRegisteredEvents = events;
-      },
 
-      async fetchRewardRecievedEvents(fromBlock) {
-          const contract = this.affiliateContract;
+      this.consumerRegisteredEvents.push(...events)
+
+      fromBlock = toBlock + 1;
+      toBlock = Math.min(fromBlock + blockLimit, endBlock);
+    }
+  },
+
+      async fetchRewardRecievedEvents(startBlock, endBlock) {
+        const blockLimit = 50000;
+        const contract = this.affiliateContract;
+
+        this.rewardRecievedEvents = [];
+
+        let fromBlock = startBlock;
+        let toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+        while (fromBlock <= endBlock) {
+          console.log(`Fetching RewardRecieved events from blocks ${fromBlock} to ${toBlock}...`);
 
           const events = await contract.getPastEvents("RewardRecieved", {
             fromBlock,
+            toBlock,
           });
-          this.rewardRecievedEvents = events;
-          },
+
+          this.rewardRecievedEvents.push(...events)
+
+          fromBlock = toBlock + 1;
+          toBlock = Math.min(fromBlock + blockLimit, endBlock);
+        }
+      },
 
               processEvents() {
           this.consumerRegisteredEvents.forEach((event) => {
@@ -735,13 +765,14 @@ import ListAffiliate from '@/components/ListAffiliate.vue';
                 },
 
       async fetchPastEvents() {
-          const fromBlock = 31290509;
+        const fromBlock = 32000576;
+        const toBlock = await this.getWeb3.eth.getBlockNumber();
 
-    await this.fetchConsumerRegisteredEvents(fromBlock);
-    await this.fetchRewardRecievedEvents(fromBlock);
+        await this.fetchConsumerRegisteredEvents(fromBlock, toBlock);
+        await this.fetchRewardRecievedEvents(fromBlock, toBlock);
 
 
-    this.processEvents();
+        this.processEvents();
 
       },
 

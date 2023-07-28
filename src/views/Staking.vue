@@ -772,58 +772,110 @@ import ListStaking from '@/components/ListStaking.vue';
       }, pollingInterval);
     },
 
-    async fetchStakeEvents(fromBlock) {
-        const contract = this.stakingContract;
+    async fetchStakeEvents(startBlock, endBlock) {
+      const blockLimit = 50000;
+      const contract = this.stakingContract;
+
+      // Fetch events in batches of 50,000 blocks to avoid block gas limit issues
+      this.stakeEvents = [];
+
+      let fromBlock = startBlock;
+      let toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+      while (fromBlock <= endBlock) {
+        console.log(`Fetching stake events from blocks ${fromBlock} to ${toBlock}...`);
 
         const events = await contract.getPastEvents("Staked", {
           fromBlock,
+          toBlock,
         });
-        this.stakeEvents = events;
-        },
 
-        async fetchUnstakeEvents(fromBlock) {
-            const contract = this.stakingContract;
+        this.stakeEvents.push(...events);
 
-            const events = await contract.getPastEvents("Unstaked", {
-              fromBlock,
-            });
-            this.unstakeEvents = events;
-            },
+        fromBlock = toBlock + 1;
+        toBlock = Math.min(fromBlock + blockLimit, endBlock);
+      }
+    },
 
-            async fetchRecievedFundsEvents(fromBlock) {
-                const contract = this.stakingContract;
+    async fetchUnstakeEvents(startBlock, endBlock) {
+      const blockLimit = 50000;
+      const contract = this.stakingContract;
 
-                const events = await contract.getPastEvents("ReceivedFundsForStaking", {
-                  fromBlock,
-                });
-                this.recievedFundsEvents = events;
-                },
+      // Fetch events in batches of 50,000 blocks to avoid block gas limit issues
+      this.unstakeEvents = [];
 
-                processEvents() {
-                    this.stakeEvents.forEach((event) => {
-                      this.handleStakingEvent(event);
-                      this.addToHandledEvents(event, "Staked");
-                    });
-                    this.unstakeEvents.forEach((event) => {
-                      this.handleUnstakingEvent(event);
-                        this.addToHandledEvents(event, "Unstaked");
-                    });
-                    this.recievedFundsEvents.forEach((event) => {
-                      this.handleRecievedFundsForStaking(event);
-                        this.addToHandledEvents(event, "ReceivedFundsForStaking");
-                    });
-                  },
+      let fromBlock = startBlock;
+      let toBlock = Math.min(fromBlock + blockLimit, endBlock);
 
-        async fetchPastEvents() {
-            const fromBlock = 31290509;
+      while (fromBlock <= endBlock) {
+        console.log(`Fetching unstake events from blocks ${fromBlock} to ${toBlock}...`);
 
-      await this.fetchStakeEvents(fromBlock);
-      await this.fetchUnstakeEvents(fromBlock);
-      await this.fetchRecievedFundsEvents(fromBlock);
+        const events = await contract.getPastEvents("Unstaked", {
+          fromBlock,
+          toBlock,
+        });
+
+        this.unstakeEvents.push(...events);
+
+        fromBlock = toBlock + 1;
+        toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+      }
+    },
+
+    async fetchRecievedFundsEvents(startBlock, endBlock) {
+      const blockLimit = 50000;
+      const contract = this.stakingContract;
+
+      // Fetch events in batches of 50,000 blocks to avoid block gas limit issues
+      this.recievedFundsEvents = [];
+
+      let fromBlock = startBlock;
+      let toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+      while (fromBlock <= endBlock) {
+        console.log(`Fetching recieved funds events from blocks ${fromBlock} to ${toBlock}...`);
+
+        const events = await contract.getPastEvents("ReceivedFundsForStaking", {
+
+          fromBlock,
+          toBlock,
+        });
+
+        this.recievedFundsEvents.push(...events);
+
+        fromBlock = toBlock + 1;
+        toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+      }
+    },
+
+    processEvents() {
+      this.stakeEvents.forEach((event) => {
+        this.handleStakingEvent(event);
+        this.addToHandledEvents(event, "Staked");
+      });
+      this.unstakeEvents.forEach((event) => {
+        this.handleUnstakingEvent(event);
+          this.addToHandledEvents(event, "Unstaked");
+      });
+      this.recievedFundsEvents.forEach((event) => {
+        this.handleRecievedFundsForStaking(event);
+          this.addToHandledEvents(event, "ReceivedFundsForStaking");
+      });
+    },
+
+    async fetchPastEvents() {
+      const fromBlock = 32000576;
+      const toBlock = await this.getWeb3.eth.getBlockNumber();
+
+      await this.fetchStakeEvents(fromBlock, toBlock);
+      await this.fetchUnstakeEvents(fromBlock, toBlock);
+      await this.fetchRecievedFundsEvents(fromBlock, toBlock);
 
       this.processEvents();
 
-        },
+    },
 
   
   
