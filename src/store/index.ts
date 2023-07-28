@@ -104,6 +104,18 @@ export default createStore({
         return;
       }
       state.web3auth.connect();
+      const provider = await state.web3auth.connect();
+      commit("setLoading", true);
+      commit("setProvider", provider);
+      if (state.web3auth.provider) {
+          commit("setProvider", state.web3auth.provider);
+		  console.log("setProvider", state.web3auth.provider);
+          //const initVal = await torusPlugin.initWithProvider(store.state.provider, userInfo);
+          commit("setLoggedIn", true);
+
+        }
+	  //check if logged in through metamask
+			commit("setIsMetamask", true);
 
       //await torusPlugin.connect()
     },

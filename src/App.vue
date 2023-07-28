@@ -248,6 +248,7 @@ export default {
           store.dispatch("setLoggedIn", true);
 
         }
+        store.dispatch("setLoading", false);
 
 		//check if logged in through metamask
 		if (web3auth.connectedAdapterName === "metamask") {
@@ -303,13 +304,15 @@ watch(
         return;
       }
       const provider = await web3auth.connect();
+      store.dispatch("setLoading", true);
       store.dispatch("setProvider", provider);
-      console.log("provider", store.state.provider);
-      const userInfo: any = await web3auth.getUserInfo();
-      //await torusPlugin.initWithProvider(provider, userInfo);
-      
-      store.dispatch("setLoggedIn", true);
+      if (web3auth.provider) {
+          store.dispatch("setProvider", web3auth.provider);
+		  console.log("setProvider", web3auth.provider);
+          //const initVal = await torusPlugin.initWithProvider(store.state.provider, userInfo);
+          store.dispatch("setLoggedIn", true);
 
+        }
 	  //check if logged in through metamask
 		if (web3auth.connectedAdapterName === "metamask") {
 			store.dispatch("setIsMetamask", true);
