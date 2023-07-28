@@ -32,6 +32,8 @@ export default createStore({
       // Game
       games: games,
       isInGame: false,
+      isJoiningPasswordMatch: false,
+      joiningPassword: null,
       leaveGame: () => { console.log("leaveGame not set") },
 
       // Stake
@@ -66,6 +68,8 @@ export default createStore({
     },
     setIsInGame(state, payload) { state.isInGame = payload },
     setLeaveGame(state, payload) { state.leaveGame = payload },
+    setIsJoiningPasswordMatch(state, payload) { state.isJoiningPasswordMatch = payload },
+    setJoiningPassword(state, payload) { state.joiningPassword = payload },
 
     // Stake
     setHandsTokenContract(state, payload) { state.handsTokenContract = payload },
@@ -107,6 +111,8 @@ export default createStore({
     setGames({ commit }, payload) { commit('setGames', payload) },
     setIsInGame({ commit }, payload) { commit('setIsInGame', payload) },
     setLeaveGame({ commit }, payload) { commit('setLeaveGame', payload) },
+    setIsJoiningPasswordMatch({ commit }, payload) { commit('setIsJoiningPasswordMatch', payload) },
+    setJoiningPassword({ commit }, payload) { commit('setJoiningPassword', payload) },
 
     //Stake
     setStakeContract({ commit }, payload) { commit('setStakeContract', payload) },

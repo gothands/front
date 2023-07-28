@@ -22,12 +22,13 @@
       line-height: 160%; margin:0; margin-bottom:56px;">
         Play rock paper scissors with your friends or with random opponents for real money.
       </p>
+      
       <button
         class="button-dark"
         @click="login"
         style="cursor: pointer; width: 270px; height:86px;"
       >
-        Sign Up
+        {{ loading ? 'Logging in...' : 'Sign Up'  }}
       </button>
     </header>
 
@@ -134,6 +135,8 @@ export default {
     'activeAccount',
     'balance',
     'provider',
+    'isJoiningPasswordMatch',
+    'joiningPassword',
   ]),
   methods:{
     login() {

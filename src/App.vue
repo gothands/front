@@ -25,6 +25,9 @@
 		
 		
 	  </nav>
+    <p v-if="joiningPassword">
+      Joining match: {{ joiningPassword }} ...
+    </p>
   <router-view/>
 </template>
 
@@ -105,6 +108,8 @@ export default {
     'balance',
     'provider',
 	'isInGame',
+  'joiningPassword',
+  'isJoiningPasswordMatch',
   ]),
 
   methods : {
@@ -114,6 +119,22 @@ export default {
   },
  
   setup() {
+    const checkJoiningPassword = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const joiningPassword = urlParams.get('game');
+      const betAmount = urlParams.get('bet');
+
+      store.dispatch("setJoiningPassword", "");
+      store.dispatch("setIsJoiningPasswordMatch", false);
+
+      if(joiningPassword && betAmount) {
+        store.dispatch("setJoiningPassword", joiningPassword);
+        store.dispatch("setIsJoiningPasswordMatch", false);
+
+      }
+      
+    }
+  
     const staking = ref<boolean>(false);
     const rampInstantSdk = ref<any>(null);
 
@@ -213,6 +234,7 @@ export default {
 
     onMounted(async () => {
       try {
+        checkJoiningPassword();
         store.dispatch("setLoading", true);
         store.dispatch("setLoggedIn", false);
         await web3auth.initModal();

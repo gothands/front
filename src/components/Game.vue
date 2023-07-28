@@ -9,7 +9,7 @@
     Hello world
   </Modal>
   <div class="content">
-    <button
+    <!-- <button
       class="button-dark"
       @click="emptyBurnerWallet"
       >emptyBurnerWallet</button>
@@ -18,7 +18,7 @@
             @click="cancelGame"
           >
             Cancel
-          </button>
+          </button> -->
     <div v-if="!isInGame && !isWaiting">
       <p style="margin:0; margin-bottom:6px;">Your balance</p>
       <h1 style="margin:0; margin-bottom:22px;">
@@ -510,6 +510,9 @@ export default {
       burnerPrivateKey: null,
       burnerContractInstance: null,
       burnerNonce: 0,
+
+      isJoiningPasswordMatch: false,
+      joiningPassword: null,
 
     };
   },
@@ -1350,7 +1353,6 @@ export default {
       const bet = this.selectedBet;
       url.searchParams.set("bet", bet);
       navigator.clipboard.writeText(url.href);
-      alert("Copied to clipboard!");
     },
 
     //calls the affiliate contract this.affiliateContract
@@ -1542,6 +1544,7 @@ export default {
 
       try {
         console.log("Joining password match...", this.currentGameId);
+        this.$store.dispatch("setIsJoiningPasswordMatch", true);
         if (!this.games[this.currentGameId ?? "0"]) 
           this.createGame(this.currentGameId ?? "0")
         this.games[this.currentGameId ?? "0"].states[0][this.getActiveAccount] = GameStates.Registering;
@@ -1574,6 +1577,8 @@ export default {
 
         localStorage.setItem("lastBetAmount", this.selectedBet);
 
+        this.$store.dispatch("setIsJoiningPasswordMatch", false);
+
         // Update the gameState to Waiting
         //console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
       } catch (error) {
@@ -1584,6 +1589,8 @@ export default {
 
         //revert selected move
         console.error("Error registering game:", error);
+
+        this.$store.dispatch("setIsJoiningPasswordMatch", false);
       }
     },
 
@@ -2120,8 +2127,19 @@ export default {
       const joiningPassword = urlParams.get('game');
       const betAmount = urlParams.get('bet');
 
+      
+
       if(joiningPassword && !this.isInGame && !this.isJoiningGame && betAmount) {
+        this.$store.dispatch("setJoiningPassword", joiningPassword);
         await this.joinPasswordMatch(joiningPassword, betAmount);
+
+        //clear query string from url
+        var url = new URL(window.location.toString());
+        url.search = '';
+        window.history.replaceState({}, document.title, url.toString());
+        this.$store.dispatch("setJoiningPassword", "");
+        this.$store.dispatch("setIsJoiningPasswordMatch", false);
+
       }
       
     },
