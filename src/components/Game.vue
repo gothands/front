@@ -9,18 +9,30 @@
     Hello world
   </Modal>
   <div class="content">
+    <button
+      class="button-dark"
+      @click="emptyBurnerWallet"
+      >emptyBurnerWallet</button>
+      <button
+            class="button-dark"
+            @click="cancelGame"
+          >
+            Cancel
+          </button>
     <div v-if="!isInGame && !isWaiting">
       <p style="margin:0; margin-bottom:6px;">Your balance</p>
       <h1 style="margin:0; margin-bottom:22px;">
-        <span
-          class="currency-symbol"
-        >$</span>
+        
         {{this.balance?.toString().split(".")[0]}}
         <span
           class="decimals">
           .{{ this.balance?.toString().split(".")[1]?.substring(0,4)?? "00" }}
 
         </span>
+        <span
+          class="currency-symbol decimals"
+          style="margin:0; margin-left:10px;"
+        >ETH</span>
       </h1>
       <div class="address-container">
         <profile-item :address="this.activeAccount" />
@@ -461,6 +473,7 @@ export default {
       randomString: "",
 
       contractInstance: null,
+      contractReadInstance: null,
       pastGames: [],
 
       playerRegisteredEvents: [],
@@ -496,6 +509,7 @@ export default {
       burnerAddress: null,
       burnerPrivateKey: null,
       burnerContractInstance: null,
+      burnerNonce: 0,
 
     };
   },
@@ -507,6 +521,7 @@ export default {
       return this.activeAccount?.toLowerCase()
     },
     getWeb3() {return new Web3(this.provider);},
+    getWeb3Read() { return new Web3(new Web3.providers.WebsocketProvider("wss://maximum-shy-meme.arbitrum-goerli.discover.quiknode.pro/9e608d37bed73e216df881fc52b358d41236b29e/")) },
     balance() {
       const value =  this.$store.state.balance;
       return (Math.round(value * 100) / 100).toFixed(2);
@@ -532,7 +547,7 @@ export default {
         return GameStates.Initial;
       }
       const currentRound = this.games[this.currentGameId ?? "0"].round;
-      return this.games[this.currentGameId ?? "0"].states[currentRound][this.getActiveAccount] ?? GameStates.Matched
+      return this.games[this.currentGameId ?? "0"].states[currentRound][this.getActiveAccount.toLowerCase()] ?? GameStates.Matched
     },
     yourGameStateToString() { 
       switch(this.gameState) {
@@ -879,7 +894,14 @@ export default {
       return accounts[0];
     },
     async setContract() {
+      //create websockets provider
+
       this.contractInstance = new this.getWeb3.eth.Contract(
+        CONTRACT_ABI,
+        CONTRACT_ADDRESS,
+      );
+
+      this.contractReadInstance = new this.getWeb3Read.eth.Contract(
         CONTRACT_ABI,
         CONTRACT_ADDRESS,
       );
@@ -905,7 +927,14 @@ export default {
       return this.contractInstance;
     },
 
-    createGame(gameId, playerA= this.getActiveAccount){
+    async getReadContract() {
+      if (!this.contractReadInstance) {
+        await this.setContract();
+      }
+      return this.contractReadInstance;
+    },
+
+    createGame(gameId, playerA=""){
       this.games[gameId] = {
         gameId,
         playerA: playerA.toLowerCase(),
@@ -956,6 +985,52 @@ export default {
     const strTime = hours + ':' + minutes.substr(-2) + ' ' + ampm;
     return strTime;
 },
+
+//send funds from burner wallet to user wallet
+//use burnerWallet private/ burner wallet instance
+//get balance, send the entire balance to this.activeWallet
+  async emptyBurnerWallet() {
+    console.log("Initiating process to empty burner wallet.")
+
+    // Get balance
+    const balance = await this.getWeb3.eth.getBalance(this.burnerAddress);
+    console.log("Current balance", balance);
+
+    // Calculate and assign gas price
+    const gasPrice = this.getWeb3.utils.toWei("0.3", "gwei");
+    const gasLimit = 3000000;
+
+    // Calculate total gas cost
+    const totalGasCost = gasPrice * gasLimit;
+
+    // Calculate amount that can be transferred considering the gas cost
+    const transferableAmount = balance - totalGasCost;
+
+    // Create a transaction
+    const transaction = {
+        from: this.burnerAddress,
+        to: this.activeAccount,
+        value: transferableAmount,
+        gasPrice,
+        gasLimit
+    };
+
+    // Sign the transaction
+    const signedTransaction = await this.getWeb3.eth.accounts.signTransaction(transaction, this.burnerPrivateKey);
+
+    // Send the signed transaction
+    this.getWeb3.eth.sendSignedTransaction(signedTransaction.rawTransaction)
+    .on('transactionHash', (transactionHash) => {
+        console.log("Transaction Hash", transactionHash)
+    })
+    .on('error', (err) => {
+        console.log("An error occurred during transaction", err);
+    });
+},
+
+
+
+
     
     //Whenever a new game is registered
     async handleRegisterEvent(event, userAddress) {
@@ -965,11 +1040,14 @@ export default {
       //check if gameId is in games
       if (!this.getGame(gameId, 0)) 
         this.createGame(gameId, playerAddress);
+
+      //set playerA
+      //this.getGame(gameId).playerA = playerAddress.toLowerCase()
       
       //set players state to waiting if hasnt already
       this.getGame(gameId).states[0][playerAddress.toLowerCase()] = GameStates.Waiting;  
       
-      const block = await this.getWeb3.eth.getBlock(event.blockNumber);
+      const block = await this.getWeb3Read.eth.getBlock(event.blockNumber);
       const timestamp = block.timestamp;
       this.getGame(gameId).time = this.convertTimestampToTime(timestamp)
       
@@ -980,16 +1058,26 @@ export default {
     //We set the bet value and the state to waiting
     handleWaitingEvent(event) {
       console.log("PlayerWaiting event:", event.returnValues);
-      const { gameId, bet } = event.returnValues;
+      const { gameId, bet, playerAddress, first } = event.returnValues;
 
       //check if gameId is in games
       if (!this.getGame(gameId, 0))
         this.createGame(gameId);
       
-      //set players state to waiting
-      const playerA = this.getGame(gameId).playerA.toLowerCase()
-      const playerB = this.getGame(gameId).playerB.toLowerCase()
-      this.getGame(gameId).states[0][playerA] = GameStates.Waiting;
+      // //set players state to waiting
+      // const playerA = this.getGame(gameId).playerA.toLowerCase()
+      // const playerB = this.getGame(gameId).playerB.toLowerCase()
+
+      //set player state to waiting if only one player is available
+      const matchedAlready = this.getGame(gameId).states[0][playerAddress.toLowerCase()] == GameStates.Matched;
+      if(!matchedAlready){
+        this.getGame(gameId).states[0][playerAddress.toLowerCase()] = GameStates.Waiting;
+        if(first){
+          this.getGame(gameId).playerA = playerAddress.toLowerCase()
+        } else {
+          this.getGame(gameId).playerB = playerAddress.toLowerCase()
+        }
+      }
 
       //set bet amount
       this.getGame(gameId).bet = bet * 10 ** -18;
@@ -1098,13 +1186,15 @@ export default {
       const { gameId, outcome } = event.returnValues;
 
       //if subscription then set modal and make sure isSubscription is a boolean
-      if (isSubscription === true && typeof isSubscription === "boolean") {
+      if (isSubscription === true && typeof isSubscription === "boolean" && (this.games[gameId]?.playerA?.toLowerCase() == this.activeAccount?.toLowerCase() || this.games[gameId]?.playerB?.toLowerCase() == this.activeAccount.toLowerCase())) { 
         console.log("setting modal");
         //get winner and loser points from yourCurrentPoints and opponentCurrentPoints
         this.winnerPoints = this.yourCurrentPoints > this.opponentCurrentPoints ? this.yourCurrentPoints : this.opponentCurrentPoints;
         this.loserPoints = this.yourCurrentPoints < this.opponentCurrentPoints ? this.yourCurrentPoints : this.opponentCurrentPoints;
         this.winModal = this.yourCurrentPoints > this.opponentCurrentPoints;
         this.showModal = true;
+        //empty burner wallet
+        this.emptyBurnerWallet()
       }
 
       //check if gameId is in games
@@ -1121,7 +1211,7 @@ export default {
     },
 
     //If the game id that was cancelled was yours then reset the current game id and remove the game
-    handlePlayerCancelledEvent(event) {
+    handlePlayerCancelledEvent(event, isSubscription = false) {
       console.log("PlayerCancelled event:", event.returnValues);
       const { gameId, playerAddress } = event.returnValues;
 
@@ -1135,16 +1225,22 @@ export default {
       if (this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() || this.games[gameId].playerB.toLowerCase() == this.activeAccount.toLowerCase()) {
         this.createGame("0");
       }
+
+      //if subscription then set modal and make sure isSubscription is a boolean
+      if (isSubscription === true && typeof isSubscription === "boolean" && playerAddress == this.activeAccount.toLowerCase()) {
+        //empty burner wallet
+        this.emptyBurnerWallet()
+      }
     },
 
     async subscribeToEvents() {
-      const contract = await this.getContract();
-      const userAddress = await this.getAccount();
+    const contract = await this.getReadContract();
+    const userAddress = await this.getAccount();
 
-      console.log("Polling for events...");
-      console.log("contract:", contract);
+    console.log("Subscribing to events...");
+    console.log("contract:", contract);
 
-      const eventNames = [
+    const eventNames = [
         "PlayerRegistered",
         "PlayerWaiting",
         "PlayersMatched",
@@ -1153,9 +1249,9 @@ export default {
         "NewRound",
         "GameOutcome",
         "PlayerCancelled",
-      ];
+    ];
 
-      const eventHandlers = {
+    const eventHandlers = {
         PlayerRegistered: this.handleRegisterEvent,
         PlayerWaiting: this.handleWaitingEvent,
         PlayersMatched: this.handlePlayersMatchedEvent,
@@ -1164,51 +1260,42 @@ export default {
         NewRound: this.handleNewRoundEvent,
         GameOutcome: this.handleOutcomeEvent,
         PlayerCancelled: this.handlePlayerCancelledEvent,
-      };
+    };
 
-      const pollingInterval = 1000; // Poll every 5 seconds
+    // Create a new set for keeping track of handled event ids
+    const handledEventIds = new Set();
 
-      let lastBlockChecked = await this.getBlockNumber()
-
-      // Create a new set for keeping track of handled event ids
-
-      setInterval(async () => {
-        const currentBlock = await this.getBlockNumber();
-
-        for (const eventName of eventNames) {
-          const events = await contract.getPastEvents(eventName, {
-            fromBlock: lastBlockChecked + 1,
-            toBlock: currentBlock,
-          });
-
-          events.forEach((event) => {
+    for (const eventName of eventNames) {
+        contract.events[eventName]()
+        .on('data', (event) => {
             const eventId = `${event.transactionHash}-${eventName}-${event.logIndex}`;
 
-            if (this.handledEventIds.has(eventId)) {
-              return;
+            if (handledEventIds.has(eventId)) {
+                return;
             }
 
             console.log(`New ${eventName} event detected:`, event);
-            if(eventName == "GameOutcome") {
+            if(eventName == "GameOutcome" || eventName == "PlayerCancelled"){
                 eventHandlers[eventName].call(this, event, true);
             }
             if (eventName === "NewRound") {
-              setTimeout(() => {
-                eventHandlers[eventName].call(this, event, userAddress);
-
-              }, 1000); // Add a 1-second delay before handling the NewRound event
+                setTimeout(() => {
+                    eventHandlers[eventName].call(this, event, userAddress);
+                }, 1000); // Add a 1-second delay before handling the NewRound event
             } else {
-              eventHandlers[eventName].call(this, event, userAddress);
+                eventHandlers[eventName].call(this, event, userAddress);
             }
 
-            this.handledEventIds.add(eventId);
-          });
-        }
+            handledEventIds.add(eventId);
+        })
+        .on('error', (error) => {
+            console.error(`Error on event ${eventName}:`, error);
+        });
+    }
+}
+,
 
-        lastBlockChecked = currentBlock;
-        console.log("lastBlockChecked:", lastBlockChecked);
-      }, pollingInterval);
-    },
+
 
     async setPassword() {
       const password = await generateRandomString();
@@ -1344,6 +1431,7 @@ export default {
           const result = await this.burnerContractInstance.methods
           .registerWithBurner(this.burnerAddress, betInWei)
           .send({ from: accounts[0], value: totalValue, gasPrice, gasLimit });
+          this.burnerNonce = await this.getWeb3Read.eth.getTransactionCount(this.burnerAddress, 'pending');
 
         }else{
           const result = await this.contractInstance.methods
@@ -1407,6 +1495,8 @@ export default {
           const result = await this.burnerContractInstance.methods
           .createPasswordMatchWithBurner(this.burnerAddress, betInWei, passwordHash)
           .send({ from: accounts[0], value: totalValue, gasPrice, gasLimit });
+          this.burnerNonce = await this.getWeb3Read.eth.getTransactionCount(this.burnerAddress, 'pending');
+
         }else {
           const result = await this.contractInstance.methods
           .createPasswordMatch(passwordHash)
@@ -1473,7 +1563,9 @@ export default {
           const totalValue = this.getWeb3.utils.toWei((this.burnerTopUpAmount + parseFloat(this.selectedBet)).toString(), "ether");
           const result = await this.burnerContractInstance.methods
           .joinPasswordMatchWithBurner(this.burnerAddress, betInWei, password)
-          .send({ from: accounts[0], value: totalValue, gasPrice, gasLimit });ce
+          .send({ from: accounts[0], value: totalValue, gasPrice, gasLimit });
+          this.burnerNonce = await this.getWeb3Read.eth.getTransactionCount(this.burnerAddress, 'pending');
+
         }else{
           const result = await this.contractInstance.methods
           .joinPasswordMatch(password)
@@ -1525,9 +1617,10 @@ export default {
         const gasLimit = 3000000;
 
         if(this.isBurner){
+          this.burnerNonce = await this.getWeb3Read.eth.getTransactionCount(this.burnerAddress, 'pending');
           const result = await this.burnerContractInstance.methods
           .commit(parseInt(this.currentGameId), encryptedMove)
-          .send({ from: this.burnerAddress, gasPrice, gasLimit });
+          .send({ from: this.burnerAddress, gasPrice, gasLimit, nonce: this.burnerNonce++ });
         }else{
           const result = await this.contractInstance.methods
           .commit(parseInt(this.currentGameId), encryptedMove)
@@ -1572,16 +1665,17 @@ export default {
         const gasPrice = this.getWeb3.utils.toWei("0.3", "gwei");
         const gasLimit = 3000000;
 
-        if(this.isBurner){
-          const result = await this.burnerContractInstance.methods
-          .cancel(parseInt(this.currentGameId))
-          .send({ from: this.burnerAddress, gasPrice, gasLimit });
-        }else{
+        // if(this.isBurner){
+        //   this.burnerNonce = await this.getWeb3Read.eth.getTransactionCount(this.burnerAddress, 'pending');
+        //   const result = await this.burnerContractInstance.methods
+        //   .cancel(parseInt(this.currentGameId))
+        //   .send({ from: this.burnerAddress, gasPrice, gasLimit, nonce: this.burnerNonce++ });
+        // }else{
           const result = await this.contractInstance.methods
             .cancel(parseInt(this.currentGameId))
             .send({ from: accounts[0], gasPrice, gasLimit });
           console.log("Game cancelled:", result);
-        }
+        //}
 
         // Update the gameState to Waiting
         //console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
@@ -1617,9 +1711,10 @@ export default {
         const gasLimit = 3000000;
 
         if(this.isBurner){
+          this.burnerNonce = await this.getWeb3Read.eth.getTransactionCount(this.burnerAddress, 'pending');
           const result = await this.burnerContractInstance.methods
           .leave(parseInt(this.currentGameId))
-          .send({ from: this.burnerAddress, gasPrice, gasLimit });
+          .send({ from: this.burnerAddress, gasPrice, gasLimit, nonce: this.burnerNonce++ });
         } else {
         const result = await this.contractInstance.methods
           .leave(parseInt(this.currentGameId))
@@ -1662,9 +1757,10 @@ export default {
         const gasLimit = 3000000;
 
         if(this.isBurner){
+          this.burnerNonce = await this.getWeb3Read.eth.getTransactionCount(this.burnerAddress, 'pending');
           const result = await this.burnerContractInstance.methods
           .reveal(parseInt(this.currentGameId), clearMove)
-          .send({ from: this.burnerAddress, gasPrice, gasLimit });
+          .send({ from: this.burnerAddress, gasPrice, gasLimit, nonce: this.burnerNonce++ });
         }else{
         const result = await this.contractInstance.methods
           .reveal(this.currentGameId, clearMove)
@@ -1685,6 +1781,7 @@ export default {
         console.error("Error revealing move:", error);
       }
     },
+    
     async getGameOutcome() {
       if (!this.contractInstance) {
         this.contractInstance = new this.getWeb3.eth.Contract(
@@ -1707,76 +1804,228 @@ export default {
       }
     },
 
-    async fetchPlayerRegisteredEvents(fromBlock) {
+    async fetchPlayerRegisteredEvents(startBlock, endBlock) {
+      const blockLimit = 50000; // Maximum blocks that can be fetched in one request
       const contract = await this.getContract();
-      const events = await contract.getPastEvents("PlayerRegistered", {
-        fromBlock,
-      });
-      this.playerRegisteredEvents = events;
-      console.log("playerRegisteredEvents:", this.playerRegisteredEvents.map(e => e.returnValues));
+
+      // Initialize events array
+      this.playerRegisteredEvents = [];
+
+      let fromBlock = startBlock;
+      let toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+      while (fromBlock <= endBlock) {
+          const events = await contract.getPastEvents("PlayerRegistered", {
+              fromBlock: fromBlock,
+              toBlock: toBlock
+          });
+
+          // Add the fetched events to the existing array
+          this.playerRegisteredEvents.push(...events);
+
+          // Log the events
+          console.log("playerRegisteredEvents:", this.playerRegisteredEvents.map(e => e.returnValues));
+
+          // Update blocks for the next iteration
+          fromBlock = toBlock + 1;
+          toBlock = Math.min(fromBlock + blockLimit, endBlock);
+      }
     },
 
-    async fetchPlayerWaitingEvents(fromBlock) {
+    async fetchPlayerWaitingEvents(startBlock, endBlock) {
+      const blockLimit = 50000; // Maximum blocks that can be fetched in one request
       const contract = await this.getContract();
-      const events = await contract.getPastEvents("PlayerWaiting", {
-        fromBlock,
-      });
-      this.playerWaitingEvents = events;
-      console.log("playerWaitingEvents:", this.playerWaitingEvents.map(e => e.returnValues));
+
+      // Initialize events array
+      this.playerWaitingEvents = [];
+
+      let fromBlock = startBlock;
+      let toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+      while (fromBlock <= endBlock) {
+          const events = await contract.getPastEvents("PlayerWaiting", {
+              fromBlock: fromBlock,
+              toBlock: toBlock
+          });
+
+          // Add the fetched events to the existing array
+          this.playerWaitingEvents.push(...events);
+
+          // Log the events
+          console.log("playerWaitingEvents:", this.playerWaitingEvents.map(e => e.returnValues));
+
+          // Update blocks for the next iteration
+          fromBlock = toBlock + 1;
+          toBlock = Math.min(fromBlock + blockLimit, endBlock);
+      }
     },
 
-    async fetchPlayersMatchedEvents(fromBlock) {
+    async fetchPlayersMatchedEvents(startBlock, endBlock){
+      const blockLimit = 50000; // Maximum blocks that can be fetched in one request
       const contract = await this.getContract();
-      const events = await contract.getPastEvents("PlayersMatched", {
-        fromBlock,
-      });
-      this.playersMatchedEvents = events;
-      console.log("playersMatchedEvents:", this.playersMatchedEvents.map(e => e.returnValues));
+
+      // Initialize events array
+      this.playersMatchedEvents = [];
+
+      let fromBlock = startBlock;
+      let toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+      while (fromBlock <= endBlock) {
+          const events = await contract.getPastEvents("PlayersMatched", {
+              fromBlock: fromBlock,
+              toBlock: toBlock
+          });
+
+          // Add the fetched events to the existing array
+          this.playersMatchedEvents.push(...events);
+
+          // Log the events
+          console.log("playersMatchedEvents:", this.playersMatchedEvents.map(e => e.returnValues));
+
+          // Update blocks for the next iteration
+          fromBlock = toBlock + 1;
+          toBlock = Math.min(fromBlock + blockLimit, endBlock);
+      }
     },
 
-    async fetchPlayersMoveCommittedEvents(fromBlock) {
+    async fetchPlayersMoveCommittedEvents(startBlock, endBlock) {
+      const blockLimit = 50000; // Maximum blocks that can be fetched in one request
       const contract = await this.getContract();
-      const events = await contract.getPastEvents("MoveCommitted", {
-        fromBlock,
-      });
-      this.moveCommittedEvents = events;
-      console.log("moveCommittedEvents:", this.moveCommittedEvents.map(e => e.returnValues));
+
+      // Initialize events array
+      this.moveCommittedEvents = [];
+
+      let fromBlock = startBlock;
+      let toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+      while (fromBlock <= endBlock) {
+          const events = await contract.getPastEvents("MoveCommitted", {
+              fromBlock: fromBlock,
+              toBlock: toBlock
+          });
+
+          // Add the fetched events to the existing array
+          this.moveCommittedEvents.push(...events);
+
+          // Log the events
+          console.log("moveCommittedEvents:", this.moveCommittedEvents.map(e => e.returnValues));
+
+          // Update blocks for the next iteration
+          fromBlock = toBlock + 1;
+          toBlock = Math.min(fromBlock + blockLimit, endBlock);
+      }
     },
 
-    async fetchMoveRevealedEvents(fromBlock) {
+    async fetchMoveRevealedEvents(startBlock, endBlock) {
+      const blockLimit = 50000; // Maximum blocks that can be fetched in one request
       const contract = await this.getContract();
-      const events = await contract.getPastEvents("MoveRevealed", {
-        fromBlock,
-      });
-      this.moveRevealedEvents = events;
-      console.log("moveRevealedEvents:", this.moveRevealedEvents.map(e => e.returnValues));
+
+      // Initialize events array
+      this.moveRevealedEvents = [];
+
+      let fromBlock = startBlock;
+      let toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+      while (fromBlock <= endBlock) {
+          const events = await contract.getPastEvents("MoveRevealed", {
+              fromBlock: fromBlock,
+              toBlock: toBlock
+          });
+
+          // Add the fetched events to the existing array
+          this.moveRevealedEvents.push(...events);
+
+          // Log the events
+          console.log("moveRevealedEvents:", this.moveRevealedEvents.map(e => e.returnValues));
+
+          // Update blocks for the next iteration
+          fromBlock = toBlock + 1;
+          toBlock = Math.min(fromBlock + blockLimit, endBlock);
+      }
     },
 
-    async fetchNewRoundEvents(fromBlock) {
+    async fetchNewRoundEvents(startBlock, endBlock) {
+      const blockLimit = 50000; // Maximum blocks that can be fetched in one request
       const contract = await this.getContract();
-      const events = await contract.getPastEvents("NewRound", {
-        fromBlock,
-      });
-      this.newRoundEvents = events;
-      console.log("newRoundEvents:", this.newRoundEvents.map(e => e.returnValues));
+
+      // Initialize events array
+      this.newRoundEvents = [];
+
+      let fromBlock = startBlock;
+      let toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+      while (fromBlock <= endBlock) {
+          const events = await contract.getPastEvents("NewRound", {
+              fromBlock: fromBlock,
+              toBlock: toBlock
+          });
+
+          // Add the fetched events to the existing array
+          this.newRoundEvents.push(...events);
+
+          // Log the events
+          console.log("newRoundEvents:", this.newRoundEvents.map(e => e.returnValues));
+
+          // Update blocks for the next iteration
+          fromBlock = toBlock + 1;
+          toBlock = Math.min(fromBlock + blockLimit, endBlock);
+      }
     },
 
-    async fetchGameOutcomeEvents(fromBlock) {
+    async fetchGameOutcomeEvents(startBlock, endBlock) {
+      const blockLimit = 50000; // Maximum blocks that can be fetched in one request
       const contract = await this.getContract();
-      const events = await contract.getPastEvents("GameOutcome", {
-        fromBlock,
-      });
-      this.gameOutcomeEvents = events;
-      console.log("gameOutcomeEvents:", this.gameOutcomeEvents.map(e => e.returnValues));
-    },
 
-    async fetchPlayerCancelledEvents(fromBlock) {
+      // Initialize events array
+      this.gameOutcomeEvents = [];
+
+      let fromBlock = startBlock;
+      let toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+      while (fromBlock <= endBlock) {
+          const events = await contract.getPastEvents("GameOutcome", {
+              fromBlock: fromBlock,
+              toBlock: toBlock
+          });
+
+          // Add the fetched events to the existing array
+          this.gameOutcomeEvents.push(...events);
+
+          // Log the events
+          console.log("gameOutcomeEvents:", this.gameOutcomeEvents.map(e => e.returnValues));
+
+          // Update blocks for the next iteration
+          fromBlock = toBlock + 1;
+          toBlock = Math.min(fromBlock + blockLimit, endBlock);
+      }
+    },
+    
+    async fetchPlayerCancelledEvents(startBlock, endBlock) {
+      const blockLimit = 50000; // Maximum blocks that can be fetched in one request
       const contract = await this.getContract();
-      const events = await contract.getPastEvents("PlayerCancelled", {
-        fromBlock,
-      });
-      this.playerCancelledEvents = events;
-      console.log("playerCancelledEvents:", this.playerCancelledEvents.map(e => e.returnValues));
+
+      // Initialize events array
+      this.playerCancelledEvents = [];
+
+      let fromBlock = startBlock;
+      let toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+      while (fromBlock <= endBlock) {
+          const events = await contract.getPastEvents("PlayerCancelled", {
+              fromBlock: fromBlock,
+              toBlock: toBlock
+          });
+
+          // Add the fetched events to the existing array
+          this.playerCancelledEvents.push(...events);
+
+          // Log the events
+          console.log("playerCancelledEvents:", this.playerCancelledEvents.map(e => e.returnValues));
+
+          // Update blocks for the next iteration
+          fromBlock = toBlock + 1;
+          toBlock = Math.min(fromBlock + blockLimit, endBlock);
+      }
     },
 
     addToHandledEvents(event, eventName) {
@@ -1878,16 +2127,17 @@ export default {
     },
 
     async fetchPastGames() {
-      const fromBlock = 31290509;
+      const fromBlock = 32000576;
+      const toBlock = await this.getWeb3.eth.getBlockNumber();
 
-      await this.fetchPlayerRegisteredEvents(fromBlock);
-      await this.fetchPlayerWaitingEvents(fromBlock);
-      await this.fetchPlayersMatchedEvents(fromBlock);
-      await this.fetchPlayersMoveCommittedEvents(fromBlock);
-      await this.fetchMoveRevealedEvents(fromBlock);
-      await this.fetchNewRoundEvents(fromBlock);
-      await this.fetchGameOutcomeEvents(fromBlock);
-      await this.fetchPlayerCancelledEvents(fromBlock);
+      await this.fetchPlayerRegisteredEvents(fromBlock, toBlock);
+      await this.fetchPlayerWaitingEvents(fromBlock, toBlock);
+      await this.fetchPlayersMatchedEvents(fromBlock, toBlock);
+      await this.fetchPlayersMoveCommittedEvents(fromBlock, toBlock);
+      await this.fetchMoveRevealedEvents(fromBlock, toBlock);
+      await this.fetchNewRoundEvents(fromBlock, toBlock);
+      await this.fetchGameOutcomeEvents(fromBlock, toBlock);
+      await this.fetchPlayerCancelledEvents(fromBlock, toBlock);
 
 
       this.processEvents();
