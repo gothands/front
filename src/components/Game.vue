@@ -8,6 +8,7 @@
   >
     Hello world
   </Modal>
+  <ModalAddFunds v-model:show="showAddFundsModal"/>
   <div class="content">
     <!-- <button
       class="button-dark"
@@ -227,7 +228,7 @@
 
         
         <div style="display:flex; align-items:start;">
-          <button v-if="!isRegistering && !isWaiting" class="button-light" @click="buyEth">
+          <button v-if="!isRegistering && !isWaiting" class="button-light" @click="toggleAddFundsModal">
              <div class="plus-symbol"></div><div>Add Funds</div>
             </button>
             <div>
@@ -250,8 +251,9 @@
           @click.stop
           >
             <option v-for="step in wagerSteps" :key="step" :value="step">
-              <span class="currency-symbol">$</span>
-              {{ step }} &nbsp;
+              {{ step }} 
+              <span class="currency-symbol">ETH</span>
+              &nbsp;
             </option>
           </select>
         </button>
@@ -391,6 +393,7 @@ import GameListVue from './GameList.vue'
 import store from '@/store'
 import { getBurnerWallet, privateKeyToAccount } from '@/utils/burner'
 import ProfileItemBurner from './ProfileItemBurner.vue'
+import ModalAddFunds from './ModalAddFunds.vue'
 
 const CONTRACT_ADDRESS = mainContracts.deployedContracts.Hands
 const CONTRACT_ABI = mainContracts.deployedAbis.Hands
@@ -450,6 +453,7 @@ export default {
       Modal,
       ProfileItem,
     ProfileItemBurner,
+    ModalAddFunds,
   },
   props: {
     provider: {
@@ -499,6 +503,7 @@ export default {
       playWithFriend: null,
 
       showModal: false,
+      showAddFundsModal: false,
       winnerPoints: 0,
       loserPoints: 0,
       winModal: false,
@@ -761,8 +766,8 @@ export default {
     }
 
     if (lastBetAmount) {
-      this.selectedBet = lastBetAmount;
-      this.sliderIndex = this.wagerSteps.indexOf(parseFloat(lastBetAmount));
+      this.selectedBet = lastBetAmount ?? this.wagerSteps[0];
+      this.sliderIndex = this.wagerSteps.indexOf(parseFloat(this.selectedBet));
     }
 
     if (lastRandomString) {
@@ -840,6 +845,9 @@ export default {
     },
   },
   methods: {
+    toggleAddFundsModal() {
+      this.showAddFundsModal = !this.showAddFundsModal
+    },
     truncateAddress(address) {
       return address?.slice(0, 6) + "..." + address?.slice(-4)
     },
@@ -1230,7 +1238,7 @@ export default {
       }
 
       //if subscription then set modal and make sure isSubscription is a boolean
-      if (isSubscription === true && typeof isSubscription === "boolean" && playerAddress == this.activeAccount.toLowerCase()) {
+      if (isSubscription === true && typeof isSubscription === "boolean" && playerAddress.toLowerCase() == this.activeAccount.toLowerCase()) {
         //empty burner wallet
         this.emptyBurnerWallet()
       }
@@ -2145,8 +2153,23 @@ export default {
     },
 
     async fetchPastGames() {
-      const fromBlock = 32000576;
-      const toBlock = await this.getWeb3.eth.getBlockNumber();
+      let fromBlock = 32000576;
+      let toBlock = await this.getWeb3.eth.getBlockNumber();
+
+      // let inc = 1000;
+      // while(toBlock > fromBlock){
+      //   await this.fetchPlayerRegisteredEvents(toBlock - inc, toBlock);
+      //   await this.fetchPlayerWaitingEvents(toBlock - inc, toBlock);
+      //   await this.fetchPlayersMatchedEvents(toBlock - inc, toBlock);
+      //   await this.fetchPlayersMoveCommittedEvents(toBlock - inc, toBlock);
+      //   await this.fetchMoveRevealedEvents(toBlock - inc, toBlock);
+      //   await this.fetchNewRoundEvents(toBlock - inc, toBlock);
+      //   await this.fetchGameOutcomeEvents(toBlock - inc, toBlock);
+      //   await this.fetchPlayerCancelledEvents(toBlock - inc, toBlock);
+
+      //   await this.processEvents();
+      // }
+
 
       await this.fetchPlayerRegisteredEvents(fromBlock, toBlock);
       await this.fetchPlayerWaitingEvents(fromBlock, toBlock);

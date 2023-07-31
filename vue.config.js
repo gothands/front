@@ -10,5 +10,10 @@ module.exports = defineConfig({
         chunks: "all",
       },
     },
+    resolve: {
+      fallback: {
+        fs: false, // Add this line to handle the "fs" module
+      },
+    },
   },
 });

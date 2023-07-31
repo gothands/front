@@ -151,7 +151,9 @@ export default {
         chainId: CURRENT_CHAIN_ID,
         rpcTarget: RPC_URLS[CURRENT_CHAIN_ID], // This is the public RPC we have added, please pass on your own endpoint while creating an app
         displayName: "Arbitrum Testnet",
-
+        blockExplorer: "https://goerli.arbiscan.io/", 
+        ticker: "ETH",
+        tickerName: "ETH",
       },
       uiConfig: {
         defaultLanguage: "en",
@@ -204,7 +206,11 @@ export default {
       chainConfig: {
         chainNamespace: CHAIN_NAMESPACES.EIP155,
         chainId: CURRENT_CHAIN_ID,
-        rpcTarget: RPC_URLS[CURRENT_CHAIN_ID]   
+        rpcTarget: RPC_URLS[CURRENT_CHAIN_ID] ,
+        blockExplorer: "https://goerli.arbiscan.io/",  
+        displayName: "Arbitrum Testnet",
+        ticker: "ETH",
+        tickerName: "ETH",
       },
     });
     // we can change the above settings using this function
@@ -214,7 +220,10 @@ export default {
         chainNamespace: CHAIN_NAMESPACES.EIP155,
         chainId: CURRENT_CHAIN_ID,
         rpcTarget: RPC_URLS[CURRENT_CHAIN_ID],
-
+        blockExplorer: "https://goerli.arbiscan.io/", 
+        displayName: "Arbitrum Testnet",
+        ticker: "ETH",
+        tickerName: "ETH",
       },
       web3AuthNetwork: "testnet",
     });
