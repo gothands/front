@@ -464,12 +464,12 @@ import ListStaking from '@/components/ListStaking.vue';
   
           async setProtocolFeeRevenue(){
             //Get the balance of the Bank contract
-            const balance = await this.getWeb3.eth.getBalance(mainContracts.deployedContracts.Bank);
-            this.protocolFeeRevenue = balance / 10 ** 18;
+            const balance = await this.stakingContract.methods.getRecievedFundsForStaking();
+            this.protocolFeeRevenue = balance 
   
             //Poll for balance every 5 seconds
             setInterval(async () => {
-              const balance = await this.getWeb3.eth.getBalance(mainContracts.deployedContracts.Bank);
+              const balance = await this.stakingContract.methods.getRecievedFundsForStaking();
               this.protocolFeeRevenue = balance / 10 ** 18;
             }, 5000);
           },
