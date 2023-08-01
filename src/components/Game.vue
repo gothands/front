@@ -239,7 +239,7 @@
           @click="registerGame"
         >   
           <div>
-            {{ isRegistering ? "Registering..." : playWithFriend ? "Play With Friend" : "Play with random" }}
+            {{ isRegistering ? "Creating..." : playWithFriend ? "Play With Friend" : "Play with random" }}
             &nbsp; 
           </div>
           <!-- <a>{{ this.wagerSteps[this.sliderIndex] }} ETH</a> -->
