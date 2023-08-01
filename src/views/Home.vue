@@ -3,24 +3,11 @@
      v-if="!loggedin"
      class=""
     >
-      <h1 style="max-width:525px; margin:24px; color: #353535;
-      text-align: center;
-      font-family: Sen;
-      font-size: 100px;
-      font-style: normal;
-      font-weight: 800;
-      line-height: normal;
-      letter-spacing: -5px;">
+      <h1 class="title-header">
         Welcome to Handsy.io
       </h1>
-      <p style="max-width:525px; color: #353535;
-      text-align: center;
-      font-family: Sen;
-      font-size: 24px;
-      font-style: normal;
-      font-weight: 400;
-      line-height: 160%; margin:0; margin-bottom:56px;">
-        Play rock paper scissors with your friends or with random opponents for real money.
+      <p class="title-paragraph">
+        Play rock paper scissors with your friends or with random opponents for <span class="currency-symbol bolden">real money</span>
       </p>
       
       <button
@@ -35,8 +22,7 @@
     <img
       v-if="!loggedin"
       src="../assets/background.png"
-      alt="Hero"
-      style="width: 100%; position: absolute; bottom: 0; left: 0; z-index: -1;"
+      style="width: 100%; position: fixed; bottom: 0; left: 0; z-index: -1;"
     />
 
     <div v-if="loggedin">

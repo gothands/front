@@ -16,6 +16,53 @@ body {
   height: 100%;
   width: 100%;
 }
+
+.title-header {
+  max-width:525px; 
+  margin:24px; color: #353535;
+  text-align: center;
+  font-family: Sen;
+  font-size: 100px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: normal;
+  letter-spacing: -5px;
+}
+
+.title-paragraph {
+  max-width:600px; 
+  color: #353535;
+  text-align: center;
+  font-family: Sen;
+  font-size: 24px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 160%; 
+  margin:0; 
+  margin-bottom:56px;
+}
+
+/* Mobile */
+@media only screen and (max-width: 600px) {
+  .title-header {
+    margin-top: 60px;
+    font-size: 50px;
+    font-style: normal;
+    font-weight: 900;
+    line-height: normal;
+    letter-spacing: -2px;
+  }
+
+  .title-paragraph {
+    font-size: 24px;
+    line-height: 160%;
+    margin: 50px 20px 50px 20px;
+    max-width: 425px;
+  }
+}
+
+
+
 .content {
   display: flex;
   flex-direction: column;
@@ -50,6 +97,10 @@ header {
 
 .currency-symbol {
   color: #E19885;
+}
+
+.bolden {
+  font-weight: 800;
 }
 .burner-icon {
   width: 20px;
