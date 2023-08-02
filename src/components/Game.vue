@@ -227,7 +227,7 @@
         </div> -->
 
         
-        <div style="display:flex; align-items:start;">
+        <div class="button-holder">
           <button v-if="!isRegistering && !isWaiting" class="button-light" @click="toggleAddFundsModal">
              <div class="plus-symbol"></div><div>Add Funds</div>
             </button>
@@ -239,7 +239,7 @@
           @click="registerGame"
         >   
           <div>
-            {{ isRegistering ? "Creating..." : playWithFriend ? "Play With Friend" : "Play with random" }}
+            {{ isRegistering ? "Creating..." : playWithFriend ? "Create Match" : "Play random" }}
             &nbsp; 
           </div>
           <!-- <a>{{ this.wagerSteps[this.sliderIndex] }} ETH</a> -->
@@ -261,10 +261,10 @@
           v-if="!isRegistering && !isWaiting"
           @click="togglePlayWithFriend"
           class="toggle-text"
-          style="margin-top: 30px;"
+          style="margin-top: 30px; cursor:pointer;"
           >
           {{ playWithFriend ? "Play with random instead?": "Play with friend instead?" }}
-          <span style="color:#E19885; font-weight:bold; text-decoration:underline;">Switch</span>
+          <span style="color:#E19885; font-weight:bold; text-decoration:underline; cursor:pointer;">Switch</span>
         </p>
             </div>
           
@@ -274,7 +274,7 @@
           <p style="opacity:0.5;">Waiting for opponent ...</p>
           <div class="searching"></div>
           <button
-            class="button-dark"
+            class="button-light"
             @click="cancelGame"
           >
             Cancel

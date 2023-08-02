@@ -6,7 +6,7 @@
 
 		<div
 			
-		 	style="display:flex; justify-content:end; align-items:center; gap:40px"
+		 	class="nav-right"
 		>
 			<router-link v-if="!isInGame && loggedin" to="/affiliate">Affiliate</router-link>
 			<router-link v-if="!isInGame && loggedin" to="/staking">Staking</router-link>
