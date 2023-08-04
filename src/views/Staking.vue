@@ -464,12 +464,12 @@ import ListStaking from '@/components/ListStaking.vue';
   
           async setProtocolFeeRevenue(){
             //Get the balance of the Bank contract
-            const balance = await this.stakingContract.methods.getRecievedFundsForStaking();
+            const balance = await this.stakingContract.methods.getReceivedFundsForStaking().call();
             this.protocolFeeRevenue = balance 
   
             //Poll for balance every 5 seconds
             setInterval(async () => {
-              const balance = await this.stakingContract.methods.getRecievedFundsForStaking();
+              const balance = await this.stakingContract.methods.getReceivedFundsForStaking().call();
               this.protocolFeeRevenue = balance / 10 ** 18;
             }, 5000);
           },
@@ -722,55 +722,46 @@ import ListStaking from '@/components/ListStaking.vue';
           },
 
           async subscribeToEvents() {
-      const contract = this.stakingContract;
-      const userAddress = this.activeAccount;
+            const contract = this.stakingContract;
+            const userAddress = this.activeAccount;
 
-      console.log("Polling for events...");
-      console.log("contract:", contract);
+            console.log("Polling for events...");
+            console.log("contract:", contract);
 
-      const eventNames = [
-        "Staked",
-        "Unstaked",
-        "ReceivedFundsForStaking",
-      ];
+            const eventNames = [
+              "Staked",
+              "Unstaked",
+              "ReceivedFundsForStaking",
+            ];
 
-      const eventHandlers = {
-        Staked: this.handleStakingEvent,
-        Unstaked: this.handleUnstakingEvent,
-        ReceivedFundsForStaking: this.handleRecievedFundsForStaking,
-      };
+            const eventHandlers = {
+              Staked: this.handleStakingEvent,
+              Unstaked: this.handleUnstakingEvent,
+              ReceivedFundsForStaking: this.handleRecievedFundsForStaking,
+            };
 
-      const pollingInterval = 1000; // Poll every 5 seconds
+            // Create a new set for keeping track of handled event ids
+            const handledEventIds = new Set();
 
-      let lastBlockChecked = await this.getBlockNumber()
+            for (const eventName of eventNames) {
+                  contract.events[eventName]()
+                  .on('data', (event) => {
+                      const eventId = `${event.transactionHash}-${eventName}-${event.logIndex}`;
 
-      // Create a new set for keeping track of handled event ids
+                      if (handledEventIds.has(eventId)) {
+                          return;
+                      }
 
-      setInterval(async () => {
-        const currentBlock = await this.getBlockNumber();
+                      console.log(`New ${eventName} event detected:`, event);
+                      eventHandlers[eventName].call(this, event, userAddress);
 
-        for (const eventName of eventNames) {
-          const events = await contract.getPastEvents(eventName, {
-            fromBlock: lastBlockChecked + 1,
-            toBlock: currentBlock,
-          });
-
-          events.forEach((event) => {
-            const eventId = `${event.transactionHash}-${eventName}-${event.logIndex}`;
-
-            if (this.handledEventIds.has(eventId)) { return }
-
-            console.log(`New ${eventName} event detected:`, event);
-            eventHandlers[eventName].call(this, event, userAddress);
-
-            this.handledEventIds.add(eventId);
-          });
-        }
-
-        lastBlockChecked = currentBlock;
-        console.log("lastBlockChecked:", lastBlockChecked);
-      }, pollingInterval);
-    },
+                      handledEventIds.add(eventId);
+                  })
+                  .on('error', (error) => {
+                      console.error(`Error on event ${eventName}:`, error);
+                  });
+                }
+          },
 
     async fetchStakeEvents(startBlock, endBlock) {
       const blockLimit = 50000;

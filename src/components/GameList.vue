@@ -32,7 +32,7 @@
         <tbody>
           <tr v-for="(item, index) in selectedData" :key="index">
             <td class="score">{{ item.points[item.playerA] }} : {{ item.points[item.playerB] ?? 0 }}</td>
-            <td class="time">{{ item.time }}</td>
+            <td class="time">{{ timeString(item.time) }}</td>
             <td class="player">
                 <profile-item :address="item.playerA"></profile-item>
             </td>
@@ -57,6 +57,7 @@
   <script>
 import GameMove from './GameMove.vue'
 import ProfileItem from './ProfileItem.vue'
+import {timeAgo} from '../utils/index.ts'
   export default {
     components: {
         GameMove,
@@ -125,6 +126,10 @@ import ProfileItem from './ProfileItem.vue'
         truncateAddress(address) {
       return address?.slice(0, 6) + "..." + address?.slice(-4)
     },
+      timeString(time){
+        const currentTimeInSec = this.$store.state.currentTime
+        return timeAgo(time, currentTimeInSec)
+      }
     }
   }
   </script>

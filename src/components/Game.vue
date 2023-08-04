@@ -1072,7 +1072,7 @@ export default {
       
       const block = await this.getWeb3Read.eth.getBlock(event.blockNumber);
       const timestamp = block.timestamp;
-      this.getGame(gameId).time = this.convertTimestampToTime(timestamp)
+      this.getGame(gameId).time = timestamp;
       
       //set currentGameId if user is in game
     },

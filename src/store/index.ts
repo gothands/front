@@ -9,7 +9,7 @@ interface Balances {
   [address: string]: any;
 }
 
-export default createStore({
+const store = createStore({
   state() {
     let games = {};
     let localGames: string | null = localStorage.getItem('games');
@@ -38,9 +38,10 @@ export default createStore({
 
       // Stake
       stakeContract: null as any,
-      handsTokenContract: null as any
+      handsTokenContract: null as any,
 
-
+      //current time in seconds
+      currentTime: Math.floor(Date.now() / 1000)
     }
   },
   getters: {
@@ -73,7 +74,10 @@ export default createStore({
 
     // Stake
     setHandsTokenContract(state, payload) { state.handsTokenContract = payload },
-    setStakeContract(state, payload) { state.stakeContract = payload }
+    setStakeContract(state, payload) { state.stakeContract = payload },
+
+    //current time in seconds
+    setCurrentTime(state, payload) { state.currentTime = payload }
 
   },
   actions: {
@@ -198,9 +202,21 @@ export default createStore({
         
         return error;
       }
+    },
+
+    //set time interval to update currentTime
+    setTime({ commit, state }) {
+      setInterval(() => {
+        commit('setCurrentTime', Math.floor(Date.now() / 1000))
+      }, 1000)
     }
 
   },
   modules: {
-  }
+  },
+
 })
+
+store.dispatch('setTime')
+
+export default store

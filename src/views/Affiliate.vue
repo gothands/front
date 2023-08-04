@@ -673,36 +673,27 @@ import ListAffiliate from '@/components/ListAffiliate.vue';
       RewardRecieved: this.handleRewardRecievedEvent,
     };
 
-    const pollingInterval = 1000; // Poll every 5 seconds
-
-    let lastBlockChecked = await this.getBlockNumber()
-
     // Create a new set for keeping track of handled event ids
+    const handledEventIds = new Set();
 
-    setInterval(async () => {
-      const currentBlock = await this.getBlockNumber();
-
-      for (const eventName of eventNames) {
-        const events = await contract.getPastEvents(eventName, {
-          fromBlock: lastBlockChecked + 1,
-          toBlock: currentBlock,
-        });
-
-        events.forEach((event) => {
+for (const eventName of eventNames) {
+      contract.events[eventName]()
+      .on('data', (event) => {
           const eventId = `${event.transactionHash}-${eventName}-${event.logIndex}`;
 
-          if (this.handledEventIds.has(eventId)) { return }
+          if (handledEventIds.has(eventId)) {
+              return;
+          }
 
           console.log(`New ${eventName} event detected:`, event);
           eventHandlers[eventName].call(this, event, userAddress);
 
-          this.handledEventIds.add(eventId);
-        });
-      }
-
-      lastBlockChecked = currentBlock;
-      console.log("lastBlockChecked:", lastBlockChecked);
-    }, pollingInterval);
+          handledEventIds.add(eventId);
+      })
+      .on('error', (error) => {
+          console.error(`Error on event ${eventName}:`, error);
+      });
+    }
   },
 
   async fetchConsumerRegisteredEvents(startBlock, endBlock) {
