@@ -51,7 +51,7 @@
       Copy affiliate link
     </button> -->
     <!-- If in game-->
-    <div v-if="isInGame">
+    <div v-if="isInGame" style="width:100%;">
       <!-- <button
         class="button-dark"
         @click="leaveGame"
@@ -62,13 +62,11 @@
       <div style="justify-content: center;">
         Round {{ currentRound }} for <a>{{ currentWager }} ETH</a>
       </div>
-      <div> {{ roundStateString }}</div>
       <!-- Game view -->
-      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr;">
+      <div class="game-view">
           <!-- Selected move-->
           <div 
-          style="display: flex; flex-direction:column; gap: 35px; align-items: center;"
-
+            class="game-move-controls"
             v-if="shouldMove"
             >
             <div style="display:flex; gap:20px">
@@ -86,16 +84,16 @@
               ${{ balance }}
             </div>
             <div 
-                  style="display: flex; flex-direction:column; gap: 10px; align-items: center;"
-              >
-                  <GameMove :isNormal="true" :move="selectedMove"></GameMove>
+              style="display: flex; flex-direction:column; gap: 10px; align-items: center;"
+            >
+                  <GameMove class="hide-for-mobile" :isNormal="true" :move="selectedMove"></GameMove>
                   <p>{{selectedMove == 1 ? "Rock" : selectedMove == 2 ? "Paper" : "Scissors"}}</p>
               </div>
             
           </div>
           <!-- Choose move-->
           <div
-            style="display: flex; flex-direction:column; gap: 35px; align-items: center;"
+            class="game-move-controls"
             v-else
           >
           <div style="display:flex; gap:20px">
@@ -103,8 +101,8 @@
             <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 2 }"></div>
             <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 3 }"></div>
           </div>
-          <GameMove v-if="bothRevealed" :move="selectedMove"/>
-            <GameMove v-else :move="4"/>
+          <GameMove class="hide-for-mobile" v-if="bothRevealed" :move="selectedMove"/>
+            <GameMove class="hide-for-mobile" v-else :move="4"/>
           <div class="address-container">
             <div class="profile-mini"></div>
               <p class="address">{{ truncateAddress(yourAddress) }}</p>
@@ -151,26 +149,31 @@
 
           </div>
 
-          <div style="display:flex; flex-direction:column; height: 100%; align-items: center; gap:35px">
-            <p>Your bet is</p>
-            <h1 style="margin:0; margin-bottom:22px;">
-              <span
-                class="currency-symbol"
-              >$</span>
+          <div class="middle-game-view">
+            <p class="hide-for-mobile">Your bet is</p>
+            <h1 class="hide-for-mobile" style="margin:0; margin-bottom:22px;">
+              
               {{this.selectedBet?.toString().split(".")[0]}}
               <span
                 class="decimals">
                 .{{ this.selectedBet?.toString().split(".")[1]?.substring(0,4)?? "00" }}
-      
+
               </span>
+              <span
+                class="currency-symbol decimals"
+                style="margin:0; margin-left:10px;"
+              >ETH</span>
             </h1>
+            <p class="hide-for-mobile" style="opacity:0.5;">{{ roundStateString }}</p>
+            <h1 class="show-for-mobile">VS</h1>
           </div>
 
           <!-- Opponent move-->
           <div 
+          class="game-move-controls opponent-view"
           >
-              <div class="flex flex-column"
-                  style="display: flex; flex-direction:column; gap: 35px; align-items: center;"
+              <div
+              class="game-move-controls"
               >
                 <div style="display:flex; gap:20px">
                   <div :class="{ 'point': true, 'point-active': opponentCurrentPoints >= 1 }"></div>
@@ -184,12 +187,12 @@
                   <div class="profile-mini"></div>
                    <p class="address">{{ truncateAddress(opponentAddress) }}</p>
                 </div>
-                <div class="player-balance">
+                <div class="player-balance hide-for-mobile">
                   ${{ opponentBalance }}
                 </div>
 
                 <div v-if="!isOpponentMoveSent"
-                 class="loading"></div>
+                 class="loading hide-for-mobile"></div>
                 <div v-else
                   class="checkmark"
                 >
@@ -579,6 +582,7 @@ export default {
           return ""
       }
     },
+    isSent() { return this.gameState == GameStates.Sent },
     isRegistering() { return this.gameState == GameStates.Registering },
     isWaiting() { return this.gameState == GameStates.Waiting },
     isRevealing() { return this.gameState == GameStates.Revealing },
@@ -593,7 +597,15 @@ export default {
         } else {
           return "Draw!"
         }
-      } 
+      }else if(!this.isSent){
+        return "Choose your move"
+      }else if(this.isSent && !this.isOpponentMoveSent){
+        return "Waiting for opponent"
+      } else if (this.isRevealing){
+        return "Revealing move"
+      } else if (this.isRevealed && !this.isOpponentMoveRevealed){
+        return "Waiting for opponent reveal"
+      }
       return null
       
     },

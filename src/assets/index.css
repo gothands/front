@@ -797,12 +797,41 @@ gap: 10px;
   align-items:start;
 }
 
+.game-view {
+  display:grid; 
+  grid-template-columns: 3fr 1fr 3fr;
+}
+
+
+.game-move-controls {
+  display: flex; 
+  flex-direction:column; 
+  gap: 35px; 
+  align-items: center;
+}
+
+.hide-for-mobile{
+  visibility: visible;
+}
+
+.show-for-mobile{
+  visibility: hidden;
+}
+
+.middle-game-view {
+  display:flex; 
+  flex-direction:column; 
+  height: 100%; 
+  align-items: center; 
+  gap:35px
+}
+
 
 
 /* Mobile */
 @media only screen and (max-width: 600px) {
   .title {
-    font-size: 60px;
+    font-size: 40px;
   }
   .title-header {
     margin-top: 60px;
@@ -866,6 +895,107 @@ gap: 10px;
     max-width: 100vw;
   }
 
+  nav div:nth-child(1){
+    margin-top: -21px;
+  }
+
+}
+
+/* Tablet */
+@media screen and (max-width: 960px) {
+  
+  .game-view { 
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    justify-content: space-evenly;
+    gap: 20px;
+    height: 70vh;
+
+  }
+
+  
+
+  .game-view > div {
+    gap:0px;
+  }
+
+  .game-view h1 {
+    font-size: 30px;
+  }
+
+  .game-view .decimals {
+    margin-left: 0px;
+    font-size: 30px;
+  }
+
+  .game-view .normal {
+    width: 90px;
+    height: 90px;
+  }
+
+  .game-view .normal:hover {
+    width:100px;
+    height: 100px;
+  }
+
+  .game-view .large {
+    width: 120px;
+    height: 120px;
+  }
+
+  nav .button-light {
+    height:50px;
+    width: 130px;
+  }
+
+  .address-container {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .player-balance {
+    display: none;
+  }
+
+  .game-move-controls {
+    gap: 0px;
+    flex-direction: column;
+  }
+
+  .hide-for-mobile {
+    display: none;
+  }
+
+  .show-for-mobile {
+    display: block;
+    visibility: visible;
+  }
+
+  .point {
+    width: 20px;
+    height: 20px;
+  }
+
+  .point-active {
+    width: 20px;
+    height: 20px;
+  }
+
+  .content {
+    margin-top: 50px;
+  }
+
+  .app {
+    height: 100%;
+  }
+
+  .middle-game-view {
+    justify-content: center;
+  }
+
+  .opponent-view {}
+  
 }
 
 
