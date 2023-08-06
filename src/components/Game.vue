@@ -983,7 +983,7 @@ export default {
           [playerA.toLowerCase()]: 0,
         },
         round: 0,
-        leaver: 0,
+        leaver: null,
       };
     },
 
@@ -1866,7 +1866,7 @@ export default {
     },
 
     async fetchPlayerRegisteredEvents(startBlock, endBlock) {
-      const blockLimit = 50000; // Maximum blocks that can be fetched in one request
+      const blockLimit = 10000; // Maximum blocks that can be fetched in one request
       const contract = await this.getContract();
 
       // Initialize events array
@@ -1894,7 +1894,7 @@ export default {
     },
 
     async fetchPlayerWaitingEvents(startBlock, endBlock) {
-      const blockLimit = 50000; // Maximum blocks that can be fetched in one request
+      const blockLimit = 10000; // Maximum blocks that can be fetched in one request
       const contract = await this.getContract();
 
       // Initialize events array
@@ -1922,7 +1922,7 @@ export default {
     },
 
     async fetchPlayersMatchedEvents(startBlock, endBlock){
-      const blockLimit = 50000; // Maximum blocks that can be fetched in one request
+      const blockLimit = 10000; // Maximum blocks that can be fetched in one request
       const contract = await this.getContract();
 
       // Initialize events array
@@ -1950,7 +1950,7 @@ export default {
     },
 
     async fetchPlayersMoveCommittedEvents(startBlock, endBlock) {
-      const blockLimit = 50000; // Maximum blocks that can be fetched in one request
+      const blockLimit = 10000; // Maximum blocks that can be fetched in one request
       const contract = await this.getContract();
 
       // Initialize events array
@@ -1978,7 +1978,7 @@ export default {
     },
 
     async fetchMoveRevealedEvents(startBlock, endBlock) {
-      const blockLimit = 50000; // Maximum blocks that can be fetched in one request
+      const blockLimit = 10000; // Maximum blocks that can be fetched in one request
       const contract = await this.getContract();
 
       // Initialize events array
@@ -2006,7 +2006,7 @@ export default {
     },
 
     async fetchNewRoundEvents(startBlock, endBlock) {
-      const blockLimit = 50000; // Maximum blocks that can be fetched in one request
+      const blockLimit = 10000; // Maximum blocks that can be fetched in one request
       const contract = await this.getContract();
 
       // Initialize events array
@@ -2034,7 +2034,7 @@ export default {
     },
 
     async fetchGameOutcomeEvents(startBlock, endBlock) {
-      const blockLimit = 50000; // Maximum blocks that can be fetched in one request
+      const blockLimit = 10000; // Maximum blocks that can be fetched in one request
       const contract = await this.getContract();
 
       // Initialize events array
@@ -2062,7 +2062,7 @@ export default {
     },
     
     async fetchPlayerCancelledEvents(startBlock, endBlock) {
-      const blockLimit = 50000; // Maximum blocks that can be fetched in one request
+      const blockLimit = 10000; // Maximum blocks that can be fetched in one request
       const contract = await this.getContract();
 
       // Initialize events array
@@ -2090,7 +2090,7 @@ export default {
     },
 
     async fetchPlayerEvents(startBlock, endBlock, eventName) {
-      const blockLimit = 50000; // Maximum blocks that can be fetched in one request
+      const blockLimit = 10000; // Maximum blocks that can be fetched in one request
       const contract = await this.getContract();
 
       // Initialize events array

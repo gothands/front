@@ -158,7 +158,7 @@ const APPLICATION_FEE = 0.05;
         const bet = game.bet
         const winnings = this.getWinnings(bet)
         const outcome = game.outcome
-        const isPlayerA = player.toLocaleCase() === game.playerA.toLowerCase()
+        const isPlayerA = player?.toLowerCase() === game.playerA?.toLowerCase()
         if (outcome === Outcomes.Cancelled) {
           return 0
         } else if (outcome === Outcomes.PlayerALeft && isPlayerA) {
@@ -188,11 +188,15 @@ const APPLICATION_FEE = 0.05;
       },
       isLeaver(game, player){
         const outcome = game.outcome
-        return outcome === Outcomes.Left && game.leaver.toLowerCase() === player.toLowerCase()
+        return outcome === Outcomes.Left && game?.leaver?.toLowerCase() === player.toLowerCase()
       },
       isWinner(game, player){
         const winnings = this.getPlayerWinnings(game, player)
         return winnings > 0
+      },
+      isLoser(game, player){
+        const winnings = this.getPlayerWinnings(game, player)
+        return winnings < 0
       },
       getColorBasedOnWinnings(game, player){
         const winnings = this.getPlayerWinnings(game, player)
