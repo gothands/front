@@ -668,6 +668,12 @@ flex-shrink: 0;
   background-size: contain;
 }
 
+.None {
+  background: url(rock.svg);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
 
 .Rock {
   background: url(rock.svg);
@@ -824,6 +830,18 @@ gap: 10px;
   height: 100%; 
   align-items: center; 
   gap:35px
+}
+
+.red {
+  color: #E19885;
+}
+
+.green {
+  color: #24B27F;
+}
+
+.blue {
+  color: #00AEFF;
 }
 
 
