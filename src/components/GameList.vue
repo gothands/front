@@ -35,17 +35,26 @@
             <td class="time">{{ timeString(item.time) }}</td>
             <td class="player">
                 <profile-item :address="item.playerA"></profile-item>
+                <div v-if="wasCancelled(item)" class="grey">Cancelled</div>
+                <div v-else-if="isLeaver(item, item.playerA)" class="red">Left</div>
+                <div v-else-if="isWinner(item, item.playerA)" class="green">{{ getPlayerWinnings(item, item.playerA) }}  <span class="blue">(-{{getApplicationFee(item)}})</span> </div>
+                <div v-else-if="isLoser(item, item.playerA)" class="red">{{ getPlayerWinnings(item, item.playerA) }} </div>
             </td>
 
             <td class="player">
               <profile-item :address="item.playerB"></profile-item>
+              <div v-if="isLeaver(item, item.playerA)" class="red">Left</div>
+              <div v-else-if="isWinner(item, item.playerA)" class="green">{{ getPlayerWinnings(item, item.playerB) }}  <span class="blue">(-{{getApplicationFee(item)}})</span> </div>
+              <div v-else-if="isLoser(item, item.playerA)" class="red">{{ getPlayerWinnings(item, item.playerB) }} </div>
             </td>
             <td class="prize">${{ item.bet }}</td>
             <td class="round" colspan="2">
               <ul class="rounds-container">
-                <div v-for="(round, roundIndex) in item.moves" :key="roundIndex" class="rounds-list">
-                  <game-move :isSmall="true" :move="round[item.playerA]"></game-move> : <game-move :isSmall="true" :move="round[item.playerB]"></game-move>
-                </div>
+                <template v-if="item.moves > 1">
+                  <div v-for="(round, roundIndex) in item.moves" :key="roundIndex" class="rounds-list">
+                    <game-move :isSmall="true" :move="round[item.playerA]"></game-move> : <game-move :isSmall="true" :move="round[item.playerB]"></game-move>
+                  </div>
+                </template>
               </ul>
             </td>
           </tr>
@@ -58,6 +67,11 @@
 import GameMove from './GameMove.vue'
 import ProfileItem from './ProfileItem.vue'
 import {timeAgo} from '../utils/index.ts'
+import { Outcomes } from '@/types'
+
+
+const APPLICATION_FEE = 0.05;
+
   export default {
     components: {
         GameMove,
@@ -123,13 +137,73 @@ import {timeAgo} from '../utils/index.ts'
       }
     },
     methods:{
-        truncateAddress(address) {
-      return address?.slice(0, 6) + "..." + address?.slice(-4)
-    },
+      truncateAddress(address) {
+        return address?.slice(0, 6) + "..." + address?.slice(-4)
+      },
       timeString(time){
         const currentTimeInSec = this.$store.state.currentTime
         return timeAgo(time, currentTimeInSec)
-      }
+      },
+      getWinnings(bet) {
+        return bet * 2 * (1 - APPLICATION_FEE)
+      },
+      getApplicationFee(game) {
+        const bet = game.bet
+        return bet * 2 * APPLICATION_FEE
+      },
+      getPlayerPoints(game, player){
+        return game.points[player]
+      },
+      getPlayerWinnings(game, player){
+        const bet = game.bet
+        const winnings = this.getWinnings(bet)
+        const outcome = game.outcome
+        const isPlayerA = player.toLocaleCase() === game.playerA.toLowerCase()
+        if (outcome === Outcomes.Cancelled) {
+          return 0
+        } else if (outcome === Outcomes.PlayerALeft && isPlayerA) {
+          return -bet
+        } else if (outcome === Outcomes.PlayerBLeft && isPlayerA) {
+          return winnings
+        } else if (outcome === Outcomes.PlayerALeft && !isPlayerA) {
+          return winnings
+        } else if (outcome === Outcomes.PlayerBLeft && !isPlayerA) {
+          return -bet
+        }
+         else if (outcome === Outcomes.Draw) {
+          return 0
+        } else if (outcome === Outcomes.PlayerA && isPlayerA) {
+          return winnings
+        } else if (outcome === Outcomes.PlayerB && isPlayerA) {
+          return -bet
+        } else if (outcome === Outcomes.PlayerA && !isPlayerA) {
+          return -bet
+        } else if (outcome === Outcomes.PlayerB && !isPlayerA) {
+          return winnings
+        }
+      },
+      wasCancelled(game){
+        const outcome = game.outcome
+        return outcome === Outcomes.Cancelled
+      },
+      isLeaver(game, player){
+        const outcome = game.outcome
+        return outcome === Outcomes.Left && game.leaver.toLowerCase() === player.toLowerCase()
+      },
+      isWinner(game, player){
+        const winnings = this.getPlayerWinnings(game, player)
+        return winnings > 0
+      },
+      getColorBasedOnWinnings(game, player){
+        const winnings = this.getPlayerWinnings(game, player)
+        if (winnings > 0) {
+          return 'green'
+        } else if (winnings < 0) {
+          return 'red'
+        } else {
+          return 'grey'
+        }
+      },
     }
   }
   </script>

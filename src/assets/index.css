@@ -832,6 +832,10 @@ gap: 10px;
   gap:35px
 }
 
+.grey {
+  color: #4A4A4A;
+}
+
 .red {
   color: #E19885;
 }

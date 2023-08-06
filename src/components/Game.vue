@@ -742,16 +742,21 @@ export default {
     pendingGames(){
       const games = Object.values(this.games)
       return games.filter(game => game.outcome == Outcomes.None && game.playerB == "" && game.gameId != "0")
+        .sort((a, b) => b.time - a.time)
     },
     //Return array of games that are ongoing. Where a users are playing a game
     activeGames(){
       const games = Object.values(this.games)
       return games.filter(game => game.outcome == Outcomes.None && game.playerB != "" && game.gameId != "0")
+      .sort((a, b) => b.time - a.time)
+
     },
 
     completedGames(){
       const games = Object.values(this.games)
       return games.filter(game => game.outcome != Outcomes.None && game.gameId != "0")
+      .sort((a, b) => parseInt(b.time ?? 0) - parseInt(a.time?? 0))
+
     },
 
     
@@ -978,6 +983,7 @@ export default {
           [playerA.toLowerCase()]: 0,
         },
         round: 0,
+        leaver: 0,
       };
     },
 
@@ -1256,6 +1262,32 @@ export default {
       }
     },
 
+    handlePlayerLeftEvent(event, isSubscription = false) {
+      console.log("Handling Player Left event:", event.returnValues);
+      const { gameId, playerAddress } = event.returnValues;
+
+      //check if gameId is in games
+      if (!this.games[gameId])
+        this.createGame(gameId, playerAddress);
+
+      //set game outcome
+
+      // if (this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() || this.games[gameId].playerB.toLowerCase() == this.activeAccount.toLowerCase()) {
+      //   this.createGame("0");
+      // }
+
+      //Set the leaver variable
+      this.getGame(gameId).leaver = playerAddress.toLowerCase()
+
+      //if subscription then set modal and make sure isSubscription is a boolean
+      if (isSubscription === true && typeof isSubscription === "boolean" && playerAddress.toLowerCase() == this.activeAccount.toLowerCase()) {
+        //empty burner wallet
+        this.emptyBurnerWallet()
+      }
+    },
+
+    
+
     async subscribeToEvents() {
     const contract = await this.getReadContract();
     const userAddress = await this.getAccount();
@@ -1272,6 +1304,7 @@ export default {
         "NewRound",
         "GameOutcome",
         "PlayerCancelled",
+        "PlayerLeft"
     ];
 
     const eventHandlers = {
@@ -1283,6 +1316,7 @@ export default {
         NewRound: this.handleNewRoundEvent,
         GameOutcome: this.handleOutcomeEvent,
         PlayerCancelled: this.handlePlayerCancelledEvent,
+        PlayerLeft: this.handlePlayerLeftEvent,
     };
 
     // Create a new set for keeping track of handled event ids
@@ -1298,7 +1332,7 @@ export default {
             }
 
             console.log(`New ${eventName} event detected:`, event);
-            if(eventName == "GameOutcome" || eventName == "PlayerCancelled"){
+            if(eventName == "GameOutcome" || eventName == "PlayerCancelled" || eventName == "PlayerLeft"){
                 eventHandlers[eventName].call(this, event, true);
             }
             if (eventName === "NewRound") {
@@ -2055,6 +2089,34 @@ export default {
       }
     },
 
+    async fetchPlayerEvents(startBlock, endBlock, eventName) {
+      const blockLimit = 50000; // Maximum blocks that can be fetched in one request
+      const contract = await this.getContract();
+
+      // Initialize events array
+      this.playerCancelledEvents = [];
+
+      let fromBlock = startBlock;
+      let toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+      while (fromBlock <= endBlock) {
+          const events = await contract.getPastEvents(eventName, {
+              fromBlock: fromBlock,
+              toBlock: toBlock
+          });
+
+          // Add the fetched events to the existing array
+          this.playerCancelledEvents.push(...events);
+
+          // Log the events
+          console.log(eventName + "events", this.playerCancelledEvents.map(e => e.returnValues));
+
+          // Update blocks for the next iteration
+          fromBlock = toBlock + 1;
+          toBlock = Math.min(fromBlock + blockLimit, endBlock);
+      }
+    },
+
     addToHandledEvents(event, eventName) {
       const eventId = `${event.transactionHash}-${eventName}-${event.logIndex}`;
       this.handledEventIds.add(eventId);
@@ -2190,7 +2252,8 @@ export default {
       await this.fetchMoveRevealedEvents(fromBlock, toBlock);
       await this.fetchNewRoundEvents(fromBlock, toBlock);
       await this.fetchGameOutcomeEvents(fromBlock, toBlock);
-      await this.fetchPlayerCancelledEvents(fromBlock, toBlock);
+      await this.fetchPlayerEvents(fromBlock, toBlock, "PlayerLeft");
+      await this.fetchPlayerLeftEvents(fromBlock, toBlock);
 
 
       this.processEvents();

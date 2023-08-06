@@ -5,7 +5,7 @@ import { Moves } from '../types';
   <div :class= "isSmall ? 'small' : isNormal ? 'normal' : 'large'" v-if="move == Moves.Rock" class="Rock"></div>
   <div :class= "isSmall ? 'small' : isNormal ? 'normal' : 'large'" v-else-if="move == Moves.Paper" class="Paper"></div>
   <div :class= "isSmall ? 'small' : isNormal ? 'normal' : 'large'" v-else-if="move == Moves.Scissors" class="Scissors"></div>
-  <div :class= "isSmall ? 'small' : isNormal ? 'normal' : 'large'" v-else-if="move == Moves.LoadingMark" class="Rock" >
+  <div :class= "isSmall ? 'small' : isNormal ? 'normal' : 'large'" v-else-if="move == Moves.LoadingMark" class="None" >
   </div>
   <div :class= "isSmall ? 'small' : isNormal ? 'normal' : 'large'" v-else-if="move == Moves.CheckMark" class="Rock" >
   </div>
