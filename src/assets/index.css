@@ -832,12 +832,18 @@ gap: 10px;
   gap:35px
 }
 
+.winnings {
+  font-weight: bolder;
+  opacity: 0.8;
+  font-size: 18px;
+}
+
 .grey {
-  color: #4A4A4A;
+  color: #acacac;
 }
 
 .red {
-  color: #E19885;
+  color: #ff572d;
 }
 
 .green {

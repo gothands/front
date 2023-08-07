@@ -1864,6 +1864,10 @@ export default {
         console.error("Error getting game outcome:", error);
       }
     },
+    
+    async sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    },
 
     async fetchPlayerRegisteredEvents(startBlock, endBlock) {
       const blockLimit = 10000; // Maximum blocks that can be fetched in one request
@@ -1890,6 +1894,9 @@ export default {
           // Update blocks for the next iteration
           fromBlock = toBlock + 1;
           toBlock = Math.min(fromBlock + blockLimit, endBlock);
+          await this.processEvents()
+          //delay
+          await this.sleep(500);
       }
     },
 
@@ -1918,6 +1925,10 @@ export default {
           // Update blocks for the next iteration
           fromBlock = toBlock + 1;
           toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+          //delay
+          await this.processEvents()
+          await this.sleep(500);
       }
     },
 
@@ -1946,6 +1957,10 @@ export default {
           // Update blocks for the next iteration
           fromBlock = toBlock + 1;
           toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+          //delay
+          await this.processEvents()
+          await this.sleep(500);
       }
     },
 
@@ -1974,6 +1989,10 @@ export default {
           // Update blocks for the next iteration
           fromBlock = toBlock + 1;
           toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+          //delay
+          await this.processEvents()
+          await this.sleep(500);
       }
     },
 
@@ -2002,6 +2021,10 @@ export default {
           // Update blocks for the next iteration
           fromBlock = toBlock + 1;
           toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+          //delay
+          await this.processEvents()
+          await this.sleep(500);
       }
     },
 
@@ -2030,6 +2053,10 @@ export default {
           // Update blocks for the next iteration
           fromBlock = toBlock + 1;
           toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+          //delay
+          await this.processEvents()
+          await this.sleep(500);
       }
     },
 
@@ -2058,6 +2085,10 @@ export default {
           // Update blocks for the next iteration
           fromBlock = toBlock + 1;
           toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+          //delay
+          await this.processEvents()
+          await this.sleep(500);
       }
     },
     
@@ -2086,6 +2117,10 @@ export default {
           // Update blocks for the next iteration
           fromBlock = toBlock + 1;
           toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+          //delay
+          await this.processEvents()
+          await this.sleep(500);
       }
     },
 
@@ -2114,6 +2149,10 @@ export default {
           // Update blocks for the next iteration
           fromBlock = toBlock + 1;
           toBlock = Math.min(fromBlock + blockLimit, endBlock);
+
+          //delay
+          await this.processEvents()
+          await this.sleep(500);
       }
     },
 
@@ -2227,7 +2266,7 @@ export default {
     },
 
     async fetchPastGames() {
-      let fromBlock = 32000576;
+      let fromBlock = 33190809;
       let toBlock = await this.getWeb3.eth.getBlockNumber();
 
       // let inc = 1000;
@@ -2253,7 +2292,7 @@ export default {
       await this.fetchNewRoundEvents(fromBlock, toBlock);
       await this.fetchGameOutcomeEvents(fromBlock, toBlock);
       await this.fetchPlayerEvents(fromBlock, toBlock, "PlayerLeft");
-      await this.fetchPlayerLeftEvents(fromBlock, toBlock);
+      await this.fetchPlayerCancelledEvents(fromBlock, toBlock);
 
 
       this.processEvents();

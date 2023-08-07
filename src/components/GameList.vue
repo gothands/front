@@ -34,27 +34,31 @@
             <td class="score">{{ item.points[item.playerA] }} : {{ item.points[item.playerB] ?? 0 }}</td>
             <td class="time">{{ timeString(item.time) }}</td>
             <td class="player">
+              <div>
                 <profile-item :address="item.playerA"></profile-item>
-                <div v-if="wasCancelled(item)" class="grey">Cancelled</div>
-                <div v-else-if="isLeaver(item, item.playerA)" class="red">Left</div>
-                <div v-else-if="isWinner(item, item.playerA)" class="green">{{ getPlayerWinnings(item, item.playerA) }}  <span class="blue">(-{{getApplicationFee(item)}})</span> </div>
-                <div v-else-if="isLoser(item, item.playerA)" class="red">{{ getPlayerWinnings(item, item.playerA) }} </div>
+                <div v-if="wasCancelled(item)" class="grey winnings">Cancelled</div>
+                <div v-else-if="isLeaver(item, item.playerA)" class="winnings red">Left</div>
+                <div v-else-if="isWinner(item, item.playerA)" class="winnings green">+{{ getPlayerWinnings(item, item.playerA) }} ETH <span class="blue">(-{{getApplicationFee(item)}})</span> </div>
+                <div v-else-if="isLoser(item, item.playerA)" class="winnings red">{{ getPlayerWinnings(item, item.playerA) }} ETH </div>
+              </div>
             </td>
 
             <td class="player">
-              <profile-item :address="item.playerB"></profile-item>
-              <div v-if="isLeaver(item, item.playerA)" class="red">Left</div>
-              <div v-else-if="isWinner(item, item.playerA)" class="green">{{ getPlayerWinnings(item, item.playerB) }}  <span class="blue">(-{{getApplicationFee(item)}})</span> </div>
-              <div v-else-if="isLoser(item, item.playerA)" class="red">{{ getPlayerWinnings(item, item.playerB) }} </div>
+              <div>
+                <profile-item :address="item.playerB"></profile-item>
+                <div v-if="isLeaver(item, item.playerB)" class="winnings red">Left</div>
+                <div v-else-if="isWinner(item, item.playerB)" class="winnings green"> +{{ getPlayerWinnings(item, item.playerB) }} ETH  <span class="blue">(-{{getApplicationFee(item)}})</span> </div>
+                <div v-else-if="isLoser(item, item.playerB)" class="winnings red">{{ getPlayerWinnings(item, item.playerB) }} ETH </div>
+              </div>
             </td>
             <td class="prize">${{ item.bet }}</td>
             <td class="round" colspan="2">
               <ul class="rounds-container">
-                <template v-if="item.moves > 1">
                   <div v-for="(round, roundIndex) in item.moves" :key="roundIndex" class="rounds-list">
-                    <game-move :isSmall="true" :move="round[item.playerA]"></game-move> : <game-move :isSmall="true" :move="round[item.playerB]"></game-move>
+                    <template v-if="Object.keys(round).length > 1">
+                      <game-move :isSmall="true" :move="round[item.playerA]"></game-move> : <game-move :isSmall="true" :move="round[item.playerB]"></game-move>
+                    </template>
                   </div>
-                </template>
               </ul>
             </td>
           </tr>
@@ -145,7 +149,7 @@ const APPLICATION_FEE = 0.05;
         return timeAgo(time, currentTimeInSec)
       },
       getWinnings(bet) {
-        return bet * 2 * (1 - APPLICATION_FEE)
+        return (bet - (bet * 2 * APPLICATION_FEE)).toFixed(4)
       },
       getApplicationFee(game) {
         const bet = game.bet
@@ -159,32 +163,36 @@ const APPLICATION_FEE = 0.05;
         const winnings = this.getWinnings(bet)
         const outcome = game.outcome
         const isPlayerA = player?.toLowerCase() === game.playerA?.toLowerCase()
-        if (outcome === Outcomes.Cancelled) {
+
+        console.log("getting player winnings", game, player, winnings, outcome, isPlayerA)
+        if (outcome == Outcomes.Cancelled) {
+          console.log("cancelled")
           return 0
-        } else if (outcome === Outcomes.PlayerALeft && isPlayerA) {
+        } else if (outcome == Outcomes.PlayerALeft && isPlayerA) {
           return -bet
-        } else if (outcome === Outcomes.PlayerBLeft && isPlayerA) {
+        } else if (outcome == Outcomes.PlayerBLeft && isPlayerA) {
           return winnings
-        } else if (outcome === Outcomes.PlayerALeft && !isPlayerA) {
+        } else if (outcome == Outcomes.PlayerALeft && !isPlayerA) {
           return winnings
-        } else if (outcome === Outcomes.PlayerBLeft && !isPlayerA) {
+        } else if (outcome == Outcomes.PlayerBLeft && !isPlayerA) {
           return -bet
         }
-         else if (outcome === Outcomes.Draw) {
+         else if (outcome == Outcomes.Draw) {
           return 0
-        } else if (outcome === Outcomes.PlayerA && isPlayerA) {
+        } else if (outcome == Outcomes.PlayerA && isPlayerA) {
           return winnings
-        } else if (outcome === Outcomes.PlayerB && isPlayerA) {
+        } else if (outcome == Outcomes.PlayerB && isPlayerA) {
           return -bet
-        } else if (outcome === Outcomes.PlayerA && !isPlayerA) {
+        } else if (outcome == Outcomes.PlayerA && !isPlayerA) {
           return -bet
-        } else if (outcome === Outcomes.PlayerB && !isPlayerA) {
+        } else if (outcome == Outcomes.PlayerB && !isPlayerA) {
           return winnings
         }
+        return -1;
       },
       wasCancelled(game){
         const outcome = game.outcome
-        return outcome === Outcomes.Cancelled
+        return outcome == Outcomes.Cancelled
       },
       isLeaver(game, player){
         const outcome = game.outcome
@@ -192,6 +200,7 @@ const APPLICATION_FEE = 0.05;
       },
       isWinner(game, player){
         const winnings = this.getPlayerWinnings(game, player)
+        console.log("getting winnings for player", winnings, player)
         return winnings > 0
       },
       isLoser(game, player){
