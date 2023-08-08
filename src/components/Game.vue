@@ -5,6 +5,7 @@
     v-model:loserPoints="loserPoints"
     v-model:win="winModal"
     v-model:bet="selectedBet"
+    v-model:leaver="leaverModal"
   >
     Hello world
   </Modal>
@@ -505,6 +506,7 @@ export default {
 
       playWithFriend: null,
 
+      leaverModal: null,
       showModal: false,
       showAddFundsModal: false,
       winnerPoints: 0,
@@ -1209,6 +1211,51 @@ export default {
       
       
     },
+
+    getPlayerWinnings(game, player){
+        const bet = game.bet
+        const winnings = this.getWinnings(bet)
+        const outcome = game.outcome
+        const isPlayerA = player?.toLowerCase() === game.playerA?.toLowerCase()
+
+        console.log("getting player winnings", game, player, winnings, outcome, isPlayerA)
+        if (outcome == Outcomes.Cancelled) {
+          console.log("cancelled")
+          return 0
+        } else if (outcome == Outcomes.PlayerALeft && isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.PlayerBLeft && isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerALeft && !isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerBLeft && !isPlayerA) {
+          return -bet
+        }
+         else if (outcome == Outcomes.Draw) {
+          return 0
+        } else if (outcome == Outcomes.PlayerA && isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerB && isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.PlayerA && !isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.PlayerB && !isPlayerA) {
+          return winnings
+        }
+      },
+      wasCancelled(game){
+        const outcome = game.outcome
+        return outcome == Outcomes.Cancelled
+      },
+      isLeaver(game, player){
+        const outcome = game.outcome
+        return outcome === Outcomes.Left && game?.leaver?.toLowerCase() === player.toLowerCase()
+      },
+      isWinner(game, player){
+        const winnings = this.getPlayerWinnings(game, player)
+        console.log("getting winnings for player", winnings, player)
+        return winnings > 0
+      },
     
     handleOutcomeEvent(event, isSubscription = false) {
       console.log("GameOutcome event:", event.returnValues);
@@ -1220,8 +1267,9 @@ export default {
         //get winner and loser points from yourCurrentPoints and opponentCurrentPoints
         this.winnerPoints = this.yourCurrentPoints > this.opponentCurrentPoints ? this.yourCurrentPoints : this.opponentCurrentPoints;
         this.loserPoints = this.yourCurrentPoints < this.opponentCurrentPoints ? this.yourCurrentPoints : this.opponentCurrentPoints;
-        this.winModal = this.yourCurrentPoints > this.opponentCurrentPoints;
+        this.winModal = this.isWinner(gameId, this.activeAccount)
         this.showModal = true;
+        this.leaverModal = outcome == Outcomes.PlayerALeft ? this.games[gameId].playerA : outcome == Outcomes.PlayerBLeft ? this.games[gameId].playerB : null
         //empty burner wallet
         this.emptyBurnerWallet()
       }

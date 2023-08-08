@@ -5,7 +5,9 @@
                 <div class="trophy" v-if="win"></div>
 
                 <!-- Result text-->
-                <h4 v-if="win">You won! <span style="color:#E19885; font-weight:bold;">$ {{bet}}</span> </h4>
+                <h4 v-if="win">You won! <span style="color:#E19885; font-weight:bold;"> {{getWinnings(bet)}} ETH</span>  <span style="color:#c5edff; font-weight:bold;"> (-{{getApplicationFee(bet)}} ETH)</span> </h4>
+                <h4 v-else-if="isLeaver">You left the game! <span style="color:#E19885; font-weight:bold;">$ {{bet}}</span> </h4>
+                <h4 v-else-if="opponentIsLeaver">Your opponent left the game! <span style="color:#E19885; font-weight:bold;">$ {{bet}}</span> </h4>
                 <h4 style="margin-top:60px" v-else>You lose! <span style="color:#E19885; font-weight:bold;">$ {{bet}}</span> </h4>
 
                 <!-- Points ratio -->
@@ -120,6 +122,10 @@ export default {
         event: 'update:show'
     },
     props: {
+        player: {
+          type: String,
+          default: ""
+        },
         show: {
             type: Boolean,
             default: false
@@ -139,12 +145,32 @@ export default {
         bet: {
             type: Number,
             default: 0
+        },
+        leaver: {
+            type: String,
+            default: 0
         }
     },
     methods: {
+      getWinnings(bet) {
+        return (bet - (bet * 2 * APPLICATION_FEE)).toFixed(4)
+      },
+      getApplicationFee(bet) {
+        return bet * 2 * APPLICATION_FEE
+      },
         toggleShow() {
             this.$emit('update:show', !this.show)
+        },
+        isLeaver(){
+          return this.leaver.toLowerCase() == this.player.toLowerCase()
+        },
+        opponentIsLeaver(){
+          return this.leaver.toLowerCase() != this.player.toLowerCase() && this.leaver != null
+        },
+        noOneLeft(){
+          return this.leaver == null
         }
+            
     },
 
     //output the value of move

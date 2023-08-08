@@ -188,7 +188,6 @@ const APPLICATION_FEE = 0.05;
         } else if (outcome == Outcomes.PlayerB && !isPlayerA) {
           return winnings
         }
-        return -1;
       },
       wasCancelled(game){
         const outcome = game.outcome
