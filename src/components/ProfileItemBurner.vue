@@ -1,6 +1,8 @@
 <template>
     <div>
-        <div class="burner-item" :to="'/profile/' + address">
+        <div 
+            @click="copy" 
+            class="burner-item" :to="'/profile/' + address">
             <div class="burner-icon"></div>
             <p class="burner-address">{{ truncateAddress(address) }}</p>
             <p class="burner-funds">{{balance}}ETH</p>
@@ -49,6 +51,9 @@ export default {
         }
     },
     methods: {
+        copy() {
+            navigator.clipboard.writeText(this.address)
+        },
         truncateAddress(address) {
             return address?.slice(0, 6) + "..." + address?.slice(-4)
         }
