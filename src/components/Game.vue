@@ -21,6 +21,7 @@
           >
             Cancel
           </button> -->
+          <div style="display:flex; align-items:center" v-if="fetchingEvents"><p>Syncing events</p><div class="small-loading"></div></div>
     <div v-if="!isInGame && !isWaiting">
       <p style="margin:0; margin-bottom:6px;">Your balance</p>
       <h1 style="margin:0; margin-bottom:22px;">
@@ -401,6 +402,7 @@ import ModalAddFunds from './ModalAddFunds.vue'
 
 const CONTRACT_ADDRESS = mainContracts.deployedContracts.Hands
 const CONTRACT_ABI = mainContracts.deployedAbis.Hands
+const DEFAULT_FETCH_BLOCK = 33190809;
 
 //EXAMPLE Game.
 // {
@@ -492,6 +494,7 @@ export default {
       newRoundEvents: [],
       gameOutcomeEvents: [],
       playerCancelledEvents: [],
+      playerLeftEvents: [],
 
       wagerSteps: ["0.01", "0.1", "1", "5", "10"],
       sliderIndex: 0,
@@ -523,6 +526,9 @@ export default {
 
       isJoiningPasswordMatch: false,
       joiningPassword: null,
+
+      lastFetchedBlock: DEFAULT_FETCH_BLOCK,
+      fetchingEvents: false,
 
     };
   },
@@ -769,8 +775,8 @@ export default {
   async mounted() {
     console.log("provider", this.provider)
     this.initialized = false
-    this.fetchPastGames();
-    this.subscribeToEvents();
+    this.fetchingEvents = true;
+    
 
     console.log("ramp sdk", RampInstantSDK)
 
@@ -779,6 +785,9 @@ export default {
     const lastRandomString = localStorage.getItem("lastRandomString");
     const lastBetAmount = localStorage.getItem("lastBetAmount");
     const playWithFriend = localStorage.getItem("playWithFriend");
+    const lastFetchedBlock = localStorage.getItem("lastFetchedBlock");
+
+    console.log("in storage lastFetchedBlock", lastFetchedBlock ?? "null")
 
     if (lastSentMove) {
       this.selectedMove = lastSentMove;
@@ -787,15 +796,26 @@ export default {
     if (lastBetAmount) {
       this.selectedBet = lastBetAmount ?? this.wagerSteps[0];
       this.sliderIndex = this.wagerSteps.indexOf(parseFloat(this.selectedBet));
+    }else{
+      this.selectedBet = this.wagerSteps[0];
+      this.sliderIndex = 0;
     }
 
     if (lastRandomString) {
       this.randomString = lastRandomString;
     }
 
+    this.lastFetchedBlock = lastFetchedBlock ?? DEFAULT_FETCH_BLOCK
+    console.log("lastFetchedBlock", this.lastFetchedBlock)
+
     this.playWithFriend = playWithFriend === "true" ? true : false;
     console.log("playWithFriend", this.playWithFriend);
     console.log("playWithFriend localStorage", localStorage.getItem("playWithFriend"));
+
+    this.uncacheEvents()
+
+    this.fetchPastGames();
+    this.subscribeToEvents();
 
     this.initialized = true
 
@@ -807,6 +827,8 @@ export default {
 
     //check if joining password match
     await this.checkJoiningPassword()
+
+    
     
   },
   watch:{
@@ -864,6 +886,39 @@ export default {
     },
   },
   methods: {
+    getLastFetchBlock() {
+      return localStorage.getItem("lastFetchedBlock") ?? DEFAULT_FETCH_BLOCK
+    },
+    setLastFetchBlock(blockNumber) {
+      this.lastFetchedBlock = blockNumber
+      localStorage.setItem("lastFetchedBlock", blockNumber)
+    },
+    cacheEvents(){
+      //Json stringify and add to local storage
+      localStorage.setItem("playerRegisteredEvents", JSON.stringify(this.playerRegisteredEvents))
+      localStorage.setItem("playerWaitingEvents", JSON.stringify(this.playerWaitingEvents))
+      localStorage.setItem("playersMatchedEvents", JSON.stringify(this.playersMatchedEvents))
+      localStorage.setItem("moveCommittedEvents", JSON.stringify(this.moveCommittedEvents))
+      localStorage.setItem("moveRevealedEvents", JSON.stringify(this.moveRevealedEvents))
+      localStorage.setItem("newRoundEvents", JSON.stringify(this.newRoundEvents))
+      localStorage.setItem("gameOutcomeEvents", JSON.stringify(this.gameOutcomeEvents))
+      localStorage.setItem("playerCancelledEvents", JSON.stringify(this.playerCancelledEvents))
+      localStorage.setItem("playerLeftEvents", JSON.stringify(this.playerLeftEvents))
+    },
+    uncacheEvents(){
+      //Json stringify and add to local storage
+      this.playerRegisteredEvents = JSON.parse(localStorage.getItem("playerRegisteredEvents")) ?? []
+      this.playerWaitingEvents = JSON.parse(localStorage.getItem("playerWaitingEvents")) ?? []
+      this.playersMatchedEvents = JSON.parse(localStorage.getItem("playersMatchedEvents")) ?? []
+      this.moveCommittedEvents = JSON.parse(localStorage.getItem("moveCommittedEvents")) ?? []
+      this.moveRevealedEvents = JSON.parse(localStorage.getItem("moveRevealedEvents")) ?? []
+      this.newRoundEvents = JSON.parse(localStorage.getItem("newRoundEvents"))?? []
+      this.gameOutcomeEvents = JSON.parse(localStorage.getItem("gameOutcomeEvents")) ?? []
+      this.playerCancelledEvents = JSON.parse(localStorage.getItem("playerCancelledEvents")) ?? []
+      this.playerLeftEvents = JSON.parse(localStorage.getItem("playerLeftEvents")) ?? []
+
+      console.log("uncached events", this.playerRegisteredEvents, this.playerWaitingEvents, this.playersMatchedEvents, this.moveCommittedEvents, this.moveRevealedEvents, this.newRoundEvents, this.gameOutcomeEvents, this.playerCancelledEvents, this.playerLeftEvents)
+    },
     toggleAddFundsModal() {
       this.showAddFundsModal = !this.showAddFundsModal
     },
@@ -1078,7 +1133,7 @@ export default {
       //set players state to waiting if hasnt already
       this.getGame(gameId).states[0][playerAddress.toLowerCase()] = GameStates.Waiting;  
       
-      const block = await this.getWeb3Read.eth.getBlock(event.blockNumber);
+      const block = await this.getWeb3.eth.getBlock(event.blockNumber);
       const timestamp = block.timestamp;
       this.getGame(gameId).time = timestamp;
       
@@ -1251,7 +1306,41 @@ export default {
         const outcome = game.outcome
         return outcome === Outcomes.Left && game?.leaver?.toLowerCase() === player.toLowerCase()
       },
-      isWinner(game, player){
+      getWinnings(bet) {
+        return (bet - (bet * 2 * APPLICATION_FEE)).toFixed(4)
+      },
+      getPlayerWinnings(game, player){
+        const bet = game.bet
+        const winnings = this.getWinnings(bet)
+        const outcome = game.outcome
+        const isPlayerA = player?.toLowerCase() === game.playerA?.toLowerCase()
+
+        console.log("getting player winnings", game, player, winnings, outcome, isPlayerA)
+        if (outcome == Outcomes.Cancelled) {
+          console.log("cancelled")
+          return 0
+        } else if (outcome == Outcomes.PlayerALeft && isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.PlayerBLeft && isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerALeft && !isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerBLeft && !isPlayerA) {
+          return -bet
+        }
+         else if (outcome == Outcomes.Draw) {
+          return 0
+        } else if (outcome == Outcomes.PlayerA && isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerB && isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.PlayerA && !isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.PlayerB && !isPlayerA) {
+          return winnings
+        }
+      },
+      calcWinnerFromAmount(game, player){
         const winnings = this.getPlayerWinnings(game, player)
         console.log("getting winnings for player", winnings, player)
         return winnings > 0
@@ -1267,7 +1356,7 @@ export default {
         //get winner and loser points from yourCurrentPoints and opponentCurrentPoints
         this.winnerPoints = this.yourCurrentPoints > this.opponentCurrentPoints ? this.yourCurrentPoints : this.opponentCurrentPoints;
         this.loserPoints = this.yourCurrentPoints < this.opponentCurrentPoints ? this.yourCurrentPoints : this.opponentCurrentPoints;
-        this.winModal = this.isWinner(gameId, this.activeAccount)
+        this.winModal = this.calcWinnerFromAmount(this.games[gameId], this.activeAccount)
         this.showModal = true;
         this.leaverModal = outcome == Outcomes.PlayerALeft ? this.games[gameId].playerA : outcome == Outcomes.PlayerBLeft ? this.games[gameId].playerB : null
         //empty burner wallet
@@ -1922,7 +2011,6 @@ export default {
       const contract = await this.getContract();
 
       // Initialize events array
-      this.playerRegisteredEvents = [];
 
       let fromBlock = startBlock;
       let toBlock = Math.min(fromBlock + blockLimit, endBlock);
@@ -1942,9 +2030,9 @@ export default {
           // Update blocks for the next iteration
           fromBlock = toBlock + 1;
           toBlock = Math.min(fromBlock + blockLimit, endBlock);
-          await this.processEvents()
+          
           //delay
-          await this.sleep(500);
+          
       }
     },
 
@@ -1953,7 +2041,6 @@ export default {
       const contract = await this.getContract();
 
       // Initialize events array
-      this.playerWaitingEvents = [];
 
       let fromBlock = startBlock;
       let toBlock = Math.min(fromBlock + blockLimit, endBlock);
@@ -1975,8 +2062,8 @@ export default {
           toBlock = Math.min(fromBlock + blockLimit, endBlock);
 
           //delay
-          await this.processEvents()
-          await this.sleep(500);
+          
+          
       }
     },
 
@@ -1985,7 +2072,6 @@ export default {
       const contract = await this.getContract();
 
       // Initialize events array
-      this.playersMatchedEvents = [];
 
       let fromBlock = startBlock;
       let toBlock = Math.min(fromBlock + blockLimit, endBlock);
@@ -2007,8 +2093,8 @@ export default {
           toBlock = Math.min(fromBlock + blockLimit, endBlock);
 
           //delay
-          await this.processEvents()
-          await this.sleep(500);
+          
+          
       }
     },
 
@@ -2017,7 +2103,6 @@ export default {
       const contract = await this.getContract();
 
       // Initialize events array
-      this.moveCommittedEvents = [];
 
       let fromBlock = startBlock;
       let toBlock = Math.min(fromBlock + blockLimit, endBlock);
@@ -2039,8 +2124,8 @@ export default {
           toBlock = Math.min(fromBlock + blockLimit, endBlock);
 
           //delay
-          await this.processEvents()
-          await this.sleep(500);
+          
+          
       }
     },
 
@@ -2049,7 +2134,6 @@ export default {
       const contract = await this.getContract();
 
       // Initialize events array
-      this.moveRevealedEvents = [];
 
       let fromBlock = startBlock;
       let toBlock = Math.min(fromBlock + blockLimit, endBlock);
@@ -2071,8 +2155,8 @@ export default {
           toBlock = Math.min(fromBlock + blockLimit, endBlock);
 
           //delay
-          await this.processEvents()
-          await this.sleep(500);
+          
+          
       }
     },
 
@@ -2081,7 +2165,6 @@ export default {
       const contract = await this.getContract();
 
       // Initialize events array
-      this.newRoundEvents = [];
 
       let fromBlock = startBlock;
       let toBlock = Math.min(fromBlock + blockLimit, endBlock);
@@ -2103,8 +2186,8 @@ export default {
           toBlock = Math.min(fromBlock + blockLimit, endBlock);
 
           //delay
-          await this.processEvents()
-          await this.sleep(500);
+          
+          
       }
     },
 
@@ -2113,7 +2196,6 @@ export default {
       const contract = await this.getContract();
 
       // Initialize events array
-      this.gameOutcomeEvents = [];
 
       let fromBlock = startBlock;
       let toBlock = Math.min(fromBlock + blockLimit, endBlock);
@@ -2135,8 +2217,8 @@ export default {
           toBlock = Math.min(fromBlock + blockLimit, endBlock);
 
           //delay
-          await this.processEvents()
-          await this.sleep(500);
+          
+          
       }
     },
     
@@ -2145,7 +2227,6 @@ export default {
       const contract = await this.getContract();
 
       // Initialize events array
-      this.playerCancelledEvents = [];
 
       let fromBlock = startBlock;
       let toBlock = Math.min(fromBlock + blockLimit, endBlock);
@@ -2167,8 +2248,8 @@ export default {
           toBlock = Math.min(fromBlock + blockLimit, endBlock);
 
           //delay
-          await this.processEvents()
-          await this.sleep(500);
+          
+          
       }
     },
 
@@ -2177,7 +2258,6 @@ export default {
       const contract = await this.getContract();
 
       // Initialize events array
-      this.playerCancelledEvents = [];
 
       let fromBlock = startBlock;
       let toBlock = Math.min(fromBlock + blockLimit, endBlock);
@@ -2199,14 +2279,19 @@ export default {
           toBlock = Math.min(fromBlock + blockLimit, endBlock);
 
           //delay
-          await this.processEvents()
-          await this.sleep(500);
+          
+          
       }
     },
 
     addToHandledEvents(event, eventName) {
       const eventId = `${event.transactionHash}-${eventName}-${event.logIndex}`;
       this.handledEventIds.add(eventId);
+    },
+
+    alreadyHandled(event, eventName) {
+      const eventId = `${event.transactionHash}-${eventName}-${event.logIndex}`;
+      return this.handledEventIds.has(eventId);
     },
     
     async processEvents() {
@@ -2314,8 +2399,10 @@ export default {
     },
 
     async fetchPastGames() {
-      let fromBlock = 33190809;
+      let fromBlock = this.lastFetchedBlock;
       let toBlock = await this.getWeb3.eth.getBlockNumber();
+
+      console.log("fetching past games from block", fromBlock, "to block", toBlock);
 
       // let inc = 1000;
       // while(toBlock > fromBlock){
@@ -2331,6 +2418,8 @@ export default {
       //   await this.processEvents();
       // }
 
+      
+
 
       await this.fetchPlayerRegisteredEvents(fromBlock, toBlock);
       await this.fetchPlayerWaitingEvents(fromBlock, toBlock);
@@ -2342,8 +2431,12 @@ export default {
       await this.fetchPlayerEvents(fromBlock, toBlock, "PlayerLeft");
       await this.fetchPlayerCancelledEvents(fromBlock, toBlock);
 
+      this.cacheEvents();
+      this.setLastFetchBlock(toBlock);
 
-      this.processEvents();
+
+      await this.processEvents();
+      this.fetchingEvents = false;
     },
   },
 };
