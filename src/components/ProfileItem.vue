@@ -2,7 +2,7 @@
     <div>
         <router-link class="player-item" :to="'/profile/' + address">
             <div class="profile-mini"></div>
-            <p>{{ truncateAddress(address) }}</p>
+            <p>{{ user }}</p>
           </router-link>
     </div>
     
@@ -26,6 +26,23 @@ export default {
         address: {
             type: String,
             required: true
+        },
+        alwaysShow: {
+            type: Boolean,
+            default: false
+        }
+    },
+    computed: {
+        isYou() {
+            console.log("is you", this.address?.toLowerCase(), this.$store.state.activeAccount.toLowerCase())
+            return this.address?.toLowerCase() == this.$store.state.activeAccount.toLowerCase()
+        },
+        user() {
+            if(this.isYou && !this.alwaysShow) {
+                return "You"
+            }else {
+                return this.truncateAddress(this.address)
+            }
         }
     },
     methods: {

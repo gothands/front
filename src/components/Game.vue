@@ -38,7 +38,7 @@
         >ETH</span>
       </h1>
       <div class="address-container">
-        <profile-item :address="this.activeAccount" />
+        <profile-item :address="this.activeAccount" :alwaysShow="true" />
         &nbsp;
         <profile-item-burner v-if="isBurner" :address="this.burnerAddress" :balance="burnerBalance" />
 
@@ -403,6 +403,7 @@ import ModalAddFunds from './ModalAddFunds.vue'
 const CONTRACT_ADDRESS = mainContracts.deployedContracts.Hands
 const CONTRACT_ABI = mainContracts.deployedAbis.Hands
 const DEFAULT_FETCH_BLOCK = 33190809;
+const APPLICATION_FEE = 0.05;
 
 //EXAMPLE Game.
 // {
@@ -1075,19 +1076,29 @@ export default {
 //send funds from burner wallet to user wallet
 //use burnerWallet private/ burner wallet instance
 //get balance, send the entire balance to this.activeWallet
-  async emptyBurnerWallet() {
-    console.log("Initiating process to empty burner wallet.")
+async emptyBurnerWallet() {
+    console.log("Initiating process to empty burner wallet.");
 
     // Get balance
     const balance = await this.getWeb3.eth.getBalance(this.burnerAddress);
     console.log("Current balance", balance);
 
-    // Calculate and assign gas price
-    const gasPrice = this.getWeb3.utils.toWei("0.3", "gwei");
-    const gasLimit = 3000000;
+    // Estimate gas price and limit
+    const gasPrice = await this.getWeb3.eth.getGasPrice();
+    const gasLimit = await this.getWeb3.eth.estimateGas({
+        from: this.burnerAddress,
+        to: this.activeAccount,
+        value: balance
+    });
 
     // Calculate total gas cost
     const totalGasCost = gasPrice * gasLimit;
+
+    // Check if balance is greater than total gas cost
+    if (balance <= totalGasCost) {
+        console.log("Insufficient balance to cover gas cost.");
+        return;
+    }
 
     // Calculate amount that can be transferred considering the gas cost
     const transferableAmount = balance - totalGasCost;
@@ -1107,12 +1118,13 @@ export default {
     // Send the signed transaction
     this.getWeb3.eth.sendSignedTransaction(signedTransaction.rawTransaction)
     .on('transactionHash', (transactionHash) => {
-        console.log("Transaction Hash", transactionHash)
+        console.log("Transaction Hash", transactionHash);
     })
     .on('error', (err) => {
         console.log("An error occurred during transaction", err);
     });
 },
+
 
 
 
@@ -1554,7 +1566,11 @@ export default {
         try {
           const accounts = await this.getWeb3.eth.getAccounts();
           const gasPrice = this.getWeb3.utils.toWei("0.1", "gwei");
-          const gasLimit = 3000000;
+          const gasLimit = this.getWeb3.estimateGas({
+            from: accounts[0],
+            to: this.affiliateContract.options.address,
+            data: this.affiliateContract.methods.registerAsConsumer().encodeABI(),
+          });
 
           //get affilaite address from local storage 
           const affiliateAddress = localStorage.getItem("affiliateCode");
@@ -1668,20 +1684,29 @@ export default {
           this.createGame(this.currentGameId ?? "0")
         this.games[this.currentGameId ?? "0"].states[0][this.getActiveAccount] = GameStates.Registering;
 
-        const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = this.getWeb3.utils.toWei("0.3", "gwei");
-        const gasLimit = 3000000;
-
         const betInWei = this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether");
+
+        //set password
+        await this.setPassword();
+        const passwordHash = this.getPasswordHash();
+
+        const accounts = await this.getWeb3.eth.getAccounts();
+        const gasPrice = await this.getWeb3.eth.getGasPrice() * 10;
+        const gasLimit = await this.contractInstance.methods.createPasswordMatch(passwordHash).estimateGas({
+            from: accounts[0],
+            to: this.contractInstance.options.address,
+            value: betInWei
+        })*10;
+
+        console.log("gasLimit:", gasLimit)
+
 
         //get playerGame mapping
         const gameId = await this.contractInstance.methods
           .playerGame(accounts[0])
           .call({ from: accounts[0] });
 
-        //set password
-        await this.setPassword();
-        const passwordHash = this.getPasswordHash();
+        
         console.log("gameId:", gameId);
         if(this.isBurner){
           const totalValue = this.getWeb3.utils.toWei((this.burnerTopUpAmount + parseFloat(this.selectedBet)).toString(), "ether");
