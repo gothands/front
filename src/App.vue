@@ -273,6 +273,9 @@ export default {
         }
       ],
       appMetadata,
+      connect: {
+        autoConnectLastWallet: true
+      }
     })
 
 	store.commit("setOnboard", onboard);
@@ -287,6 +290,7 @@ export default {
         const userInfo: any = await web3auth.getUserInfo();
         await web3auth.addPlugin(torusPlugin);
         const mountedWallets = onboard.state.get().wallets
+        console.log("mointing",onboard.state.get())
         if (mountedWallets[0]){
           store.dispatch("setLoggedIn", true);
           store.dispatch("setProvider", mountedWallets[0].provider);
