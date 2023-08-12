@@ -52,6 +52,14 @@ a:visited {
 import Game from "./components/Game.vue";
 import Staking from "./components/Staking.vue";
 import Web3 from "web3";
+import Onboard from '@web3-onboard/core'
+import injectedModule from '@web3-onboard/injected-wallets'
+import walletConnectModule from '@web3-onboard/walletconnect'
+import coinbaseModule from '@web3-onboard/coinbase'
+
+
+
+
 
 
 import Transak from '@biconomy/transak';
@@ -238,7 +246,36 @@ export default {
     // it will add/update  the torus-evm adapter in to web3auth class
     web3auth.configureAdapter(torusWalletAdapter);
 
-	store.dispatch("setWeb3Auth", web3auth);
+  
+    const injected = injectedModule()
+    const walletConnect = walletConnectModule({projectId: 'e1f5a3f2-0a0a-4c0a-8b0a-0b0a0a0a0a0a'})
+    const coinbaseWallet = coinbaseModule()
+
+    const appMetadata = {
+      name: 'Web3-Onboard Vanilla JS Demo',
+      icon: '<svg />',
+      logo: '<svg />',
+      description: 'Demo using Onboard',
+      recommendedInjectedWallets: [
+        { name: 'Coinbase', url: 'https://wallet.coinbase.com/' },
+        { name: 'MetaMask', url: 'https://metamask.io' }
+      ]
+    }
+
+    const onboard = Onboard({
+      wallets: [injected, walletConnect, coinbaseWallet],
+      chains: [
+        {
+          id: CURRENT_CHAIN_ID,
+          token: 'ETH',
+          label: 'Arbitrum Testnet',
+          rpcUrl:  RPC_URLS[CURRENT_CHAIN_ID],
+        }
+      ],
+      appMetadata,
+    })
+
+	store.commit("setOnboard", onboard);
 
 
     onMounted(async () => {
@@ -249,12 +286,11 @@ export default {
         await web3auth.initModal();
         const userInfo: any = await web3auth.getUserInfo();
         await web3auth.addPlugin(torusPlugin);
-        if (web3auth.provider) {
-          store.dispatch("setProvider", web3auth.provider);
-		  console.log("setProvider", web3auth.provider);
-          console.log("userInfo", userInfo)
-          //const initVal = await torusPlugin.initWithProvider(store.state.provider, userInfo);
+        const mountedWallets = onboard.state.get().wallets
+        if (mountedWallets[0]){
           store.dispatch("setLoggedIn", true);
+          store.dispatch("setProvider", mountedWallets[0].provider);
+          store.dispatch("setIsMetamask", true);
 
         }
         store.dispatch("setLoading", false);

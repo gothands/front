@@ -1,6 +1,8 @@
 import { createStore } from 'vuex'
 import RPC from '../web3RPC'
 import Web3 from 'web3';
+import Onboard from '@web3-onboard/core'
+import injectedModule from '@web3-onboard/injected-wallets'
 
 import mainContracts from "../../../contracts/local-contracts.json"
 
@@ -27,6 +29,8 @@ const store = createStore({
       balances: {} as Balances,
       provider: null as any,
       web3auth: null as any,
+      onboard: null as any,
+      wallets: null as any,
       isMetamask: false,
 
       // Game
@@ -61,6 +65,8 @@ const store = createStore({
     setProvider(state, payload) { state.provider = payload },
     setWeb3Auth(state, payload) { state.web3auth = payload },
     setIsMetamask(state, payload) { state.isMetamask = payload },
+    setOnboard(state, payload) { state.onboard = payload },
+    setWallets(state, payload) { state.wallets = payload },
 
     // Game
     setGames(state, payload) { 
@@ -96,32 +102,33 @@ const store = createStore({
     setIsMetamask({ commit }, payload) { commit('setIsMetamask', payload) },
     async setBalanceOf({ commit, state }, payload) {
       const rpc = new RPC(state.provider)
-      const balance = await rpc.getBalanceOf(payload)
+      
 
-      let balances: Balances = {...state.balances}
-      balances[payload.toLowerCase()] = balance
-      console.log("balances", balances)
-      commit('setBalances', balances)
+      //do this every 10 seconds
+        const balance = await rpc.getBalanceOf(payload)
+
+        let balances: Balances = {...state.balances}
+        balances[payload.toLowerCase()] = balance
+        console.log("balances", balance)
+        commit('setBalances', balances)
     },
     async login ({ commit, state }) {
-      if (!state.web3auth) {
+      if (!state.onboard) {
+        console.error("Onboard not set")
         return;
       }
-      state.web3auth.connect();
-      const provider = await state.web3auth.connect();
+
       commit("setLoading", true);
-      commit("setProvider", provider);
-      if (state.web3auth.provider) {
-          commit("setProvider", state.web3auth.provider);
-		  console.log("setProvider", state.web3auth.provider);
-          //const initVal = await torusPlugin.initWithProvider(store.state.provider, userInfo);
-          commit("setLoggedIn", true);
-
-        }
-	  //check if logged in through metamask
-			commit("setIsMetamask", true);
-
-      //await torusPlugin.connect()
+      const wallets = await state.onboard.connectWallet()
+      console.log("wallets", wallets)
+      commit("setWallets", wallets);
+      if(wallets[0]) {
+        commit("setLoggedIn", true);
+        commit("setProvider", wallets[0].provider);
+        commit("setIsMetamask", true);
+      }else{
+        commit("setLoggedIn", false);
+      }
     },
     // Game
     setGames({ commit }, payload) { commit('setGames', payload) },

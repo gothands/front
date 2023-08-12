@@ -25,7 +25,7 @@
             <td class="rounds">{{ Object.keys(item.moves).length }}</td>
             <td class="time">{{ item.time }}</td>
             <td class="player">
-              <profile-item :address="address?.toLowerCase() === item.playerA?.toLowerCase() ? item.playerA : item.playerB"></profile-item>
+              <profile-item :address="this.address?.toLowerCase() == item.playerA?.toLowerCase() ? item.playerB : item.playerA"></profile-item>
             </td>
           </tr>
         </tbody>
