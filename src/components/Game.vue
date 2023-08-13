@@ -1076,61 +1076,77 @@ export default {
 //send funds from burner wallet to user wallet
 //use burnerWallet private/ burner wallet instance
 //get balance, send the entire balance to this.activeWallet
-async emptyBurnerWallet() {
-  console.log("Initiating process to empty burner wallet.");
+async emptyBurnerWallet(retryCount = 0) {
+  const maxRetries = 3; // You can adjust this number as needed
 
-  // Get balance
-  const balance = await this.getWeb3.eth.getBalance(this.burnerAddress);
-  console.log("Current balance", balance);
-
-  // Estimate gas price and limit
-  const gasPrice = await this.getWeb3.eth.getGasPrice();
-  const gasLimit = await this.getWeb3.eth.estimateGas({
-    from: this.burnerAddress,
-    to: this.activeAccount,
-    value: balance
-  });
-
-  // Calculate total gas cost
-  const totalGasCost = gasPrice * gasLimit;
-
-  // Check if balance is greater than total gas cost
-  if (balance <= totalGasCost) {
-    console.log("Insufficient balance to cover gas cost.");
+  if (retryCount >= maxRetries) {
+    console.log("Max retries reached. Aborting process.");
     return;
   }
 
-  // Calculate amount that can be transferred considering the gas cost
-  const transferableAmount = balance - totalGasCost;
+  console.log("Initiating process to empty burner wallet.");
 
-  // Create a transaction
-  const transaction = {
-    from: this.burnerAddress,
-    to: this.activeAccount,
-    value: transferableAmount,
-    gasPrice,
-    gasLimit
-  };
+  try {
+    // Get balance
+    const balance = await this.getWeb3.eth.getBalance(this.burnerAddress);
+    console.log("Current balance", balance);
 
-  // Sign the transaction
-  const signedTransaction = await this.getWeb3.eth.accounts.signTransaction(transaction, this.burnerPrivateKey);
-
-  // Send the signed transaction
-  this.getWeb3.eth.sendSignedTransaction(signedTransaction.rawTransaction)
-    .on('transactionHash', (transactionHash) => {
-      console.log("Transaction Hash", transactionHash);
-    })
-    .on('receipt', async (receipt) => {
-      const remainingBalance = await this.getWeb3.eth.getBalance(this.burnerAddress);
-      if (remainingBalance > 0) {
-        // Recursive call if there's remaining balance
-        await emptyBurnerWallet();
-      }
-    })
-    .on('error', (err) => {
-      console.log("An error occurred during transaction", err);
+    // Estimate gas price and limit
+    const gasPrice = await this.getWeb3.eth.getGasPrice();
+    const gasLimit = await this.getWeb3.eth.estimateGas({
+      from: this.burnerAddress,
+      to: this.activeAccount,
+      value: balance
     });
+
+    // Calculate total gas cost
+    const totalGasCost = gasPrice * gasLimit;
+
+    // Check if balance is greater than total gas cost
+    if (balance <= totalGasCost) {
+      console.log("Insufficient balance to cover gas cost.");
+      return;
+    }
+
+    // Calculate amount that can be transferred considering the gas cost
+    const transferableAmount = balance - totalGasCost;
+
+    // Create a transaction
+    const transaction = {
+      from: this.burnerAddress,
+      to: this.activeAccount,
+      value: transferableAmount,
+      gasPrice,
+      gasLimit
+    };
+
+    // Sign the transaction
+    const signedTransaction = await this.getWeb3.eth.accounts.signTransaction(transaction, this.burnerPrivateKey);
+
+    // Send the signed transaction
+    this.getWeb3.eth.sendSignedTransaction(signedTransaction.rawTransaction)
+      .on('transactionHash', (transactionHash) => {
+        console.log("Transaction Hash", transactionHash);
+      })
+      .on('receipt', async (receipt) => {
+        const remainingBalance = await this.getWeb3.eth.getBalance(this.burnerAddress);
+        if (remainingBalance > 0) {
+          // Recursive call if there's remaining balance
+          await emptyBurnerWallet();
+        }
+      })
+      .on('error', async (err) => {
+        console.log("An error occurred during transaction", err);
+        console.log("Retrying...");
+        await emptyBurnerWallet(retryCount + 1);
+      });
+  } catch (err) {
+    console.log("An exception occurred", err);
+    console.log("Retrying...");
+    await emptyBurnerWallet(retryCount + 1);
+  }
 },
+
 
 
 
