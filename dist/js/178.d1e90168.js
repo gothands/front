@@ -1,0 +1,1 @@
+"use strict";(self["webpackChunkHandsy_io"]=self["webpackChunkHandsy_io"]||[]).push([[178],{20178:(a,e,s)=>{s.d(e,{take:()=>k.q,takeUntil:()=>n.R});var k=s(5711),n=s(4136)}}]);

@@ -113,7 +113,10 @@
   const currentToChain = computed(() => state.toChains.find((item) => item.id == state.toChainId))
   
   // methods
-  const bridge = new Bridge('Testnet')
+  //check if current url is handsy.io if so, use mainnet
+  const url = window.location.href;
+  const network = url.includes("handsy.io") ? "Mainnet" : "Testnet";
+  const bridge = new Bridge(network)
   const refreshBridgeSupports = async () => {
     const supports = await bridge.supports(currentFromChain.value, currentToChain.value)
   

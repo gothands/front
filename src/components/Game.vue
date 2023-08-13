@@ -1077,53 +1077,61 @@ export default {
 //use burnerWallet private/ burner wallet instance
 //get balance, send the entire balance to this.activeWallet
 async emptyBurnerWallet() {
-    console.log("Initiating process to empty burner wallet.");
+  console.log("Initiating process to empty burner wallet.");
 
-    // Get balance
-    const balance = await this.getWeb3.eth.getBalance(this.burnerAddress);
-    console.log("Current balance", balance);
+  // Get balance
+  const balance = await this.getWeb3.eth.getBalance(this.burnerAddress);
+  console.log("Current balance", balance);
 
-    // Estimate gas price and limit
-    const gasPrice = await this.getWeb3.eth.getGasPrice();
-    const gasLimit = await this.getWeb3.eth.estimateGas({
-        from: this.burnerAddress,
-        to: this.activeAccount,
-        value: balance
-    });
+  // Estimate gas price and limit
+  const gasPrice = await this.getWeb3.eth.getGasPrice();
+  const gasLimit = await this.getWeb3.eth.estimateGas({
+    from: this.burnerAddress,
+    to: this.activeAccount,
+    value: balance
+  });
 
-    // Calculate total gas cost
-    const totalGasCost = gasPrice * gasLimit;
+  // Calculate total gas cost
+  const totalGasCost = gasPrice * gasLimit;
 
-    // Check if balance is greater than total gas cost
-    if (balance <= totalGasCost) {
-        console.log("Insufficient balance to cover gas cost.");
-        return;
-    }
+  // Check if balance is greater than total gas cost
+  if (balance <= totalGasCost) {
+    console.log("Insufficient balance to cover gas cost.");
+    return;
+  }
 
-    // Calculate amount that can be transferred considering the gas cost
-    const transferableAmount = balance - totalGasCost;
+  // Calculate amount that can be transferred considering the gas cost
+  const transferableAmount = balance - totalGasCost;
 
-    // Create a transaction
-    const transaction = {
-        from: this.burnerAddress,
-        to: this.activeAccount,
-        value: transferableAmount,
-        gasPrice,
-        gasLimit
-    };
+  // Create a transaction
+  const transaction = {
+    from: this.burnerAddress,
+    to: this.activeAccount,
+    value: transferableAmount,
+    gasPrice,
+    gasLimit
+  };
 
-    // Sign the transaction
-    const signedTransaction = await this.getWeb3.eth.accounts.signTransaction(transaction, this.burnerPrivateKey);
+  // Sign the transaction
+  const signedTransaction = await this.getWeb3.eth.accounts.signTransaction(transaction, this.burnerPrivateKey);
 
-    // Send the signed transaction
-    this.getWeb3.eth.sendSignedTransaction(signedTransaction.rawTransaction)
+  // Send the signed transaction
+  this.getWeb3.eth.sendSignedTransaction(signedTransaction.rawTransaction)
     .on('transactionHash', (transactionHash) => {
-        console.log("Transaction Hash", transactionHash);
+      console.log("Transaction Hash", transactionHash);
+    })
+    .on('receipt', async (receipt) => {
+      const remainingBalance = await this.getWeb3.eth.getBalance(this.burnerAddress);
+      if (remainingBalance > 0) {
+        // Recursive call if there's remaining balance
+        await emptyBurnerWallet();
+      }
     })
     .on('error', (err) => {
-        console.log("An error occurred during transaction", err);
+      console.log("An error occurred during transaction", err);
     });
 },
+
 
 
 
