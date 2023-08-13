@@ -248,7 +248,7 @@ export default {
 
   
     const injected = injectedModule()
-    const walletConnect = walletConnectModule({projectId: 'e1f5a3f2-0a0a-4c0a-8b0a-0b0a0a0a0a0a'})
+    const walletConnect = walletConnectModule({projectId: '731ecc593b8d659e6155e34fb33dd8b2'})
     const coinbaseWallet = coinbaseModule()
 
     const appMetadata = {
