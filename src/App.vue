@@ -86,7 +86,7 @@ const CHAIN_ID_LOCALHOST = "0x10e"
 const CHAIN_ID_LOCALHOST_HARDHAT = "0x7A69"
 const CHAIN_ID_ARBITRUM_GOERLI = "0x66eed"
 
-const RPC_URLS = {
+export const RPC_URLS = {
   [CHAIN_ID_MAINNET]: "https://rpc.ankr.com/eth",
   [CHAIN_ID_TESTNET]: "https://testnet.era.zksync.dev",
   [CHAIN_ID_LOCALHOST]: "http://localhost:3050/",
@@ -281,17 +281,29 @@ export default {
 	store.commit("setOnboard", onboard);
 
 
+
     onMounted(async () => {
       try {
+        console.log("onMounted");
         checkJoiningPassword();
         store.dispatch("setLoading", true);
         store.dispatch("setLoggedIn", false);
-        await web3auth.initModal();
-        const userInfo: any = await web3auth.getUserInfo();
-        await web3auth.addPlugin(torusPlugin);
-        const mountedWallets = onboard.state.get().wallets
+        //await web3auth.initModal();
+        //const userInfo: any = await web3auth.getUserInfo();
+        //await web3auth.addPlugin(torusPlugin);
+        const mountedWallets = await onboard.connectWallet({
+          autoSelect: {
+            label: 'Select a wallet to connect',
+            disableModals: true,
+          }
+        })
+        
         console.log("mointing",onboard.state.get())
         if (mountedWallets[0]){
+          await onboard.setChain({
+          chainId: CURRENT_CHAIN_ID,
+        })
+          store.commit("setWallets", mountedWallets);
           store.dispatch("setLoggedIn", true);
           store.dispatch("setProvider", mountedWallets[0].provider);
           store.dispatch("setIsMetamask", true);
@@ -299,18 +311,12 @@ export default {
         }
         store.dispatch("setLoading", false);
 
-		//check if logged in through metamask
-		if (web3auth.connectedAdapterName === "metamask") {
-			store.dispatch("setIsMetamask", true);
-		}
-
-		console.log("adapter", web3auth.connectedAdapterName);
 
 
 
         console.log("provider", store.state.provider);
       } catch (error) {
-        uiConsole("error", error);
+        console.log("error", error);
       } finally {
         store.dispatch("setLoading", false);
       }

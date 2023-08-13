@@ -5,7 +5,7 @@ import Onboard from '@web3-onboard/core'
 import injectedModule from '@web3-onboard/injected-wallets'
 
 import mainContracts from "../../../contracts/local-contracts.json"
-
+import { CURRENT_CHAIN_ID } from '../types/index';
 
 interface Balances {
   [address: string]: any;
@@ -123,6 +123,7 @@ const store = createStore({
       console.log("wallets", wallets)
       commit("setWallets", wallets);
       if(wallets[0]) {
+        await state.onboard.setChain({chainId: CURRENT_CHAIN_ID})
         commit("setLoggedIn", true);
         commit("setProvider", wallets[0].provider);
         commit("setIsMetamask", true);
