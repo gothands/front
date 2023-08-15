@@ -14,7 +14,9 @@ export const Outcomes = {
     Draw: 3,
     PlayerALeft: 4,
     PlayerBLeft: 5,
-    Timeout: 6,
+    PlayerATimeout: 6,
+    PlayerBTimeout: 7,
+    BothTimeout: 8,
     Cancelled: 7,
 };
   
