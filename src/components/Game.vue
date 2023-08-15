@@ -1406,8 +1406,8 @@ async emptyBurnerWallet(retryCount = 0) {
         this.showModal = true;
         this.leaverModal = outcome == Outcomes.PlayerALeft ? this.games[gameId].playerA : outcome == Outcomes.PlayerBLeft ? this.games[gameId].playerB : null
         this.winModal = isPlayerA ? 
-          outcome == Outcomes.PlayerA && this.activeAccount.toLowerCase() != this.leaverModal.toLowerCase() :
-          outcome == Outcomes.PlayerB && this.activeAccount.toLowerCase() != this.leaverModal.toLowerCase()
+          outcome == Outcomes.PlayerA :
+          outcome == Outcomes.PlayerB
         //this.winModal = outcome == Outcomes.PlayerA ? this.games[gameId].playerA : outcome == Outcomes.PlayerB ? this.games[gameId].playerB : null
         console.log("Modal Stats", this.winnerPoints, this.loserPoints, this.winModal, this.leaverModal);
         console.log("Modal Stats, Outcomes.PlayerALeft and Outcomes.PlayerBLeft", Outcomes.PlayerALeft, Outcomes.PlayerBLeft);

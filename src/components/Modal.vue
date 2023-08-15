@@ -6,10 +6,10 @@
 
                 <!-- Result text-->
                 <h4 v-if="isWinner">You won! <span style="color:#E19885; font-weight:bold;"> {{getWinnings(bet)}} ETH</span>  <span style="color:#c5edff; font-weight:bold;"> (-{{getApplicationFee(bet)}} ETH)</span> </h4>
-                <h4 v-else style="margin-top:60px" >You lose! <span style="color:#E19885; font-weight:bold;">$ {{bet}}</span> </h4>
+                <h4 v-else style="margin-top:60px" >You lose! <span style="color:#E19885; font-weight:bold;"> {{bet}} ETH</span> </h4>
 
-                <p v-if="isLeaver && !noOneLeft">You left the game! <span style="color:#E19885; font-weight:bold;">$ {{bet}}</span> </p>
-                <p v-else-if="opponentIsLeaver && !noOneLeft">Your opponent left the game! <span style="color:#E19885; font-weight:bold;">$ {{bet}}</span> </p>
+                <p v-if="isLeaver && !noOneLeft">Because you left the game!</p>
+                <p v-else-if="opponentIsLeaver && !noOneLeft">Because your opponent left the game! </p>
 
                 <!-- Points ratio -->
                 <h1 style="margin:0; margin-bottom:24px; padding:0;" v-if="isWinner"><span style="color:#E19885">{{winnerPoints}}</span> : {{loserPoints}}</h1>
@@ -174,11 +174,11 @@ export default {
       },
       isLeaver(){
         console.log("Modal stats: isLeaver: " + this.leaver + " player: " + this.player)
-        return this.leaver.toLowerCase() == this.player.toLowerCase()
+        return this.leaver?.toLowerCase() == this.player?.toLowerCase()
       },
       opponentIsLeaver(){
         console.log("Modal stats: isLeaver: " + this.leaver + " player: " + this.player)
-        return this.leaver.toLowerCase() != this.player.toLowerCase() && this.leaver != null
+        return this.leaver?.toLowerCase() != this.player?.toLowerCase() && this.leaver != null
       },
       noOneLeft(){
         console.log("Modal stats: isLeaver: " + this.leaver + " player: " + this.player)
