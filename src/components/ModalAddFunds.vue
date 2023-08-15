@@ -2,12 +2,8 @@
     <transition name="fade">
         <div class="modal-container" v-if="show">
             <div class="modal-add-funds">
-                    <funds-manager></funds-manager>
-                    <button
-                    class="button-light"
-                    @click="toggleShow">
-                        Close
-                    </button>
+                    <funds-manager :minimumFundsToAdd="minimumFundsToAdd" :callback="callback" :closeCallBack="toggleShow"></funds-manager>
+                    
                 </div>
                 
             </div>
@@ -116,6 +112,14 @@ export default {
             type: Boolean,
             default: false
         },
+        minimumFundsToAdd: {
+            type: Number,
+            default: null
+        },
+        callback: {
+            type: Function,
+            default: () => {}
+        }
     },
     methods: {
         toggleShow() { this.$emit('update:show', !this.show) },

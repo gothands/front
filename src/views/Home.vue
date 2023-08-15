@@ -15,7 +15,7 @@
         @click="login"
         style="cursor: pointer; width: 270px; height:86px;"
       >
-        {{ loading ? 'Logging in...' : 'Sign Up'  }}
+        {{ loading ? 'Logging in...' : 'Sign Up'  }} {{ joiningPassword ? 'to join match' : '' }}
       </button>
     </header>
 

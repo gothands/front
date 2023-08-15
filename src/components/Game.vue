@@ -9,7 +9,11 @@
   >
     Hello world
   </Modal>
-  <ModalAddFunds v-model:show="showAddFundsModal"/>
+  <ModalAddFunds 
+    v-model:show="showAddFundsModal" 
+    :minimumFundsToAdd="minimumAmount"
+    :callback="onAddFunds"
+    />
   <div class="content">
     <!-- <button
       class="button-dark"
@@ -531,6 +535,11 @@ export default {
       lastFetchedBlock: DEFAULT_FETCH_BLOCK,
       fetchingEvents: false,
 
+      onAddFunds: () => {
+        console.log("onAddFunds")
+        this.showAddFundsModal = false
+      },
+      minimumAmount: 0,
     };
   },
   computed: {
@@ -1132,18 +1141,18 @@ async emptyBurnerWallet(retryCount = 0) {
         const remainingBalance = await this.getWeb3.eth.getBalance(this.burnerAddress);
         if (remainingBalance > 0) {
           // Recursive call if there's remaining balance
-          await emptyBurnerWallet();
+          await this.emptyBurnerWallet();
         }
       })
       .on('error', async (err) => {
         console.log("An error occurred during transaction", err);
         console.log("Retrying...");
-        await emptyBurnerWallet(retryCount + 1);
+        await this.emptyBurnerWallet(retryCount + 1);
       });
   } catch (err) {
     console.log("An exception occurred", err);
     console.log("Retrying...");
-    await emptyBurnerWallet(retryCount + 1);
+    await this.emptyBurnerWallet(retryCount + 1);
   }
 },
 
@@ -1614,6 +1623,25 @@ async emptyBurnerWallet(retryCount = 0) {
 
     },
 
+    async userMustHave(requiredAmount, callBackFunction){
+      console.log("checking is user has")
+      const balanceInWei = await this.getWeb3.eth.getBalance(this.activeAccount);
+      if(parseInt(balanceInWei) < parseInt(requiredAmount)){
+        await this.setDoesNotHaveFunds(requiredAmount, callBackFunction);
+        return false;
+      }
+      return true;
+    },
+
+    async setDoesNotHaveFunds(requiredAmount, callBackFunction){
+      this.minimumAmount = requiredAmount * 10 ** -18;
+      this.onAddFunds = ()=>{
+        this.showAddFundsModal = false;
+        callBackFunction();
+      }
+      this.showAddFundsModal = true;
+    },
+
 
     //Join or create a new game
     async registerGame() {
@@ -1646,16 +1674,32 @@ async emptyBurnerWallet(retryCount = 0) {
         this.games[this.currentGameId ?? "0"].states[0][this.getActiveAccount] = GameStates.Registering;
 
         const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = this.getWeb3.utils.toWei("0.3", "gwei");
-        const gasLimit = 3000000;
-
+        
         const betInWei = this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether");
 
-        //get playerGame mapping
-        const gameId = await this.contractInstance.methods
-          .playerGame(accounts[0])
-          .call({ from: accounts[0] });
-        console.log("gameId:", gameId);
+        if(!await this.userMustHave(betInWei, this.registerGame)){
+          throw new Error("User does not have enough funds");
+        }
+
+        const gasPrice = await this.getWeb3.eth.getGasPrice();
+        const gasLimit = this.isBurner ? await this.burnerContractInstance.methods.registerWithBurner(this.burnerAddress, betInWei)
+          .estimateGas({
+            from: accounts[0],
+            to: this.contractInstance.options.address,
+            value: this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether")
+        }) : await this.contractInstance.methods.register().estimateGas({
+            from: accounts[0],
+            to: this.contractInstance.options.address,
+            value: this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether")
+        });
+
+        //check if user has enough funds
+        const totalGasCost = gasPrice * gasLimit;
+        const balanceInWei = this.balance * 10 ** 18;
+        if(balanceInWei < totalGasCost){
+          this.setDoesNotHaveFunds(totalGasCost, this.registerGame);
+          return;
+        }
 
         //check if burner
         if(this.isBurner){
@@ -1710,17 +1754,22 @@ async emptyBurnerWallet(retryCount = 0) {
 
         const betInWei = this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether");
 
+
+        if(!await this.userMustHave(betInWei, this.createPasswordGame)){
+          throw new Error("User does not have enough funds");
+        }
+
         //set password
         await this.setPassword();
         const passwordHash = this.getPasswordHash();
 
         const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = await this.getWeb3.eth.getGasPrice() * 10;
+        const gasPrice = await this.getWeb3.eth.getGasPrice()*10;
         const gasLimit = await this.contractInstance.methods.createPasswordMatch(passwordHash).estimateGas({
             from: accounts[0],
             to: this.contractInstance.options.address,
             value: betInWei
-        })*10;
+        })*5;
 
         console.log("gasLimit:", gasLimit)
 
@@ -1729,6 +1778,15 @@ async emptyBurnerWallet(retryCount = 0) {
         const gameId = await this.contractInstance.methods
           .playerGame(accounts[0])
           .call({ from: accounts[0] });
+
+        //check if user has enough funds
+        const totalGasCost = gasPrice * gasLimit;
+        const balanceInWei = this.balance * 10 ** 18;
+        if(balanceInWei < totalGasCost){
+          console.log("is setting does not have funds")
+          this.setDoesNotHaveFunds(totalGasCost, this.createPasswordGame);
+          return;
+        }
 
         
         console.log("gameId:", gameId);
@@ -1790,20 +1848,37 @@ async emptyBurnerWallet(retryCount = 0) {
         this.games[this.currentGameId ?? "0"].states[0][this.getActiveAccount] = GameStates.Registering;
 
         const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = this.getWeb3.utils.toWei("0.3", "gwei");
-        const gasLimit = 3000000;
+        
 
         const betInWei = this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether");
+        const totalValue = this.getWeb3.utils.toWei((this.burnerTopUpAmount + parseFloat(this.selectedBet)).toString(), "ether");
 
-        //get playerGamje mapping
-        const gameId = await this.contractInstance.methods
-          .playerGame(accounts[0])
-          .call({ from: accounts[0] });
+        if(!await this.userMustHave(totalValue, ()=>{this.joinPasswordMatch(password, betAmount)})){
+          return;
+        }
+
+        const gasPrice = await this.getWeb3.eth.getGasPrice();
+        const gasLimit = this.isBurner ? await this.burnerContractInstance.methods.joinPasswordMatchWithBurner(this.burnerAddress, betInWei, password)
+          .estimateGas({
+            from: accounts[0],
+            to: this.contractInstance.options.address,
+            value: totalValue
+        }) : await this.contractInstance.methods.joinPasswordMatch(password).estimateGas({
+            from: accounts[0],
+            to: this.contractInstance.options.address,
+            value: betInWei
+        });
+
+        //check if user has enough funds
+        const totalGasCost = gasPrice * gasLimit;
+        const balanceInWei = this.balance * 10 ** 18;
+        if(balanceInWei < totalGasCost){
+          this.setDoesNotHaveFunds(totalGasCost, this.joinPasswordMatch);
+          return;
+        }
 
         //set password
-        console.log("gameId:", gameId);
         if(this.isBurner){
-          const totalValue = this.getWeb3.utils.toWei((this.burnerTopUpAmount + parseFloat(this.selectedBet)).toString(), "ether");
           const result = await this.burnerContractInstance.methods
           .joinPasswordMatchWithBurner(this.burnerAddress, betInWei, password)
           .send({ from: accounts[0], value: totalValue, gasPrice, gasLimit });
@@ -1819,6 +1894,8 @@ async emptyBurnerWallet(retryCount = 0) {
 
         this.$store.dispatch("setIsJoiningPasswordMatch", false);
 
+        this.clearQueryString();
+
         // Update the gameState to Waiting
         //console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
       } catch (error) {
@@ -1831,6 +1908,8 @@ async emptyBurnerWallet(retryCount = 0) {
         console.error("Error registering game:", error);
 
         this.$store.dispatch("setIsJoiningPasswordMatch", false);
+
+        this.clearQueryString();
       }
     },
 
@@ -1909,8 +1988,21 @@ async emptyBurnerWallet(retryCount = 0) {
         // this.games[this.currentGameId ?? "0"].states[this.getActiveAccount] = GameStates.Cancelling;
         //console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
         const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = this.getWeb3.utils.toWei("0.3", "gwei");
-        const gasLimit = 3000000;
+        const gasPrice = await this.getWeb3.eth.getGasPrice();
+        const gasLimit = await this.contractInstance.methods
+            .cancel(parseInt(this.currentGameId))
+            .estimateGas({
+              from: accounts[0],
+              to: this.contractInstance.options.address,
+            });
+
+        //check if user has enough funds
+        const totalGasCost = gasPrice * gasLimit;
+        const balanceInWei = this.balance * 10 ** 18;
+        if(balanceInWei < totalGasCost){
+          this.setDoesNotHaveFunds(totalGasCost, this.cancelGame);
+          return;
+        }
 
         // if(this.isBurner){
         //   this.burnerNonce = await this.getWeb3Read.eth.getTransactionCount(this.burnerAddress, 'pending');
@@ -1954,8 +2046,18 @@ async emptyBurnerWallet(retryCount = 0) {
         // this.games[this.currentGameId ?? "0"].states[this.getActiveAccount] = GameStates.Cancelling;
         //console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
         const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = this.getWeb3.utils.toWei("0.3", "gwei");
-        const gasLimit = 3000000;
+        const gasPrice = await this.getWeb3.eth.getGasPrice();
+        const gasLimit = this.isBurner ? await this.burnerContractInstance.methods
+            .leave(parseInt(this.currentGameId))
+            .estimateGas({
+              from: accounts[0],
+              to: this.contractInstance.options.address,
+            }) : await this.contractInstance.methods
+            .leave(parseInt(this.currentGameId))
+            .estimateGas({
+              from: accounts[0],
+              to: this.contractInstance.options.address,
+            });
 
         if(this.isBurner){
           this.burnerNonce = await this.getWeb3Read.eth.getTransactionCount(this.burnerAddress, 'pending');
@@ -2425,6 +2527,15 @@ async emptyBurnerWallet(retryCount = 0) {
 
     },
 
+    clearQueryString() {
+      //clear query string from url
+      var url = new URL(window.location.toString());
+        url.search = '';
+        window.history.replaceState({}, document.title, url.toString());
+        this.$store.dispatch("setJoiningPassword", "");
+        this.$store.dispatch("setIsJoiningPasswordMatch", false);
+    },
+
     async checkJoiningPassword() {
       const urlParams = new URLSearchParams(window.location.search);
       const joiningPassword = urlParams.get('game');
@@ -2434,14 +2545,10 @@ async emptyBurnerWallet(retryCount = 0) {
 
       if(joiningPassword && !this.isInGame && !this.isJoiningGame && betAmount) {
         this.$store.dispatch("setJoiningPassword", joiningPassword);
+        console.log("joining match with bet amount", betAmount)
         await this.joinPasswordMatch(joiningPassword, betAmount);
 
-        //clear query string from url
-        var url = new URL(window.location.toString());
-        url.search = '';
-        window.history.replaceState({}, document.title, url.toString());
-        this.$store.dispatch("setJoiningPassword", "");
-        this.$store.dispatch("setIsJoiningPasswordMatch", false);
+        
 
       }
       

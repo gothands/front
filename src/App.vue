@@ -25,9 +25,15 @@
 		
 		
 	  </nav>
-    <p v-if="joiningPassword">
-      Joining match: {{ joiningPassword }} ...
-    </p>
+    <div style="display:flex;align-items:center;justify-content:center; width:100%;">
+      <p 
+        v-if="joiningPassword"
+        class="joining-password"
+      >
+        Joining match: {{ joiningPassword.toUpperCase() }} ...
+      </p>
+    </div>
+    
   <router-view/>
 </template>
 
@@ -138,7 +144,6 @@ export default {
       if(joiningPassword && betAmount) {
         store.dispatch("setJoiningPassword", joiningPassword);
         store.dispatch("setIsJoiningPasswordMatch", false);
-
       }
       
     }
@@ -295,7 +300,7 @@ export default {
           autoSelect: {
             label: 'Select a wallet to connect',
             disableModals: true,
-          }
+          },
         })
         
         console.log("mointing",onboard.state.get())
@@ -336,7 +341,7 @@ export default {
 
     const pollBalance = async () => {
       await fetchBalance();
-      setTimeout(pollBalance, 5000); // Poll every 5000 milliseconds (5 seconds)
+      setTimeout(pollBalance, 1000); // Poll every 5000 milliseconds (5 seconds)
     };
 
 
