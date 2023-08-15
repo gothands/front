@@ -6,6 +6,7 @@
     v-model:win="winModal"
     v-model:bet="selectedBet"
     v-model:leaver="leaverModal"
+    v-model:player="this.activeAccount"
   >
     Hello world
   </Modal>
@@ -1401,9 +1402,16 @@ async emptyBurnerWallet(retryCount = 0) {
         //get winner and loser points from yourCurrentPoints and opponentCurrentPoints
         this.winnerPoints = this.yourCurrentPoints > this.opponentCurrentPoints ? this.yourCurrentPoints : this.opponentCurrentPoints;
         this.loserPoints = this.yourCurrentPoints < this.opponentCurrentPoints ? this.yourCurrentPoints : this.opponentCurrentPoints;
-        this.winModal = this.calcWinnerFromAmount(this.games[gameId], this.activeAccount)
+        const isPlayerA = this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase()
         this.showModal = true;
         this.leaverModal = outcome == Outcomes.PlayerALeft ? this.games[gameId].playerA : outcome == Outcomes.PlayerBLeft ? this.games[gameId].playerB : null
+        this.winModal = isPlayerA ? 
+          outcome == Outcomes.PlayerA && this.activeAccount.toLowerCase() != this.leaverModal.toLowerCase() :
+          outcome == Outcomes.PlayerB && this.activeAccount.toLowerCase() != this.leaverModal.toLowerCase()
+        //this.winModal = outcome == Outcomes.PlayerA ? this.games[gameId].playerA : outcome == Outcomes.PlayerB ? this.games[gameId].playerB : null
+        console.log("Modal Stats", this.winnerPoints, this.loserPoints, this.winModal, this.leaverModal);
+        console.log("Modal Stats, Outcomes.PlayerALeft and Outcomes.PlayerBLeft", Outcomes.PlayerALeft, Outcomes.PlayerBLeft);
+        console.log("Modal States outcome", outcome);
         //empty burner wallet
         this.emptyBurnerWallet()
       }
@@ -1872,10 +1880,10 @@ async emptyBurnerWallet(retryCount = 0) {
         //check if user has enough funds
         const totalGasCost = gasPrice * gasLimit;
         const balanceInWei = this.balance * 10 ** 18;
-        if(balanceInWei < totalGasCost){
-          this.setDoesNotHaveFunds(totalGasCost, this.joinPasswordMatch);
-          return;
-        }
+        // if(balanceInWei < totalGasCost){
+        //   this.setDoesNotHaveFunds(totalGasCost, this.joinPasswordMatch);
+        //   return;
+        // }
 
         //set password
         if(this.isBurner){
