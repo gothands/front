@@ -49,3 +49,6 @@ export const RPC_URLS = {
 };
 
 export const CURRENT_CHAIN_ID = CHAIN_ID_ARBITRUM_GOERLI;
+
+export const DEFAULT_FETCH_BLOCK = 34700240;
+export const APPLICATION_FEE = 0.05;

@@ -394,7 +394,7 @@ import GameMove from "./GameMove.vue";
 import GameList from "./GameList.vue";
 import Modal from "./Modal.vue";
 import ProfileItem from "./ProfileItem.vue";
-import { Moves, Outcomes, GameStates } from "../types";
+import { Moves, Outcomes, GameStates, APPLICATION_FEE, DEFAULT_FETCH_BLOCK } from "../types";
 import Web3 from "web3";
 import { sha256 } from "js-sha256";
 import RampInstantSDK from "@ramp-network/ramp-instant-sdk";
@@ -407,8 +407,6 @@ import ModalAddFunds from './ModalAddFunds.vue'
 
 const CONTRACT_ADDRESS = mainContracts.deployedContracts.Hands
 const CONTRACT_ABI = mainContracts.deployedAbis.Hands
-const DEFAULT_FETCH_BLOCK = 33190809;
-const APPLICATION_FEE = 0.05;
 
 //EXAMPLE Game.
 // {
