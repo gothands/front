@@ -1,7 +1,7 @@
 <template>
     <div>
         <router-link class="player-item" :to="'/profile/' + address">
-            <div class="profile-mini"></div>
+            <div class="profile-mini" ref="profileMini"></div>
             <p>{{ user }}</p>
           </router-link>
     </div>
@@ -21,6 +21,8 @@
 
 <script>
 import { Outcomes } from '@/types'
+import jazzicon from '@metamask/jazzicon'
+
 export default {
     props: {
         address: {
@@ -43,12 +45,26 @@ export default {
             }else {
                 return this.truncateAddress(this.address)
             }
-        }
+        },
     },
     methods: {
+        updateJazzicon() {
+        const seed = parseInt(this.address?.slice(2, 10), 16); // Convert the address slice to a number
+        const icon = jazzicon(32, seed); // Use the seed to generate the Jazzicon
+        const profileMini = this.$refs.profileMini;
+        profileMini.innerHTML = ''; // Clear previous jazzicon
+        profileMini.appendChild(icon);
+        console.log("updated jazzicon");
+    },
         truncateAddress(address) {
             return address?.slice(0, 6) + "..." + address?.slice(-4)
         }
+    },
+    watch: {
+        address: 'updateJazzicon'
+    },
+    mounted() {
+        this.updateJazzicon();
     }
 }
 </script>
