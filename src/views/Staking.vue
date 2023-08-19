@@ -4,7 +4,9 @@
         class="content staking-view">
         <router-link class="back" to="/">
         </router-link>
-        <div style="margin-bottom:56;" class="profile-big"></div>
+        <div style="margin-bottom:56;" class="profile-big">
+          <profile-icon :address="activeAccount" :isLarge="true" />
+        </div>
         <p >Your balance</p>
         <div style="display:flex; justify-content:center; gap:40px; align-items:end;">
         <h1 style="margin:0; margin-top: -20px; margin-bottom:70px; padding:0; align-items:end; margin-bottom:-20px; font-size: 100px;">
@@ -130,7 +132,7 @@
   width: 240px;
 height: 240px;
 flex-shrink: 0;
-  border-radius: 240px;
+  border-radius: 1240px;
 background:  #E9E9E9 -105.215px 0px / 149.927% 100% no-repeat;
 box-shadow: 0px 50px 120px 0px rgba(0, 0, 0, 0.08);
 }
@@ -212,6 +214,7 @@ align-items: end;
 import GameMove from '@/components/GameMove.vue';
 import ModalStake from '@/components/ModalStake.vue';
 import ListStaking from '@/components/ListStaking.vue';
+import ProfileIcon from '@/components/ProfileIcon.vue';
     
     //EXAMPLE Game.
     // {
@@ -264,7 +267,8 @@ import ListStaking from '@/components/ListStaking.vue';
     export default {
       components: {
             ModalStake,
-            ListStaking
+            ListStaking,
+            ProfileIcon,
       },
     //   props: {
     //     provider: {

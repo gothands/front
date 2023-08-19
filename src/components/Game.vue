@@ -84,7 +84,7 @@
             <GameMove v-if="bothRevealed" :move="selectedMove"/>
             <GameMove v-else :move="4"/>
             <div class="address-container">
-              <div class="profile-mini"></div>
+              <div class="profile-mini"><profile-icon :address="yourAddress" :isMini="true" /></div>
                 <p class="address">{{ truncateAddress(yourAddress) }}</p>
             </div>
             <div class="player-balance">
@@ -111,8 +111,8 @@
           <GameMove class="hide-for-mobile" v-if="bothRevealed" :move="selectedMove"/>
             <GameMove class="hide-for-mobile" v-else :move="4"/>
           <div class="address-container">
-            <div class="profile-mini"></div>
-              <p class="address">{{ truncateAddress(yourAddress) }}</p>
+            <div class="profile-mini"><profile-icon :address="yourAddress" :isMini="true" /></div>
+            <p class="address">{{ truncateAddress(yourAddress) }}</p>
           </div>
           <div class="player-balance">
             ${{ balance }}
@@ -191,8 +191,8 @@
                   <GameMove class="flip" v-else-if="isOpponentMoveSent" :move="5"/>
                   <GameMove class="flip" v-else :move="4"/>
                 <div class="address-container">
-                  <div class="profile-mini"></div>
-                   <p class="address">{{ truncateAddress(opponentAddress) }}</p>
+                  <div class="profile-mini"><profile-icon :address="opponentAddress" :isMini="true" /></div>
+                  <p class="address">{{ truncateAddress(opponentAddress) }}</p>
                 </div>
                 <div class="player-balance hide-for-mobile">
                   ${{ opponentBalance }}
@@ -403,6 +403,7 @@ import GameListVue from './GameList.vue'
 import store from '@/store'
 import { getBurnerWallet, privateKeyToAccount } from '@/utils/burner'
 import ProfileItemBurner from './ProfileItemBurner.vue'
+import ProfileIcon from './ProfileIcon.vue'
 import ModalAddFunds from './ModalAddFunds.vue'
 
 const CONTRACT_ADDRESS = mainContracts.deployedContracts.Hands
@@ -464,6 +465,7 @@ export default {
       ProfileItem,
     ProfileItemBurner,
     ModalAddFunds,
+    ProfileIcon,
   },
   props: {
     provider: {

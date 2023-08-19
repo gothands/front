@@ -2,7 +2,7 @@
   <div class="content profile-view">
     <router-link class="back" to="/">
     </router-link>
-      <div class="profile-big"></div>
+    <profile-icon class="profile-big" :address="address" :isLarge="true" />
       <p>Player history</p>
       <div class="profile-display">
         <h1 style="margin:0; margin-top: -50px; padding:0; align-items:end; margin-bottom:-20px; font-size: 100px;">
@@ -89,6 +89,7 @@ align-items: end;
 
 <script>
 import ProfileItem from '@/components/ProfileItem.vue'
+import ProfileIcon from '@/components/ProfileIcon.vue'
 import ProfileGameList from '@/components/ProfileGameList.vue'
 import { Outcomes } from '@/types'
 import RPC from '../web3RPC'
@@ -97,7 +98,8 @@ const APPLICATION_FEE = 0.05;
 export default {
   components: {
     ProfileItem,
-    ProfileGameList
+    ProfileGameList,
+    ProfileIcon,
   },
   data() {
     return {

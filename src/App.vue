@@ -23,11 +23,8 @@
 			@click="leaveGame">
 			Leave
 		</button> 
-			<div
-				v-if="loggedin"
-				class="profile"
-			>
-			</div>
+    <profile-icon v-if="loggedin" class="profile" :address="activeAccount" :isMedium="true" />
+
 		</div>
 		
 		
@@ -63,6 +60,7 @@ a:visited {
 
 <script lang="ts">
 import Game from "./components/Game.vue";
+import ProfileIcon from "./components/ProfileIcon.vue";
 import Staking from "./components/Staking.vue";
 import Web3 from "web3";
 import Onboard from '@web3-onboard/core'
@@ -119,6 +117,7 @@ export default {
   components: {
     Game,
     Staking,
+    ProfileIcon,
   },
   computed: mapState([
     'loggedin',
