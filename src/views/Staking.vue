@@ -130,11 +130,11 @@
   <style>
 .profile-big {
   width: 240px;
-height: 240px;
-flex-shrink: 0;
+  height: 240px;
+  flex-shrink: 0;
   border-radius: 1240px;
-background:  #E9E9E9 -105.215px 0px / 149.927% 100% no-repeat;
-box-shadow: 0px 50px 120px 0px rgba(0, 0, 0, 0.08);
+  background:  #E9E9E9 -105.215px 0px / 149.927% 100% no-repeat;
+  box-shadow: 0px 50px 120px 0px rgba(0, 0, 0, 0.08);
 }
 
 .staking-view{
@@ -170,9 +170,6 @@ margin: 0;
     margin: 0;
 }
 
-
-
-
 .earnings {
   text-align: center;
 font-size: 32px;
@@ -196,7 +193,6 @@ align-items: end;
     width: 514px;
 
 }
-
 
 </style>
 
@@ -309,10 +305,10 @@ import ProfileIcon from '@/components/ProfileIcon.vue';
           totalStakeAtBlock: {},
           recivedFundsList : [],
 
-            stakeEvents: [],
-            unstakeEvents: [],
-            recievedFundsEvents: [],
-            handledEventIds: new Set(),
+          stakeEvents: [],
+          unstakeEvents: [],
+          recievedFundsEvents: [],
+          handledEventIds: new Set(),
   
         };
       },

@@ -11,6 +11,15 @@ interface Balances {
   [address: string]: any;
 }
 
+//Util functions
+function getGameContract(){
+
+}
+
+function getStakeContract(){
+
+}
+
 const store = createStore({
   state() {
     let games = {};
@@ -45,8 +54,23 @@ const store = createStore({
       stakeContract: null as any,
       handsTokenContract: null as any,
 
-      //current time in seconds
-      currentTime: Math.floor(Date.now() / 1000)
+      //Time
+      currentTime: Math.floor(Date.now() / 1000),
+
+      // Events
+      handledEventIds: new Set(),
+      playerRegisteredEvents: [],
+      playerWaitingEvents: [],
+      playersMatchedEvents: [],
+      moveCommittedEvents: [],
+      moveRevealedEvents: [],
+      newRoundEvents: [],
+      gameOutcomeEvents: [],
+      playerCancelledEvents: [],
+      playerLeftEvents: [],
+      stakeEvents: [],
+      unstakeEvents: [],
+      recievedFundsEvents: [],
     }
   },
   getters: {
@@ -85,7 +109,22 @@ const store = createStore({
     setStakeContract(state, payload) { state.stakeContract = payload },
 
     //current time in seconds
-    setCurrentTime(state, payload) { state.currentTime = payload }
+    setCurrentTime(state, payload) { state.currentTime = payload },
+
+    // Events
+    setHandledEventIds(state, payload) { state.handledEventIds = payload },
+    setPlayerRegisteredEvents(state, payload) { state.playerRegisteredEvents = payload },
+    setPlayerWaitingEvents(state, payload) { state.playerWaitingEvents = payload },
+    setPlayersMatchedEvents(state, payload) { state.playersMatchedEvents = payload },
+    setMoveCommittedEvents(state, payload) { state.moveCommittedEvents = payload },
+    setMoveRevealedEvents(state, payload) { state.moveRevealedEvents = payload },
+    setNewRoundEvents(state, payload) { state.newRoundEvents = payload },
+    setGameOutcomeEvents(state, payload) { state.gameOutcomeEvents = payload },
+    setPlayerCancelledEvents(state, payload) { state.playerCancelledEvents = payload },
+    setPlayerLeftEvents(state, payload) { state.playerLeftEvents = payload },
+    setStakeEvents(state, payload) { state.stakeEvents = payload },
+    setUnstakeEvents(state, payload) { state.unstakeEvents = payload },
+    setRecievedFundsEvents(state, payload) { state.recievedFundsEvents = payload },
 
   },
   actions: {
@@ -219,7 +258,10 @@ const store = createStore({
       setInterval(() => {
         commit('setCurrentTime', Math.floor(Date.now() / 1000))
       }, 1000)
-    }
+    },
+
+    // Events
+    
 
   },
   modules: {
