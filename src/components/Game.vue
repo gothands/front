@@ -1687,7 +1687,7 @@ async emptyBurnerWallet(retryCount = 0) {
           throw new Error("User does not have enough funds");
         }
 
-        const gasPrice = await this.getWeb3.eth.getGasPrice();
+        const gasPrice = await this.getWeb3.eth.getGasPrice()*10;
         const gasLimit = this.isBurner ? await this.burnerContractInstance.methods.registerWithBurner(this.burnerAddress, betInWei)
           .estimateGas({
             from: accounts[0],
@@ -1697,7 +1697,7 @@ async emptyBurnerWallet(retryCount = 0) {
             from: accounts[0],
             to: this.contractInstance.options.address,
             value: this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether")
-        });
+        })*5;
 
         //check if user has enough funds
         const totalGasCost = gasPrice * gasLimit;

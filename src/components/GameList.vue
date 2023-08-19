@@ -194,8 +194,8 @@ const APPLICATION_FEE = 0.05;
         return outcome == Outcomes.Cancelled
       },
       isLeaver(game, player){
-        const outcome = game.outcome
-        return outcome === Outcomes.Left && game?.leaver?.toLowerCase() === player.toLowerCase()
+        const isPlayerA = player?.toLowerCase() === game.playerA?.toLowerCase()
+        return isPlayerA ? game.outcome == Outcomes.PlayerALeft : game.outcome == Outcomes.PlayerBLeft
       },
       isWinner(game, player){
         const winnings = this.getPlayerWinnings(game, player)

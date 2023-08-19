@@ -20,18 +20,36 @@
           >ETH</span>
         </h1>
         <div style="display:flex; gap:20px; align-items:end">
-          <div class="earnings">
+          <div
+            v-if="this.earnings > 0"
+           class="earnings green">
+            +{{this.earnings?.toString().split(".")[0]}}
             <span
-              class="currency-symbol"
-            >$</span>
+              >
+              .{{ this.earnings?.toString().split(".")[1]?.substring(0,4)?? "00" }}
+    
+            </span>
+            <span
+              class="green"
+              style="margin-left:5px;"
+            >ETH</span>
+          </div>
+          <div
+            v-else-if="this.earnings <= 0"
+           class="earnings red">
             {{this.earnings?.toString().split(".")[0]}}
             <span
               >
               .{{ this.earnings?.toString().split(".")[1]?.substring(0,4)?? "00" }}
     
             </span>
+            <span
+              class="red"
+              style="margin-left:5px;"
+            >ETH</span>
           </div>
-          <p style="margin:0;">earned</p>
+          <p v-if="this.earnings > 0" class="green" style="margin:0;">earned</p>
+          <p v-else-if="this.earnings <= 0" class="red" style="margin:0;">earned</p>
         </div>
       </div>
       <profile-item :address="address" />
@@ -89,17 +107,15 @@ export default {
   async mounted() {
     this.$store.dispatch('setBalanceOf', this.address)
     const rpc = new RPC(this.$store.state.provider)
-      
-
       //do this every 10 seconds
-        const balance = await rpc.getBalanceOf(this.address)
+      const balance = await rpc.getBalanceOf(this.address)
 
-        let balances = {...this.$store.state.balances}
-        balances[this.address.toLowerCase()] = balance
-        console.log("balances", balance)
-        console.log("balances", balances)
-        this.$store.commit('setBalances', balances)
-        this.balance = balance
+      let balances = {...this.$store.state.balances}
+      balances[this.address.toLowerCase()] = balance
+      console.log("balances", balance)
+      console.log("balances", balances)
+      this.$store.commit('setBalances', balances)
+      this.balance = balance
     console.log("mounted")
   },
   methods:{
@@ -165,9 +181,10 @@ export default {
           game => 
             game.gameId != "0" &&
             (game.playerA.toLowerCase() == this.address.toLowerCase() || game.playerB.toLowerCase() == this.address.toLowerCase()) &&
-            (game.outcome != Outcomes.None || game.outcome != Outcomes.Cancelled) &&
+            (game.outcome != Outcomes.None && game.outcome != Outcomes.Cancelled) &&
             (game.playerB != "" && game.playerA != "")
         )
+        .sort((a, b) => parseInt(b.time ?? 0) - parseInt(a.time?? 0))
     },
     completedGames() {
       console.log("completed games", this.games.filter(game => game.outcome != Outcomes.None))
@@ -178,9 +195,8 @@ export default {
 
       for (let game of this.games) {
         const playerWinnings = this.getPlayerWinnings(game, this.address)
-
-        earnings += playerWinnings
-
+        console.log("earnings value: for", this.address, playerWinnings, game.outcome)
+        earnings += parseFloat(playerWinnings)
       }
 
       console.log("earnings", earnings)
