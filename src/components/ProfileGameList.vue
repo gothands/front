@@ -1,6 +1,6 @@
 <template>
-    <div style="margin: 120px 80px;">
-      <table style="table-layout: fixed;">
+    <div style="margin: 120px 80px; overflow:auto;">
+      <table style="">
         <thead>
         
           <tr>

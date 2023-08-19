@@ -886,6 +886,13 @@ gap: 10px;
 
 }
 
+.profile-display {
+  display:flex; 
+  justify-content:center; 
+  gap:40px; 
+  align-items:end;
+}
+
 
 
 /* Mobile */
@@ -959,6 +966,20 @@ gap: 10px;
     margin-top: -21px;
   }
 
+  .profile-display {
+    display:flex;
+    justify-content:center; 
+    gap:40px; 
+    align-items:end;
+    flex-direction: column;
+  }
+
+  .profile-big {
+    width: 100px;
+    height: 100px;
+    border-radius: 100px;
+  }
+
 }
 
 /* Tablet */
@@ -971,9 +992,14 @@ gap: 10px;
     justify-content: space-evenly;
     gap: 20px;
     height: 70vh;
-
   }
 
+
+  .profile-big {
+    width: 150px;
+    height: 150px;
+    border-radius: 100px;
+  }
   
 
   .game-view > div {

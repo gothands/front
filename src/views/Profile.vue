@@ -4,7 +4,7 @@
     </router-link>
       <div class="profile-big"></div>
       <p>Player history</p>
-      <div style="display:flex; justify-content:center; gap:40px; align-items:end;">
+      <div class="profile-display">
         <h1 style="margin:0; margin-top: -50px; padding:0; align-items:end; margin-bottom:-20px; font-size: 100px;">
           
           {{this.balance?.toString().split(".")[0]}}
