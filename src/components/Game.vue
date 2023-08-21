@@ -795,7 +795,7 @@ export default {
     const lastSentMove = localStorage.getItem("lastSentMove");
     const lastRandomString = localStorage.getItem("lastRandomString");
     const lastBetAmount = localStorage.getItem("lastBetAmount");
-    const playWithFriend = localStorage.getItem("playWithFriend");
+    const playWithRandom = localStorage.getItem("playWithRandom");
     const lastFetchedBlock = localStorage.getItem("lastFetchedBlock");
 
     console.log("in storage lastFetchedBlock", lastFetchedBlock ?? "null")
@@ -819,9 +819,9 @@ export default {
     this.lastFetchedBlock = lastFetchedBlock ?? DEFAULT_FETCH_BLOCK
     console.log("lastFetchedBlock", this.lastFetchedBlock)
 
-    this.playWithFriend = playWithFriend === "true" ? true : false;
+    this.playWithFriend = playWithRandom === "true" ? false : true;
     console.log("playWithFriend", this.playWithFriend);
-    console.log("playWithFriend localStorage", localStorage.getItem("playWithFriend"));
+    console.log("playWithFriend localStorage", localStorage.getItem("playWithRandom"));
 
     this.uncacheEvents()
 
@@ -956,15 +956,15 @@ export default {
       this.selectedBet = this.wagerSteps[this.sliderIndex];
     },
     togglePlayWithFriend() {
-      const localStoragePlayWithFriend = localStorage.getItem("playWithFriend");
-      if (localStoragePlayWithFriend == "true") {
+      const localStoragePlayWithRandom = localStorage.getItem("playWithRandom");
+      if (localStoragePlayWithRandom == "true") {
         console.log("setting playWithFriend to false");
-        localStorage.setItem("playWithFriend", false);
-        this.playWithFriend = false;
+        localStorage.setItem("playWithRandom", false);
+        this.playWithFriend = true;
       } else {
         console.log("setting playWithFriend to true");
-        localStorage.setItem("playWithFriend", true);
-        this.playWithFriend = true;
+        localStorage.setItem("playWithRandom", true);
+        this.playWithFriend = false;
       }
       
     },
