@@ -492,15 +492,15 @@ export default {
       contractReadInstance: null,
       pastGames: [],
 
-      playerRegisteredEvents: [],
-      playerWaitingEvents: [],
-      playersMatchedEvents: [],
-      moveCommittedEvents: [],
-      moveRevealedEvents: [],
-      newRoundEvents: [],
-      gameOutcomeEvents: [],
-      playerCancelledEvents: [],
-      playerLeftEvents: [],
+      // playerRegisteredEvents: [],
+      // playerWaitingEvents: [],
+      // playersMatchedEvents: [],
+      // moveCommittedEvents: [],
+      // moveRevealedEvents: [],
+      // newRoundEvents: [],
+      // gameOutcomeEvents: [],
+      // playerCancelledEvents: [],
+      // playerLeftEvents: [],
 
       wagerSteps: ["0.01", "0.1", "1", "5", "10"],
       sliderIndex: 0,
@@ -534,7 +534,6 @@ export default {
       joiningPassword: null,
 
       lastFetchedBlock: DEFAULT_FETCH_BLOCK,
-      fetchingEvents: false,
 
       onAddFunds: () => {
         console.log("onAddFunds")
@@ -544,6 +543,19 @@ export default {
     };
   },
   computed: {
+    triggerProcessEvents() { return this.$store.state.triggerProcessEvents },
+    fetchingEvents() { return this.$store.state.isFetchingEvents},
+
+    playerRegisteredEvents() { return this.$store.state.playerRegisteredEvents },
+    playerWaitingEvents() { return this.$store.state.playerWaitingEvents },
+    playersMatchedEvents() { return this.$store.state.playersMatchedEvents },
+    moveCommittedEvents() { return this.$store.state.moveCommittedEvents },
+    moveRevealedEvents() { return this.$store.state.moveRevealedEvents },
+    newRoundEvents() { return this.$store.state.newRoundEvents },
+    gameOutcomeEvents() { return this.$store.state.gameOutcomeEvents },
+    playerCancelledEvents() { return this.$store.state.playerCancelledEvents },
+    playerLeftEvents() { return this.$store.state.playerLeftEvents },
+
     isMetamask(){ return this.$store.state.isMetamask },
     isBurner(){ return this.burnerAddress != null && this.burnerPrivateKey != null && this.burnerContractInstance != null },
     //Game state
@@ -786,7 +798,6 @@ export default {
   async mounted() {
     console.log("provider", this.provider)
     this.initialized = false
-    this.fetchingEvents = true;
     
 
     console.log("ramp sdk", RampInstantSDK)
@@ -796,7 +807,7 @@ export default {
     const lastRandomString = localStorage.getItem("lastRandomString");
     const lastBetAmount = localStorage.getItem("lastBetAmount");
     const playWithRandom = localStorage.getItem("playWithRandom");
-    const lastFetchedBlock = localStorage.getItem("lastFetchedBlock");
+    //const lastFetchedBlock = localStorage.getItem("lastFetchedBlock");
 
     console.log("in storage lastFetchedBlock", lastFetchedBlock ?? "null")
 
@@ -816,16 +827,16 @@ export default {
       this.randomString = lastRandomString;
     }
 
-    this.lastFetchedBlock = lastFetchedBlock ?? DEFAULT_FETCH_BLOCK
-    console.log("lastFetchedBlock", this.lastFetchedBlock)
+    //this.lastFetchedBlock = lastFetchedBlock ?? DEFAULT_FETCH_BLOCK
+    //console.log("lastFetchedBlock", this.lastFetchedBlock)
 
     this.playWithFriend = playWithRandom === "true" ? false : true;
     console.log("playWithFriend", this.playWithFriend);
     console.log("playWithFriend localStorage", localStorage.getItem("playWithRandom"));
 
-    this.uncacheEvents()
+    // this.uncacheEvents()
 
-    this.fetchPastGames();
+    // this.fetchPastGames();
     this.subscribeToEvents();
 
     this.initialized = true
@@ -843,6 +854,10 @@ export default {
     
   },
   watch:{
+    triggerProcessEvents: {
+      handler(){ this.processEvents() },
+      immediate: true,
+    },
     games: {
       handler(newValue, oldValue) {
         console.log("yourGameState", gameStateToString(this.gameState));
@@ -1534,6 +1549,7 @@ async emptyBurnerWallet(retryCount = 0) {
             }
 
             handledEventIds.add(eventId);
+            this.$store.dispatch("addEvent", {eventName, event})
         })
         .on('error', (error) => {
             console.error(`Error on event ${eventName}:`, error);
@@ -2600,7 +2616,6 @@ async emptyBurnerWallet(retryCount = 0) {
 
 
       await this.processEvents();
-      this.fetchingEvents = false;
     },
   },
 };

@@ -5,7 +5,7 @@ import Onboard from '@web3-onboard/core'
 import injectedModule from '@web3-onboard/injected-wallets'
 
 import mainContracts from "../../../contracts/local-contracts.json"
-import { CURRENT_CHAIN_ID } from '../types/index';
+import { CURRENT_CHAIN_ID, DEFAULT_FETCH_BLOCK, READ_PROVIDER_URL } from '../types/index';
 
 interface Balances {
   [address: string]: any;
@@ -58,6 +58,9 @@ const store = createStore({
       currentTime: Math.floor(Date.now() / 1000),
 
       // Events
+      triggerProcessEvents: false,
+      isFetchingEvents: false,
+      lastFetchedBlock: DEFAULT_FETCH_BLOCK,
       handledEventIds: new Set(),
       playerRegisteredEvents: [],
       playerWaitingEvents: [],
@@ -112,6 +115,9 @@ const store = createStore({
     setCurrentTime(state, payload) { state.currentTime = payload },
 
     // Events
+    triggerProcessEvents(state, payload){ state.triggerProcessEvents = payload},
+    setIsFetchingEvents(state, payload) { state.isFetchingEvents = payload },
+    setLastFetchBlock(state, payload) { state.lastFetchedBlock = payload },
     setHandledEventIds(state, payload) { state.handledEventIds = payload },
     setPlayerRegisteredEvents(state, payload) { state.playerRegisteredEvents = payload },
     setPlayerWaitingEvents(state, payload) { state.playerWaitingEvents = payload },
@@ -261,7 +267,196 @@ const store = createStore({
     },
 
     // Events
-    
+    addEvent({commit, state}, {eventName, event}){
+      switch (eventName) {
+        case "PlayerRegistered":
+          commit('setPlayerRegisteredEvents', [...state.playerRegisteredEvents, event]);
+          localStorage.setItem('playerRegisteredEvents', JSON.stringify(state.playerRegisteredEvents))
+          break;
+      
+        case "PlayerWaiting":
+          commit('setPlayerWaitingEvents', [...state.playerWaitingEvents, event]);
+          localStorage.setItem('playerWaitingEvents', JSON.stringify(state.playerWaitingEvents))
+          break;
+
+        case "PlayersMatched":
+          commit('setPlayersMatchedEvents', [...state.playersMatchedEvents, event]);
+          localStorage.setItem('playersMatchedEvents', JSON.stringify(state.playersMatchedEvents))
+          break;
+      
+        case "MoveCommitted":
+          commit('setMoveCommittedEvents', [...state.moveCommittedEvents, event]);
+          localStorage.setItem('moveCommittedEvents', JSON.stringify(state.moveCommittedEvents))
+          break;
+
+        case "MoveRevealed":
+          commit('setMoveRevealedEvents', [...state.moveRevealedEvents, event]);
+          localStorage.setItem('moveRevealedEvents', JSON.stringify(state.moveRevealedEvents))
+          break;
+
+        case "NewRound":
+          commit('setNewRoundEvents', [...state.newRoundEvents, event]);
+          localStorage.setItem('newRoundEvents', JSON.stringify(state.newRoundEvents))
+          break;
+
+        case "GameOutcome":
+          commit('setGameOutcomeEvents', [...state.gameOutcomeEvents, event]);
+          localStorage.setItem('gameOutcomeEvents', JSON.stringify(state.gameOutcomeEvents))
+          break;
+
+        case "PlayerCancelled":
+          commit('setPlayerCancelledEvents', [...state.playerCancelledEvents, event]);
+          localStorage.setItem('playerCancelledEvents', JSON.stringify(state.playerCancelledEvents))
+          break;
+
+        case "PlayerLeft":
+          commit('setPlayerLeftEvents', [...state.playerLeftEvents, event]);
+          localStorage.setItem('playerLeftEvents', JSON.stringify(state.playerLeftEvents))
+          break;
+
+        case "PlayerLeft":
+          commit('setPlayerLeftEvents', [...state.playerLeftEvents, event]);
+          localStorage.setItem('playerLeftEvents', JSON.stringify(state.playerLeftEvents))
+          break;
+
+        case "PlayerLeft":
+          commit('setPlayerLeftEvents', [...state.playerLeftEvents, event]);
+          localStorage.setItem('playerLeftEvents', JSON.stringify(state.playerLeftEvents))
+          break;
+
+        case "PlayerLeft":
+          commit('setPlayerLeftEvents', [...state.playerLeftEvents, event]);
+          localStorage.setItem('playerLeftEvents', JSON.stringify(state.playerLeftEvents))
+          break;
+        
+        default:
+          break;
+      }
+
+    },
+    cacheEvents({ commit, state }) {
+      localStorage.setItem('playerRegisteredEvents', JSON.stringify(state.playerRegisteredEvents))
+      localStorage.setItem('playerWaitingEvents', JSON.stringify(state.playerWaitingEvents))
+      localStorage.setItem('playersMatchedEvents', JSON.stringify(state.playersMatchedEvents))
+      localStorage.setItem('moveCommittedEvents', JSON.stringify(state.moveCommittedEvents))
+      localStorage.setItem('moveRevealedEvents', JSON.stringify(state.moveRevealedEvents))
+      localStorage.setItem('newRoundEvents', JSON.stringify(state.newRoundEvents))
+      localStorage.setItem('gameOutcomeEvents', JSON.stringify(state.gameOutcomeEvents))
+      localStorage.setItem('playerCancelledEvents', JSON.stringify(state.playerCancelledEvents))
+      localStorage.setItem('playerLeftEvents', JSON.stringify(state.playerLeftEvents))
+      localStorage.setItem('stakeEvents', JSON.stringify(state.stakeEvents))
+      localStorage.setItem('unstakeEvents', JSON.stringify(state.unstakeEvents))
+      localStorage.setItem('recievedFundsEvents', JSON.stringify(state.recievedFundsEvents))
+    },
+    uncacheEvents({ commit, state }) {
+      commit('setPlayerRegisteredEvents', JSON.parse(localStorage.getItem('playerRegisteredEvents') || "[]"))
+      commit('setPlayerWaitingEvents', JSON.parse(localStorage.getItem('playerWaitingEvents') || "[]"))
+      commit('setPlayersMatchedEvents', JSON.parse(localStorage.getItem('playersMatchedEvents') || "[]"))
+      commit('setMoveCommittedEvents', JSON.parse(localStorage.getItem('moveCommittedEvents') || "[]"))
+      commit('setMoveRevealedEvents', JSON.parse(localStorage.getItem('moveRevealedEvents') || "[]"))
+      commit('setNewRoundEvents', JSON.parse(localStorage.getItem('newRoundEvents') || "[]"))
+      commit('setGameOutcomeEvents', JSON.parse(localStorage.getItem('gameOutcomeEvents') || "[]"))
+      commit('setPlayerCancelledEvents', JSON.parse(localStorage.getItem('playerCancelledEvents') || "[]"))
+      commit('setPlayerLeftEvents', JSON.parse(localStorage.getItem('playerLeftEvents') || "[]"))
+      commit('setStakeEvents', JSON.parse(localStorage.getItem('stakeEvents') || "[]"))
+      commit('setUnstakeEvents', JSON.parse(localStorage.getItem('unstakeEvents') || "[]"))
+      commit('setRecievedFundsEvents', JSON.parse(localStorage.getItem('recievedFundsEvents') || "[]"))
+    },
+    initLastFetchedBlock({ commit }) {
+      const lastFetchedBlock = localStorage.getItem('lastFetchedBlock')
+      if (lastFetchedBlock) {
+        commit('setLastFetchBlock', lastFetchedBlock)
+      }
+    },
+    setLastFetchBlock({ commit, state }, payload) {
+      commit('setLastFetchBlock', payload)
+      localStorage.setItem('lastFetchedBlock', payload)
+    },
+    initHandledEventIds({ commit }) {
+      const handledEventIds = localStorage.getItem('handledEventIds')
+      if (handledEventIds) {
+        commit('setHandledEventIds', new Set(JSON.parse(handledEventIds)))
+      }
+    },
+    setHandledEventIds({ commit, state }, payload) {
+      commit('setHandledEventIds', payload)
+      localStorage.setItem('handledEventIds', JSON.stringify(Array.from(payload)))
+    },
+    addHandledEventId({ commit, state }, payload) {
+      const handledEventIds = new Set(state.handledEventIds)
+      handledEventIds.add(payload)
+      commit('setHandledEventIds', handledEventIds)
+    },
+
+    async fetchEvents({ commit, state , dispatch }) {
+      //Start fetching events
+      commit('setIsFetchingEvents', true)
+
+      //Initialize events from cache
+      dispatch('initLastFetchedBlock')
+      dispatch('initHandledEventIds')
+      dispatch('uncacheEvents')
+
+      //initialize web3 Read only provider and contracts
+      const web3 = new Web3(new Web3.providers.WebsocketProvider(READ_PROVIDER_URL))
+      const handsContract = new web3.eth.Contract(
+        mainContracts.deployedAbis.Hands as any,
+        mainContracts.deployedContracts.Hands
+      )
+      const stakeContract = new web3.eth.Contract(
+        mainContracts.deployedAbis.Staking as any,
+        mainContracts.deployedContracts.Staking
+      )
+
+      //Get events from lastFetchedBlock
+      const startBlock = state.lastFetchedBlock
+      const endBlock = await web3.eth.getBlockNumber()
+      const blockLimit = 10000; // Maximum blocks that can be fetched in one request
+
+      let fromBlock = startBlock;
+      let toBlock = Math.min(fromBlock + blockLimit, endBlock);
+      while (fromBlock <= endBlock) {
+          const playerRegisteredEvents = await handsContract.getPastEvents("PlayerRegistered", { fromBlock: fromBlock, toBlock: toBlock});
+          const playerWaitingEvents = await handsContract.getPastEvents("PlayerWaiting", { fromBlock: fromBlock, toBlock: toBlock});
+          const playersMatchedEvents = await handsContract.getPastEvents("PlayersMatched", { fromBlock: fromBlock, toBlock: toBlock});
+          const moveCommittedEvents = await handsContract.getPastEvents("MoveCommitted", { fromBlock: fromBlock, toBlock: toBlock});
+          const moveRevealedEvents = await handsContract.getPastEvents("MoveRevealed", { fromBlock: fromBlock, toBlock: toBlock});
+          const newRoundEvents = await handsContract.getPastEvents("NewRound", { fromBlock: fromBlock, toBlock: toBlock});
+          const gameOutcomeEvents = await handsContract.getPastEvents("GameOutcome", { fromBlock: fromBlock, toBlock: toBlock});
+          const playerCancelledEvents = await handsContract.getPastEvents("PlayerCancelled", { fromBlock: fromBlock, toBlock: toBlock});
+          const playerLeftEvents = await handsContract.getPastEvents("PlayerLeft", { fromBlock: fromBlock, toBlock: toBlock});
+          const stakeEvents = await stakeContract.getPastEvents("Stake", { fromBlock: fromBlock, toBlock: toBlock});
+          const unstakeEvents = await stakeContract.getPastEvents("Unstake", { fromBlock: fromBlock, toBlock: toBlock});
+          const recievedFundsEvents = await stakeContract.getPastEvents("RecievedFunds", { fromBlock: fromBlock, toBlock: toBlock});
+
+          // Add to events
+          commit('setPlayerRegisteredEvents', [...state.playerRegisteredEvents, ...playerRegisteredEvents]);
+          commit('setPlayerWaitingEvents', [...state.playerWaitingEvents, ...playerWaitingEvents]);
+          commit('setPlayersMatchedEvents', [...state.playersMatchedEvents, ...playersMatchedEvents]);
+          commit('setMoveCommittedEvents', [...state.moveCommittedEvents, ...moveCommittedEvents]);
+          commit('setMoveRevealedEvents', [...state.moveRevealedEvents, ...moveRevealedEvents]);
+          commit('setNewRoundEvents', [...state.newRoundEvents, ...newRoundEvents]);
+          commit('setGameOutcomeEvents', [...state.gameOutcomeEvents, ...gameOutcomeEvents]);
+          commit('setPlayerCancelledEvents', [...state.playerCancelledEvents, ...playerCancelledEvents]);
+          commit('setPlayerLeftEvents', [...state.playerLeftEvents, ...playerLeftEvents]);
+          commit('setStakeEvents', [...state.stakeEvents, ...stakeEvents]);
+          commit('setUnstakeEvents', [...state.unstakeEvents, ...unstakeEvents]);
+          commit('setRecievedFundsEvents', [...state.recievedFundsEvents, ...recievedFundsEvents]);
+
+          //Cache events and set last fetched block
+          dispatch('setLastFetchBlock', toBlock);
+          dispatch('cacheEvents')
+
+          // Update blocks for the next iteration
+          fromBlock = toBlock + 1;
+          toBlock = Math.min(fromBlock + blockLimit, endBlock);  
+          
+          //process events
+          commit('triggerProcessEvents', !state.triggerProcessEvents);
+      }
+
+    },
+
 
   },
   modules: {
@@ -270,5 +465,6 @@ const store = createStore({
 })
 
 store.dispatch('setTime')
+store.dispatch('fetchEvents')
 
 export default store

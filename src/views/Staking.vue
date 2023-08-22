@@ -313,6 +313,9 @@ import ProfileIcon from '@/components/ProfileIcon.vue';
         };
       },
       computed: {
+        stakeEvents() { return this.$store.state.stakeEvents },
+        unstakeEvents() { return this.$store.state.unstakeEvents },
+        recievedFundsEvents() { return this.$store.state.recievedFundsEvents },
         provider() { return this.$store.state.provider },
         getActiveAccount() { return this.activeAccount?.toLowerCase()},
         getWeb3() {return new Web3(this.provider);},
@@ -332,7 +335,12 @@ import ProfileIcon from '@/components/ProfileIcon.vue';
                 }
             },
             immediate: true
-        }
+        },
+        triggerProcessEvents: {
+          handler(){ this.processEvents() },
+          immediate: true,
+        },
+
     },
       methods: {
           async init(){
@@ -345,7 +353,7 @@ import ProfileIcon from '@/components/ProfileIcon.vue';
               this.setClaimableEthForAffiliate();
               this.setProtocolFeeRevenue();
 
-              this.fetchPastEvents();
+              //this.fetchPastEvents();
               this.subscribeToEvents();
 
 
@@ -761,6 +769,7 @@ import ProfileIcon from '@/components/ProfileIcon.vue';
                       eventHandlers[eventName].call(this, event, userAddress);
 
                       handledEventIds.add(eventId);
+                      this.$store.dispatch("addEvent", {eventName, event})
                   })
                   .on('error', (error) => {
                       console.error(`Error on event ${eventName}:`, error);
