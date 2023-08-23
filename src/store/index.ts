@@ -398,7 +398,7 @@ const store = createStore({
       dispatch('uncacheEvents')
 
       //initialize web3 Read only provider and contracts
-      const web3 = new Web3(new Web3.providers.WebsocketProvider(READ_PROVIDER_URL))
+      const web3 = new Web3(new Web3.providers.HttpProvider(READ_PROVIDER_URL))
       const handsContract = new web3.eth.Contract(
         mainContracts.deployedAbis.Hands as any,
         mainContracts.deployedContracts.Hands
@@ -411,11 +411,12 @@ const store = createStore({
       //Get events from lastFetchedBlock
       const startBlock = state.lastFetchedBlock
       const endBlock = await web3.eth.getBlockNumber()
-      const blockLimit = 10000; // Maximum blocks that can be fetched in one request
+      const blockLimit = 100; // Maximum blocks that can be fetched in one request
 
       let fromBlock = startBlock;
       let toBlock = Math.min(fromBlock + blockLimit, endBlock);
       while (fromBlock <= endBlock) {
+        console.log("fetching events from block", fromBlock, "to block", toBlock)
           const playerRegisteredEvents = await handsContract.getPastEvents("PlayerRegistered", { fromBlock: fromBlock, toBlock: toBlock});
           const playerWaitingEvents = await handsContract.getPastEvents("PlayerWaiting", { fromBlock: fromBlock, toBlock: toBlock});
           const playersMatchedEvents = await handsContract.getPastEvents("PlayersMatched", { fromBlock: fromBlock, toBlock: toBlock});
@@ -425,9 +426,9 @@ const store = createStore({
           const gameOutcomeEvents = await handsContract.getPastEvents("GameOutcome", { fromBlock: fromBlock, toBlock: toBlock});
           const playerCancelledEvents = await handsContract.getPastEvents("PlayerCancelled", { fromBlock: fromBlock, toBlock: toBlock});
           const playerLeftEvents = await handsContract.getPastEvents("PlayerLeft", { fromBlock: fromBlock, toBlock: toBlock});
-          const stakeEvents = await stakeContract.getPastEvents("Stake", { fromBlock: fromBlock, toBlock: toBlock});
-          const unstakeEvents = await stakeContract.getPastEvents("Unstake", { fromBlock: fromBlock, toBlock: toBlock});
-          const recievedFundsEvents = await stakeContract.getPastEvents("RecievedFunds", { fromBlock: fromBlock, toBlock: toBlock});
+          const stakeEvents = await stakeContract.getPastEvents("Staked", { fromBlock: fromBlock, toBlock: toBlock});
+          const unstakeEvents = await stakeContract.getPastEvents("Unstaked", { fromBlock: fromBlock, toBlock: toBlock});
+          const recievedFundsEvents = await stakeContract.getPastEvents("ReceivedFundsForStaking", { fromBlock: fromBlock, toBlock: toBlock});
 
           // Add to events
           commit('setPlayerRegisteredEvents', [...state.playerRegisteredEvents, ...playerRegisteredEvents]);

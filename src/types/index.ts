@@ -50,7 +50,7 @@ export const RPC_URLS = {
 
 export const CURRENT_CHAIN_ID = CHAIN_ID_ARBITRUM_GOERLI;
 
-export const READ_PROVIDER_URL = "wss://maximum-shy-meme.arbitrum-goerli.discover.quiknode.pro/9e608d37bed73e216df881fc52b358d41236b29e/"
+export const READ_PROVIDER_URL = "https://goerli-rollup.arbitrum.io/rpc"
 
 export const DEFAULT_FETCH_BLOCK = 34700240;
 export const APPLICATION_FEE = 0.05;

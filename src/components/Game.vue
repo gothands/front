@@ -809,7 +809,7 @@ export default {
     const playWithRandom = localStorage.getItem("playWithRandom");
     //const lastFetchedBlock = localStorage.getItem("lastFetchedBlock");
 
-    console.log("in storage lastFetchedBlock", lastFetchedBlock ?? "null")
+    //console.log("in storage lastFetchedBlock", lastFetchedBlock ?? "null")
 
     if (lastSentMove) {
       this.selectedMove = lastSentMove;
@@ -915,10 +915,10 @@ export default {
     getLastFetchBlock() {
       return localStorage.getItem("lastFetchedBlock") ?? DEFAULT_FETCH_BLOCK
     },
-    setLastFetchBlock(blockNumber) {
-      this.lastFetchedBlock = blockNumber
-      localStorage.setItem("lastFetchedBlock", blockNumber)
-    },
+    // setLastFetchBlock(blockNumber) {
+    //   this.lastFetchedBlock = blockNumber
+    //   localStorage.setItem("lastFetchedBlock", blockNumber)
+    // },
     cacheEvents(){
       //Json stringify and add to local storage
       localStorage.setItem("playerRegisteredEvents", JSON.stringify(this.playerRegisteredEvents))
@@ -2578,45 +2578,45 @@ async emptyBurnerWallet(retryCount = 0) {
       
     },
 
-    async fetchPastGames() {
-      let fromBlock = this.lastFetchedBlock;
-      let toBlock = await this.getWeb3.eth.getBlockNumber();
+    // async fetchPastGames() {
+    //   let fromBlock = this.lastFetchedBlock;
+    //   let toBlock = await this.getWeb3.eth.getBlockNumber();
 
-      console.log("fetching past games from block", fromBlock, "to block", toBlock);
+    //   console.log("fetching past games from block", fromBlock, "to block", toBlock);
 
-      // let inc = 1000;
-      // while(toBlock > fromBlock){
-      //   await this.fetchPlayerRegisteredEvents(toBlock - inc, toBlock);
-      //   await this.fetchPlayerWaitingEvents(toBlock - inc, toBlock);
-      //   await this.fetchPlayersMatchedEvents(toBlock - inc, toBlock);
-      //   await this.fetchPlayersMoveCommittedEvents(toBlock - inc, toBlock);
-      //   await this.fetchMoveRevealedEvents(toBlock - inc, toBlock);
-      //   await this.fetchNewRoundEvents(toBlock - inc, toBlock);
-      //   await this.fetchGameOutcomeEvents(toBlock - inc, toBlock);
-      //   await this.fetchPlayerCancelledEvents(toBlock - inc, toBlock);
+    //   // let inc = 1000;
+    //   // while(toBlock > fromBlock){
+    //   //   await this.fetchPlayerRegisteredEvents(toBlock - inc, toBlock);
+    //   //   await this.fetchPlayerWaitingEvents(toBlock - inc, toBlock);
+    //   //   await this.fetchPlayersMatchedEvents(toBlock - inc, toBlock);
+    //   //   await this.fetchPlayersMoveCommittedEvents(toBlock - inc, toBlock);
+    //   //   await this.fetchMoveRevealedEvents(toBlock - inc, toBlock);
+    //   //   await this.fetchNewRoundEvents(toBlock - inc, toBlock);
+    //   //   await this.fetchGameOutcomeEvents(toBlock - inc, toBlock);
+    //   //   await this.fetchPlayerCancelledEvents(toBlock - inc, toBlock);
 
-      //   await this.processEvents();
-      // }
+    //   //   await this.processEvents();
+    //   // }
 
       
 
 
-      await this.fetchPlayerRegisteredEvents(fromBlock, toBlock);
-      await this.fetchPlayerWaitingEvents(fromBlock, toBlock);
-      await this.fetchPlayersMatchedEvents(fromBlock, toBlock);
-      await this.fetchPlayersMoveCommittedEvents(fromBlock, toBlock);
-      await this.fetchMoveRevealedEvents(fromBlock, toBlock);
-      await this.fetchNewRoundEvents(fromBlock, toBlock);
-      await this.fetchGameOutcomeEvents(fromBlock, toBlock);
-      await this.fetchPlayerEvents(fromBlock, toBlock, "PlayerLeft");
-      await this.fetchPlayerCancelledEvents(fromBlock, toBlock);
+    //   await this.fetchPlayerRegisteredEvents(fromBlock, toBlock);
+    //   await this.fetchPlayerWaitingEvents(fromBlock, toBlock);
+    //   await this.fetchPlayersMatchedEvents(fromBlock, toBlock);
+    //   await this.fetchPlayersMoveCommittedEvents(fromBlock, toBlock);
+    //   await this.fetchMoveRevealedEvents(fromBlock, toBlock);
+    //   await this.fetchNewRoundEvents(fromBlock, toBlock);
+    //   await this.fetchGameOutcomeEvents(fromBlock, toBlock);
+    //   await this.fetchPlayerEvents(fromBlock, toBlock, "PlayerLeft");
+    //   await this.fetchPlayerCancelledEvents(fromBlock, toBlock);
 
-      this.cacheEvents();
-      this.setLastFetchBlock(toBlock);
+    //   this.cacheEvents();
+    //   this.setLastFetchBlock(toBlock);
 
 
-      await this.processEvents();
-    },
+    //   await this.processEvents();
+    // },
   },
 };
 </script>
