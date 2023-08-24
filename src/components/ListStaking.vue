@@ -12,11 +12,10 @@
         </thead>
         <tbody>
           <tr v-for="(item, index) in selectedData" :key="index">
-            <td class="result"> {{item.timestamp}} </td>
-            <td class="score">{{item.amount}}</td>
-            <td class="earned">{{ (item.yourStaked/item.totalStaked) * item.amount }}</td>
-            <td class="rounds">{{ item.yourStaked }} / {{item.totalStaked}} HANDS</td>
-            <td class="time">{{ item.time }}</td>
+            <td class="result"> {{timeString(item.timestamp)}} </td>
+            <td class="score">{{item.amount}} ETH</td>
+            <td class="earned">{{ (item.yourStake/item.totalStaked) * item.amount }} ETH</td>
+            <td class="rounds">{{ item.yourStake }} / {{item.totalStaked}} HANDS</td>
           </tr>
         </tbody>
       </table>
@@ -36,6 +35,8 @@
   <script>
 import GameMove from './GameMove.vue'
 import ProfileItem from './ProfileItem.vue'
+import { timeAgo } from '@/utils'
+
   export default {
     components: {
         GameMove,
@@ -57,6 +58,10 @@ import ProfileItem from './ProfileItem.vue'
       }
     },
     methods:{
+      timeString(time){
+        const currentTimeInSec = this.$store.state.currentTime
+        return timeAgo(time, currentTimeInSec)
+      },
         truncateAddress(address) {
             return address?.slice(0, 6) + "..." + address?.slice(-4)
         },

@@ -51,7 +51,7 @@
                 <div v-else-if="isLoser(item, item.playerB)" class="winnings red">{{ getPlayerWinnings(item, item.playerB) }} ETH </div>
               </div>
             </td>
-            <td class="prize">${{ item.bet }}</td>
+            <td class="prize">{{ item.bet }} ETH</td>
             <td class="round" colspan="2">
               <ul class="rounds-container">
                   <div v-for="(round, roundIndex) in item.moves" :key="roundIndex" class="rounds-list">

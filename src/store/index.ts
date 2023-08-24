@@ -456,6 +456,9 @@ const store = createStore({
           commit('triggerProcessEvents', !state.triggerProcessEvents);
       }
 
+      //Done fetching events
+      commit('setIsFetchingEvents', false)
+
     },
 
 

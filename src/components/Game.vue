@@ -279,8 +279,8 @@
             </div>
           
         <div v-if="isWaiting" style="display:flex; flex-direction:column; align-items:center; margin-top:-70px;">
-          <p>You wager is</p>
-          <h1 style="margin:0;"> <span class="currency-symbol">$</span>{{ this.selectedBet }} <span class="decimals">.00</span> </h1>
+          <p>Your wager is</p>
+          <h1 style="margin:0;"> {{ this.selectedBet }} <span class="currency-symbol">ETH</span> </h1>
           <p style="opacity:0.5;">Waiting for opponent ...</p>
           <div class="searching"></div>
           <button
@@ -1606,13 +1606,72 @@ async emptyBurnerWallet(retryCount = 0) {
       alert("Copied to clipboard!");
     },
 
-    copyPasswordGameLink(){
-      const url = new URL(window.location.href);
+    copyTextToClipboard(text) {
+      var textArea = document.createElement("textarea");
+
+      //
+      // *** This styling is an extra step which is likely not required. ***
+      //
+      // Why is it here? To ensure:
+      // 1. the element is able to have focus and selection.
+      // 2. if the element was to flash render it has minimal visual impact.
+      // 3. less flakyness with selection and copying which **might** occur if
+      //    the textarea element is not visible.
+      //
+      // The likelihood is the element won't even render, not even a
+      // flash, so some of these are just precautions. However in
+      // Internet Explorer the element is visible whilst the popup
+      // box asking the user for permission for the web page to
+      // copy to the clipboard.
+      //
+
+      // Place in the top-left corner of screen regardless of scroll position.
+      textArea.style.position = 'fixed';
+      textArea.style.top = 0;
+      textArea.style.left = 0;
+
+      // Ensure it has a small width and height. Setting to 1px / 1em
+      // doesn't work as this gives a negative w/h on some browsers.
+      textArea.style.width = '2em';
+      textArea.style.height = '2em';
+
+      // We don't need padding, reducing the size if it does flash render.
+      textArea.style.padding = 0;
+
+      // Clean up any borders.
+      textArea.style.border = 'none';
+      textArea.style.outline = 'none';
+      textArea.style.boxShadow = 'none';
+
+      // Avoid flash of the white box if rendered for any reason.
+      textArea.style.background = 'transparent';
+
+
+      textArea.value = text;
+
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
+      try {
+        var successful = document.execCommand('copy');
+        var msg = successful ? 'successful' : 'unsuccessful';
+        console.log('Copying text command was ' + msg);
+      } catch (err) {
+        console.log('Oops, unable to copy');
+      }
+
+      document.body.removeChild(textArea);
+    },
+
+    copyPasswordGameLink() {
       const password = this.getPassword();
-      url.searchParams.set("game", password);
       const bet = this.selectedBet;
-      url.searchParams.set("bet", bet);
-      navigator.clipboard.writeText(url.href);
+      const baseUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
+      const queryString = '?game=' + encodeURIComponent(password) + '&bet=' + encodeURIComponent(bet);
+      const fullUrl = baseUrl + queryString;
+
+      this.copyTextToClipboard(fullUrl);
     },
 
     //calls the affiliate contract this.affiliateContract
@@ -2071,7 +2130,7 @@ async emptyBurnerWallet(retryCount = 0) {
         //console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
         const accounts = await this.getWeb3.eth.getAccounts();
         const gasPrice = await this.getWeb3.eth.getGasPrice();
-        const gasLimit = this.isBurner ? await this.burnerContractInstance.methods
+        const gasLimit = (this.isBurner ? await this.burnerContractInstance.methods
             .leave(parseInt(this.currentGameId))
             .estimateGas({
               from: accounts[0],
@@ -2081,7 +2140,7 @@ async emptyBurnerWallet(retryCount = 0) {
             .estimateGas({
               from: accounts[0],
               to: this.contractInstance.options.address,
-            });
+            })) *10;
 
         if(this.isBurner){
           this.burnerNonce = await this.getWeb3Read.eth.getTransactionCount(this.burnerAddress, 'pending');

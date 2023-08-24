@@ -76,14 +76,14 @@
             
     
       </div>
-      <div>
+      <!-- <div>
         <p>Revenue Events</p>
         <list-staking 
-            :events="recivedFundsList" 
+            :events="processedRecievedFundsEvents" 
             :address="activeAccount"
         />
-        </div>
-    <div>
+        </div> -->
+    <!-- <div>
       
         Staking screen
   
@@ -110,12 +110,12 @@
         <button @click="unstake">Unstake 10 HANDS</button>
         <button @click="claim">Claim Staking Rewards</button>
         <button @click="claimAffiliateRewards">Claim Affiliate Rewards</button>
-        <!-- <button @click="removeLiquidity">Remove Liquidity 10 WETH - 10 HANDS</button> -->
+       <button @click="removeLiquidity">Remove Liquidity 10 WETH - 10 HANDS</button> -->
         <!-- <button @click="stakeLiquidity">Stake Liquidity</button> -->
         <!-- <button @click="stakeHands">Stake 100 Hands</button> -->
         <!-- <button @click="unstakeHands">Unstake Hands</button> -->
   
-    </div>
+    <!-- </div> -->
     </div>
 
     <modal-stake 
@@ -201,7 +201,7 @@ align-items: end;
   
     import RPC from "../web3RPC";
     
-    import { Moves, Outcomes, GameStates } from "../types";
+    import { Moves, Outcomes, GameStates, READ_PROVIDER_URL } from "../types";
     import Hands from "../contracts/Hands.json";
     import Web3 from "web3";
     import { sha256 } from "js-sha256";
@@ -305,20 +305,41 @@ import ProfileIcon from '@/components/ProfileIcon.vue';
           totalStakeAtBlock: {},
           recivedFundsList : [],
 
-          stakeEvents: [],
-          unstakeEvents: [],
-          recievedFundsEvents: [],
+          
           handledEventIds: new Set(),
   
         };
       },
       computed: {
+        triggerProcessEvents() { return this.$store.state.triggerProcessEvents },
         stakeEvents() { return this.$store.state.stakeEvents },
         unstakeEvents() { return this.$store.state.unstakeEvents },
         recievedFundsEvents() { return this.$store.state.recievedFundsEvents },
+        processedRecievedFundsEvents() {
+          return this.recivedFundsList.map(event => {
+            const blockNumber = Object.keys(this.totalStakeAtBlock)?.reduce((a, b) => {
+              return b <= event.blockNumber && b > a ? b : a;
+            }, 0);
+
+            //get the total staked at the block number
+            const totalStaked = this.getTotalStakeAtBlock(blockNumber)
+
+
+            //get the user's stake at the block number
+            const yourStake = this.getYourStakeAtBlock(blockNumber)
+                      
+            return {
+              ...event,
+              totalStaked,
+              yourStake,
+            }
+          })
+        },
         provider() { return this.$store.state.provider },
         getActiveAccount() { return this.activeAccount?.toLowerCase()},
         getWeb3() {return new Web3(this.provider);},
+        getWeb3Read() {return new Web3(new Web3.providers.HttpProvider(READ_PROVIDER_URL))},
+
       },
       mounted() {
         console.log("provider", this.provider)
@@ -337,6 +358,10 @@ import ProfileIcon from '@/components/ProfileIcon.vue';
             immediate: true
         },
         triggerProcessEvents: {
+          handler(){ this.processEvents() },
+          immediate: true,
+        },
+        activeAccount: {
           handler(){ this.processEvents() },
           immediate: true,
         },
@@ -657,26 +682,31 @@ import ProfileIcon from '@/components/ProfileIcon.vue';
           //handle staking event by getting the event and updating the user's staked balance at the current block number
           // set the value of this.yourStakeAtBlock and this.totalStakedAtBlock. These are both objects with the block number as the key and the staked balance as the value
           handleStakingEvent(event) {
-            console.log('Staking event stakerman', event);
+            console.log('recieved Staking event stakerman', event);
 
             const { staker, amount } = event.returnValues;
             const blockNumber = event.blockNumber;
+            const realAmount = amount / 10 ** 18;
 
-            if (staker.toLowerCase() === this.activeAccount.toLowerCase()) {
+            //if (staker?.toLowerCase() === this.activeAccount?.toLowerCase()) {
               //check if the block number is already in the object, if so add the amount to the existing value
-                if (this.yourStakeAtBlock[blockNumber]) {
-                    this.yourStakeAtBlock[blockNumber] += parseInt(amount);
+                if (this.yourStakeAtBlock[staker.toLowerCase()]) {
+                    this.yourStakeAtBlock[staker.toLowerCase()][blockNumber] += parseInt(realAmount);
                 } else {
-                    this.yourStakeAtBlock[blockNumber] = parseInt(amount);
+                  this.yourStakeAtBlock[staker.toLowerCase()] = {};
+                  this.yourStakeAtBlock[staker.toLowerCase()][blockNumber] = parseInt(realAmount);
                 }
-            }
+            //}
 
             //check if the block number is already in the object, if so add the amount to the existing value
             if (this.totalStakeAtBlock[blockNumber]) {
-              this.totalStakeAtBlock[blockNumber] += parseInt(amount);
+              this.totalStakeAtBlock[blockNumber] += parseInt(realAmount);
             } else {
-              this.totalStakeAtBlock[blockNumber] = parseInt(amount);
-            }            
+              this.totalStakeAtBlock[blockNumber] = parseInt(realAmount);
+            }  
+            
+            console.log("your stake at block", this.yourStakeAtBlock)
+            console.log("total stake at block", this.totalStakeAtBlock)
           },
 
           handleUnstakingEvent(event) {
@@ -685,14 +715,12 @@ import ProfileIcon from '@/components/ProfileIcon.vue';
             const { staker, amount } = event.returnValues;
             const blockNumber = event.blockNumber;
 
-            if (staker.toLowerCase() === this.activeAccount.toLowerCase()) {
-              //check if the block number is already in the object, if so add the amount to the existing value
-                if (this.yourStakeAtBlock[blockNumber]) {
-                    this.yourStakeAtBlock[blockNumber] -= parseInt(amount);
+            if (this.yourStakeAtBlock[staker.toLowerCase()]) {
+                    this.yourStakeAtBlock[staker.toLowerCase()][blockNumber] -= parseInt(realAmount);
                 } else {
-                    this.yourStakeAtBlock[blockNumber] = parseInt(amount);
+                  this.yourStakeAtBlock[staker.toLowerCase()] = {};
+                  this.yourStakeAtBlock[staker.toLowerCase()][blockNumber] = -parseInt(realAmount);
                 }
-            }
 
             //check if the block number is already in the object, if so add the amount to the existing value
             if (this.totalStakeAtBlock[blockNumber]) {
@@ -708,30 +736,24 @@ import ProfileIcon from '@/components/ProfileIcon.vue';
             console.log('Recieved funds for staking event', event);
 
             const { amount } = event.returnValues;
-            const block = await this.getWeb3.eth.getBlock(event.blockNumber);
+            const block = await this.getWeb3Read.eth.getBlock(event.blockNumber);
             const timestamp = block.timestamp;
+            const realAmount = amount / 10 ** 18;
 
             //get total staked at block, get the block number from keys of totalStakedAtBlock that is closest to the event block number and less than or equal to the event block number
             const blockNumber = Object.keys(this.totalStakeAtBlock)?.reduce((a, b) => {
               return b <= event.blockNumber && b > a ? b : a;
             }, 0);
 
-
-
-            //get the total staked at the block number
-            const totalStaked = this.totalStakeAtBlock[blockNumber];
-
-
-            //get the user's stake at the block number
-            const yourStake = this.yourStakeAtBlock[blockNumber];
-
             //add object with the following attributes to the events array: timestamp, amount, your share, and total staked
             this.recivedFundsList.push({
+              blockNumber,
               timestamp,
-              amount,
-              yourStake,
-              totalStaked
+              amount: realAmount,
             });
+
+            console.log("recieved your stake at block", this.yourStakeAtBlock)
+            console.log("recieved funds list", this.recivedFundsList)
           },
 
           async subscribeToEvents() {
@@ -856,6 +878,17 @@ import ProfileIcon from '@/components/ProfileIcon.vue';
     },
 
     processEvents() {
+      //reset staking variables
+      this.yourStakeAtBlock = {};
+      this.totalStakeAtBlock = {};
+
+      //reset recieved funds list
+      this.recivedFundsList = [];
+
+      //reset handled events
+      this.handledEventIds = new Set();
+
+
       this.stakeEvents.forEach((event) => {
         this.handleStakingEvent(event);
         this.addToHandledEvents(event, "Staked");
@@ -880,6 +913,25 @@ import ProfileIcon from '@/components/ProfileIcon.vue';
 
       this.processEvents();
 
+    },
+
+    //By getting the closest block number that is less than or equal to the block number of the event
+    getYourStakeAtBlock(blockNumber) {
+      const blockNumbers = Object.keys(this.yourStakeAtBlock[this.activeAccount?.toLowerCase()] || {});
+      const closestBlockNumber = blockNumbers.reduce((a, b) => {
+        return b <= blockNumber && b > a ? b : a;
+      }, 0);
+
+      return this.yourStakeAtBlock[closestBlockNumber];
+    },
+
+    //By getting the closest block number that is less than or equal to the block number of the event
+    getTotalStakeAtBlock(blockNumber) {
+      const blockNumbers = Object.keys(this.totalStakeAtBlock);
+      const closestBlockNumber = blockNumbers.reduce((a, b) => {
+        return b <= blockNumber && b > a ? b : a;
+      }, 0);
+      return this.totalStakeAtBlock[closestBlockNumber];
     },
 
   
