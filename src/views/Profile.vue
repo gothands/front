@@ -164,6 +164,16 @@ export default {
           return -bet
         } else if (outcome == Outcomes.PlayerB && !isPlayerA) {
           return winnings
+        } else if (outcome == Outcomes.PlayerATimeout && isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.PlayerBTimeout && isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerATimeout && !isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerBTimeout && !isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.BothTimeout) {
+          return 0
         }
       },
   },

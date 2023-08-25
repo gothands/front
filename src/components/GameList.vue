@@ -37,6 +37,7 @@
               <div>
                 <profile-item :address="item.playerA"></profile-item>
                 <div v-if="wasCancelled(item)" class="grey winnings">Cancelled</div>
+                <div v-else-if="isTimedOut(item, item.playerA)" class="winnings red">Timeout</div>
                 <div v-else-if="isLeaver(item, item.playerA)" class="winnings red">Left</div>
                 <div v-else-if="isWinner(item, item.playerA)" class="winnings green">+{{ getPlayerWinnings(item, item.playerA) }} ETH <span class="blue">(-{{getApplicationFee(item)}})</span> </div>
                 <div v-else-if="isLoser(item, item.playerA)" class="winnings red">{{ getPlayerWinnings(item, item.playerA) }} ETH </div>
@@ -47,6 +48,7 @@
               <div>
                 <profile-item :address="item.playerB"></profile-item>
                 <div v-if="isLeaver(item, item.playerB)" class="winnings red">Left</div>
+                <div v-else-if="isTimedOut(item, item.playerB)" class="winnings red">Timeout</div>
                 <div v-else-if="isWinner(item, item.playerB)" class="winnings green"> +{{ getPlayerWinnings(item, item.playerB) }} ETH  <span class="blue">(-{{getApplicationFee(item)}})</span> </div>
                 <div v-else-if="isLoser(item, item.playerB)" class="winnings red">{{ getPlayerWinnings(item, item.playerB) }} ETH </div>
               </div>
@@ -187,6 +189,16 @@ const APPLICATION_FEE = 0.05;
           return -bet
         } else if (outcome == Outcomes.PlayerB && !isPlayerA) {
           return winnings
+        } else if (outcome == Outcomes.PlayerATimeout && isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.PlayerBTimeout && isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerATimeout && !isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerBTimeout && !isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.BothTimeout) {
+          return 0
         }
       },
       wasCancelled(game){
@@ -196,6 +208,10 @@ const APPLICATION_FEE = 0.05;
       isLeaver(game, player){
         const isPlayerA = player?.toLowerCase() === game.playerA?.toLowerCase()
         return isPlayerA ? game.outcome == Outcomes.PlayerALeft : game.outcome == Outcomes.PlayerBLeft
+      },
+      isTimedOut(game, player){
+        const isPlayerA = player?.toLowerCase() === game.playerA?.toLowerCase()
+        return (isPlayerA ? game.outcome == Outcomes.PlayerATimeout : game.outcome == Outcomes.PlayerBTimeout) || game.outcome == Outcomes.BothTimeout
       },
       isWinner(game, player){
         const winnings = this.getPlayerWinnings(game, player)

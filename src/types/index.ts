@@ -17,7 +17,7 @@ export const Outcomes = {
     PlayerATimeout: 6,
     PlayerBTimeout: 7,
     BothTimeout: 8,
-    Cancelled: 7,
+    Cancelled: 9,
 };
   
 export const GameStates = {

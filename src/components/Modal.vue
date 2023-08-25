@@ -10,6 +10,8 @@
 
                 <p v-if="isLeaver && !noOneLeft">Because you left the game!</p>
                 <p v-else-if="opponentIsLeaver && !noOneLeft">Because your opponent left the game! </p>
+                <p v-else-if="isTimedOut">Because you didn't make a move in time!</p>
+                <p v-else-if="opponentTimedOut">Because your opponent didn't make a move in time!</p>
 
                 <!-- Points ratio -->
                 <h1 style="margin:0; margin-bottom:24px; padding:0;" v-if="isWinner"><span style="color:#E19885">{{winnerPoints}}</span> : {{loserPoints}}</h1>
@@ -152,6 +154,10 @@ export default {
       leaver: {
           type: String,
           default: null
+      },
+      timeout: {
+          type: String,
+          default: null
       }
     },
     methods: {
@@ -170,15 +176,24 @@ export default {
 
     computed: {
       isWinner(){
-        return this.win || (this.leaver != null && this.leaver.toLowerCase() != this.player.toLowerCase())
+        return this.win || (this.leaver != null && this.leaver.toLowerCase() != this.player.toLowerCase()) || !this.isTimedOut || this.opponentTimedOut
       },
       isLeaver(){
         console.log("Modal stats: isLeaver: " + this.leaver + " player: " + this.player)
         return this.leaver?.toLowerCase() == this.player?.toLowerCase()
       },
+      isTimedOut(){
+        return this.timeout?.toLowerCase() == this.player?.toLowerCase() || this.timeout == "both"
+      },
       opponentIsLeaver(){
         console.log("Modal stats: isLeaver: " + this.leaver + " player: " + this.player)
         return this.leaver?.toLowerCase() != this.player?.toLowerCase() && this.leaver != null
+      },
+      opponentTimedOut(){
+        return this.timeout?.toLowerCase() != this.player?.toLowerCase() && this.timeout != null
+      },
+      bothTimedOut(){
+        return this.leaver != null && this.player == null
       },
       noOneLeft(){
         console.log("Modal stats: isLeaver: " + this.leaver + " player: " + this.player)

@@ -6,6 +6,7 @@
     v-model:win="winModal"
     v-model:bet="selectedBet"
     v-model:leaver="leaverModal"
+    v-model:timeout="timeoutModal"
     v-model:player="this.activeAccount"
   >
     Hello world
@@ -520,6 +521,7 @@ export default {
       playWithFriend: null,
 
       leaverModal: null,
+      timeoutModal: null,
       showModal: false,
       showAddFundsModal: false,
       winnerPoints: 0,
@@ -1408,6 +1410,16 @@ async emptyBurnerWallet(retryCount = 0) {
           return -bet
         } else if (outcome == Outcomes.PlayerB && !isPlayerA) {
           return winnings
+        } else if (outcome == Outcomes.PlayerATimeout && isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.PlayerBTimeout && isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerATimeout && !isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerBTimeout && !isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.BothTimeout) {
+          return 0
         }
       },
       wasCancelled(game){
@@ -1450,6 +1462,16 @@ async emptyBurnerWallet(retryCount = 0) {
           return -bet
         } else if (outcome == Outcomes.PlayerB && !isPlayerA) {
           return winnings
+        } else if (outcome == Outcomes.PlayerATimeout && isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.PlayerBTimeout && isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerATimeout && !isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerBTimeout && !isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.BothTimeout) {
+          return 0
         }
       },
       calcWinnerFromAmount(game, player){
@@ -1474,6 +1496,7 @@ async emptyBurnerWallet(retryCount = 0) {
         this.winModal = isPlayerA ? 
           outcome == Outcomes.PlayerA :
           outcome == Outcomes.PlayerB
+        this.timeoutModal = outcome == Outcomes.PlayerATimeout ? this.games[gameId].playerA : outcome == Outcomes.PlayerBTimeout ? this.games[gameId].playerB : outcome == Outcomes.BothTimeout ? "both" : null
         //this.winModal = outcome == Outcomes.PlayerA ? this.games[gameId].playerA : outcome == Outcomes.PlayerB ? this.games[gameId].playerB : null
         console.log("Modal Stats", this.winnerPoints, this.loserPoints, this.winModal, this.leaverModal);
         console.log("Modal Stats, Outcomes.PlayerALeft and Outcomes.PlayerBLeft", Outcomes.PlayerALeft, Outcomes.PlayerBLeft);
