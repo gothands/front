@@ -88,8 +88,9 @@
                 <p class="address">{{ truncateAddress(yourAddress) }}</p>
             </div>
             <div class="player-balance">
-              ${{ balance }}
+              {{ balance }} ETH
             </div>
+            <div v-if="!isMoveSent">{{yourTimeLeft}}</div>
             <div 
               style="display: flex; flex-direction:column; gap: 10px; align-items: center;"
             >
@@ -115,8 +116,9 @@
             <p class="address">{{ truncateAddress(yourAddress) }}</p>
           </div>
           <div class="player-balance">
-            ${{ balance }}
+            {{ balance }} ETH
           </div>
+          <div v-if="!isMoveSent">{{yourTimeLeft}}</div>
             <div 
               style="display: flex; justify-content: center; gap: 10px;"
             >
@@ -195,8 +197,10 @@
                   <p class="address">{{ truncateAddress(opponentAddress) }}</p>
                 </div>
                 <div class="player-balance hide-for-mobile">
-                  ${{ opponentBalance }}
+                  {{ opponentBalance }} ETH
                 </div>
+
+                <div v-if="!isOpponentMoveSent">{{opponentTimeLeft}}</div>
 
                 <div v-if="!isOpponentMoveSent"
                  class="loading hide-for-mobile"></div>
@@ -394,7 +398,7 @@ import GameMove from "./GameMove.vue";
 import GameList from "./GameList.vue";
 import Modal from "./Modal.vue";
 import ProfileItem from "./ProfileItem.vue";
-import { Moves, Outcomes, GameStates, APPLICATION_FEE, DEFAULT_FETCH_BLOCK } from "../types";
+import { Moves, Outcomes, GameStates, APPLICATION_FEE, DEFAULT_FETCH_BLOCK, MAX_MOVE_TIME } from "../types";
 import Web3 from "web3";
 import { sha256 } from "js-sha256";
 import RampInstantSDK from "@ramp-network/ramp-instant-sdk";
@@ -750,6 +754,38 @@ export default {
     },
     isMoveSending() { return this.gameState == GameStates.Sending },
 
+    //get current game, get game.timeOfStart, a return MAX_MOVE_TIME - (this.$store.state.currentTime - timeOfStart)
+    yourTimeLeft() {
+    const currentGame = this.games[this.currentGameId];
+    const timeOfStart = currentGame?.timeOfMatched;
+    console.log("timeOfStart", timeOfStart);
+    const currentTime = this.$store.state.currentTime;
+    const timeLeftInSeconds = timeOfStart ? MAX_MOVE_TIME - (currentTime - timeOfStart) : 0;
+
+    // Convert the timeLeftInSeconds into minutes and seconds
+    const minutes = Math.floor(timeLeftInSeconds / 60);
+    const seconds = timeLeftInSeconds % 60;
+
+    // Format the time into 0:00 format
+    const formattedTimeLeft = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+    return formattedTimeLeft;
+},
+    opponentTimeLeft() {
+
+      const currentGame = this.games[this.currentGameId]
+      const timeOfStart = currentGame?.timeOfMatched
+      const currentTime = this.$store.state.currentTime
+      const timeLeftInSeconds = timeOfStart ? MAX_MOVE_TIME - (currentTime - timeOfStart) : 0
+     // Convert the timeLeftInSeconds into minutes and seconds
+    const minutes = Math.floor(timeLeftInSeconds / 60);
+    const seconds = timeLeftInSeconds % 60;
+
+    // Format the time into 0:00 format
+    const formattedTimeLeft = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+    return formattedTimeLeft;
+    },
 
     //Seamless transaction handler
     //Reveal move when both players have successfully sent their move
@@ -1194,7 +1230,8 @@ async emptyBurnerWallet(retryCount = 0) {
       //set players state to waiting if hasnt already
       this.getGame(gameId).states[0][playerAddress.toLowerCase()] = GameStates.Waiting;  
       
-      const block = await this.getWeb3.eth.getBlock(event.blockNumber);
+      let block = null;
+      while (!block) { block = await this.getWeb3.eth.getBlock(event.blockNumber);}
       const timestamp = block.timestamp;
       this.getGame(gameId).time = timestamp;
       
@@ -1231,7 +1268,7 @@ async emptyBurnerWallet(retryCount = 0) {
     },
 
 
-    handlePlayersMatchedEvent(event) {
+    async handlePlayersMatchedEvent(event) {
       console.log("PlayersMatched event:", event.returnValues);
       const { gameId, playerA, playerB } = event.returnValues;
 
@@ -1246,6 +1283,13 @@ async emptyBurnerWallet(retryCount = 0) {
       //set player states
       this.getGame(gameId).states[0][playerA.toLowerCase()] = GameStates.Matched;
       this.getGame(gameId).states[0][playerB.toLowerCase()] = GameStates.Matched;
+
+      //set time of matched
+      let block = null;
+      while (!block) { block = await this.getWeb3.eth.getBlock(event.blockNumber);}
+      const timestamp = block.timestamp;
+      this.getGame(gameId).timeOfMatched = timestamp;
+      console.log("setting time of matched", timestamp)
 
       //Check if player is in game
       console.log("setting game to matched");
@@ -1295,7 +1339,7 @@ async emptyBurnerWallet(retryCount = 0) {
     },
 
     //Handle new round event
-    handleNewRoundEvent(event) {
+    async handleNewRoundEvent(event) {
       console.log("NewRound event:", event.returnValues);
       const { gameId, round, pointsA, pointsB } = event.returnValues;
 
@@ -1319,6 +1363,13 @@ async emptyBurnerWallet(retryCount = 0) {
       this.games[gameId].points[this.games[gameId].playerB.toLowerCase()] = pointsB;
 
       console.log("setting new points for gameId", gameId, pointsA, pointsB);
+
+      //set time of matched
+      let block = null;
+      while (!block) { block = await this.getWeb3.eth.getBlock(event.blockNumber);}
+      const timestamp = block.timestamp;
+      this.getGame(gameId).timeOfMatched = timestamp;
+      console.log("setting time of matched", timestamp)
 
       //reset game state to matched if not revealed or sent
       // this.games[gameId].states[round][this.games[gameId].playerA.toLowerCase()] = GameStates.Matched;

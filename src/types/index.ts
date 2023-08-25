@@ -54,3 +54,5 @@ export const READ_PROVIDER_URL = "https://goerli-rollup.arbitrum.io/rpc"
 
 export const DEFAULT_FETCH_BLOCK = 34700240;
 export const APPLICATION_FEE = 0.05;
+
+export const MAX_MOVE_TIME = 60*2;
