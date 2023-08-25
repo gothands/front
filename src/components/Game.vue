@@ -764,6 +764,11 @@ export default {
     const currentTime = this.$store.state.currentTime;
     const timeLeftInSeconds = timeOfStart ? MAX_MOVE_TIME - (currentTime - timeOfStart) : 0;
 
+    // Check if time is negative
+    if (timeLeftInSeconds < 0) {
+        return "time out";
+    }
+
     // Convert the timeLeftInSeconds into minutes and seconds
     const minutes = Math.floor(timeLeftInSeconds / 60);
     const seconds = timeLeftInSeconds % 60;
@@ -779,7 +784,11 @@ export default {
       const timeOfStart = currentGame?.timeOfMatched
       const currentTime = this.$store.state.currentTime
       const timeLeftInSeconds = timeOfStart ? MAX_MOVE_TIME - (currentTime - timeOfStart) : 0
-     // Convert the timeLeftInSeconds into minutes and seconds
+      // Check if time is negative
+    if (timeLeftInSeconds < 0) {
+        return "time out";
+    }
+      // Convert the timeLeftInSeconds into minutes and seconds
     const minutes = Math.floor(timeLeftInSeconds / 60);
     const seconds = timeLeftInSeconds % 60;
 
