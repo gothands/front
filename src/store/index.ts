@@ -461,6 +461,11 @@ const store = createStore({
 
     },
 
+    clearAndReload(){
+      localStorage.clear()
+      location.reload()
+    }
+
 
   },
   modules: {

@@ -28,8 +28,9 @@
             Cancel
           </button> -->
           <div style="display:flex; align-items:center" v-if="fetchingEvents"><p>Syncing events</p><div class="small-loading"></div></div>
+
     <div v-if="!isInGame && !isWaiting">
-      <p style="margin:0; margin-bottom:6px;">Your balance</p>
+        <p style="margin:0; margin-bottom:6px;">Your balance &nbsp; <span  @click="this.$store.dispatch('clearAndReload')">&#x21bb;</span></p>
       <h1 style="margin:0; margin-bottom:22px;">
         
         {{this.balance?.toString().split(".")[0]}}
