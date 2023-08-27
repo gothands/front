@@ -122,7 +122,12 @@ export default {
         }
     },
     methods: {
-        toggleShow() { this.$emit('update:show', !this.show) },
+        toggleShow() {
+          this.$emit('update:show', !this.show) 
+          //call callback
+          console.log("callers callback")
+          this.callback(true)
+        },
     },
     computed: {
     },

@@ -1802,9 +1802,9 @@ async emptyBurnerWallet(retryCount = 0) {
 
     async setDoesNotHaveFunds(requiredAmount, callBackFunction){
       this.minimumAmount = requiredAmount * 10 ** -18;
-      this.onAddFunds = ()=>{
+      this.onAddFunds = (...args) => {
         this.showAddFundsModal = false;
-        callBackFunction();
+        callBackFunction(...args);
       }
       this.showAddFundsModal = true;
     },
@@ -1988,7 +1988,13 @@ async emptyBurnerWallet(retryCount = 0) {
     },
 
     //Join password match
-    async joinPasswordMatch(password, betAmount) {
+    async joinPasswordMatch(password, betAmount, isError = false) {
+      if (isError) {
+        this.$store.dispatch("setIsJoiningPasswordMatch", false);
+        this.clearQueryString();
+        return;
+      }
+
       if (!this.contractInstance) {
         this.contractInstance = new this.getWeb3.eth.Contract(
           CONTRACT_ABI,
@@ -2020,7 +2026,7 @@ async emptyBurnerWallet(retryCount = 0) {
         const betInWei = this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether");
         const totalValue = this.getWeb3.utils.toWei((this.burnerTopUpAmount + parseFloat(this.selectedBet)).toString(), "ether");
 
-        if(!await this.userMustHave(totalValue, ()=>{this.joinPasswordMatch(password, betAmount)})){
+        if(!await this.userMustHave(totalValue, (error)=>{this.joinPasswordMatch(password, betAmount, error)})){
           return;
         }
 

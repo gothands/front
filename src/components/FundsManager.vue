@@ -1,37 +1,39 @@
 <template>
     <div class="home">
-      <h2 style="">Adding funds</h2>
+      <h2 style="">Transfer Funds to L2</h2>
       <p class="green" style="margin-top:-15px; margin-bottom:20px; font-size:20px;">{{addFundsMessage}}</p>
-      <select v-model="state.tokenAddress" placeholder="Select" size="large">
-        <option
-          v-for="item in state.tokens"
-          :key="item.address"
-          :label="item.name"
-          :value="item.address"
-        />
-      </select>
-      <select v-model="state.fromChainId" placeholder="Select" size="large">
-        <option
-          v-for="item in state.fromChains"
-          :key="item.id"
-          :label="item.name"
-          :value="item.id"
-        />
-      </select>
-      <select v-model="state.toChainId" placeholder="Select" size="large">
-        <option
-          v-for="item in state.toChains"
-          :key="item.id"
-          :label="item.name"
-          :value="item.id"
-        />
-      </select>
+      <div style="display:flex; justify-content:center; justify-content:space-between;">
+        <div style="display:flex; flex-direction:column; align-items:start;">
+          <div>From</div>
+          <select class="input-select" v-model="state.fromChainId" placeholder="Select" size="large">
+            <option
+              v-for="item in state.fromChains"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            />
+          </select>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:start;">
+          <div>To</div>
+          <select class="input-select" v-model="state.toChainId" placeholder="Select" size="large">
+            <option
+              v-for="item in state.toChains"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            />
+          </select>
+        </div>
+      </div>
+      
+      
       <div class="home-item">
+        <div>Input amount</div>
         <input
           size="large"
+          class="input"
           v-model="state.amount"
-          placeholder="Please input amount."
-          style="width: 300px"
         />
       </div>
       <div v-if="state.amountsError" class="home-item amounts-error">{{ state.amountsError }}</div>
@@ -72,11 +74,12 @@
         class="button-dark"
       >
         {{ (state.complete ? 'Complete' : state.transferring ? 'Transferring' : 'Transfer') }}
+        <div class="loading" v-if="state.transferring"></div>
     </button>
     <button
                     class="button-light"
                     @click="()=>{closeCallBack()}">
-                        Close
+                        Cancel
                     </button>
       </div>
     </div>
@@ -102,7 +105,7 @@
     fromChainId: undefined as undefined | number,
     toChainId: undefined as undefined | number,
   
-    amount: '',
+    amount: 0.01,
   
     amounts: undefined as
       | undefined
@@ -167,8 +170,8 @@
   // methods
   //check if current url is handsy.io if so, use mainnet
   const url = window.location.href;
-  const network = url.includes("handsy.io") ? "Mainnet" : "Testnet";
-  //const network = "Mainnet";
+  //const network = url.includes("handsy.io") ? "Mainnet" : "Testnet";
+  const network = "Mainnet";
   const bridge = new Bridge(network)
   const refreshBridgeSupports = async () => {
     const supports = await bridge.supports(currentFromChain.value, currentToChain.value)
@@ -229,6 +232,7 @@
       state.transferring = true
       if(network == "Testnet"){
         state.complete = true;
+        state.transferring = false;
 
       //await delay by 1 seconds
       await new Promise(r => setTimeout(r, 1000));
@@ -254,6 +258,7 @@
       })
 
       state.complete = true;
+      state.transferring = false;
 
       //await delay by 1 seconds
       await new Promise(r => setTimeout(r, 1000));
@@ -262,6 +267,8 @@
       props.callback()
       
     } catch (err) {
+      state.complete = false;
+      state.transferring = false;
       alert(err.message)
     }
   }

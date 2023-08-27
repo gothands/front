@@ -893,6 +893,76 @@ gap: 10px;
   align-items:end;
 }
 
+.input-select {
+height: 70px;
+flex-shrink: 0;
+border-radius: 100px;
+background: #FFF;
+color: black;
+border: white;
+margin: 0;
+text-align: center;
+font-size: 32px;
+font-family: Sen;
+font-weight: 800;
+line-height: 160%;
+-moz-appearance:none; /* Firefox */
+-webkit-appearance:none; /* Safari and Chrome */
+appearance:none;
+z-index: 10000000;
+background-image: url("data:image/svg+xml;utf8,<svg fill='black' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+background-repeat: no-repeat;
+background-position-x: 90%;
+background-position-y: 50%;
+  height: 70px;
+  width: 200px;
+  border-radius: 35px;
+  border: 1px solid #c5c5c5;
+  font-size: 25px;
+  font-weight: bold;
+  background-color: white;
+  text-align: center;
+  margin: 20px 0px;
+
+}
+
+.home-item {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+}
+
+.input {
+  height: 60px;
+  width: 85%;
+  border-radius: 105px;
+  border: 1px solid #c5c5c5;
+  padding: 10px;
+  padding-left: 60px;
+  padding-right: -60px;
+  font-size: 20px;
+  font-weight: bold;
+  color: #888888;
+  background-color: white;
+  font-size: 25px;
+  font-weight: bold;
+  margin: 20px 0px;
+}
+
+.input:focus {
+  outline: none;
+}
+
+
+
+/* .input-select:after {
+  content: '\25BC';
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+} */
 
 
 /* Mobile */
