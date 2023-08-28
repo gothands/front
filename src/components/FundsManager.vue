@@ -182,13 +182,28 @@ import Web3 from 'web3'
   // methods
   //check if current url is handsy.io if so, use mainnet
   const updateBalances = async () => {
-  if (state.fromChainId) {
-    state.fromBalance = await getBalance(ethereum.selectedAddress, state.fromChainId.toString());
-  }
-  if (state.toChainId) {
-    state.toBalance = await getBalance(ethereum.selectedAddress, '42170');
+  const maxRetries = 3;
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      if (state.fromChainId) {
+        state.fromBalance = await getBalance(ethereum.selectedAddress, state.fromChainId.toString());
+      }
+      if (state.toChainId) {
+        state.toBalance = await getBalance(ethereum.selectedAddress, '42170');
+      }
+      // If both calls are successful, break out of the loop
+      break;
+    } catch (error) {
+      console.error("Error fetching balance. Attempt:", i + 1, error);
+      // If it's the last attempt, rethrow the error
+      if (i === maxRetries - 1) {
+        throw error;
+      }
+    }
   }
 };
+
   const url = window.location.href;
   //const network = url.includes("handsy.io") ? "Mainnet" : "Testnet";
   const network = "Mainnet";
