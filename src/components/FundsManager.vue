@@ -9,10 +9,11 @@
             <option
               v-for="item in state.fromChains"
               :key="item.id"
-              :label="item.name"
+              :label="item.name.charAt(0).toUpperCase() + item.name.slice(1)"
               :value="item.id"
             />
           </select>
+          <p style="margin:0;font-size:15px;font-weight:100; color:gray; text-align:center;">Balance: {{state.fromBalance}} ETH</p>
         </div>
         <div style="display:flex; flex-direction:column; align-items:start;">
           <div>To</div>
@@ -20,10 +21,12 @@
             <option
               v-for="item in state.toChains"
               :key="item.id"
-              :label="item.name"
+              :label="item.name.charAt(0).toUpperCase() + item.name.slice(1)"
               :value="item.id"
             />
           </select>
+          <p style="margin:0;font-size:15px;font-weight:100; color:gray; text-align:center;">Balance: {{state.toBalance}} ETH</p>
+
         </div>
       </div>
       
@@ -36,15 +39,11 @@
           v-model="state.amount"
         />
       </div>
-      <div v-if="state.amountsError" class="home-item amounts-error">{{ state.amountsError }}</div>
-      <div v-if="state.amounts" class="home-item amounts">
-        <div>
-          payAmount: <span>{{ state.amounts.payAmountHm }}</span>
-        </div>
-        <div>
-          receiveAmount: <span>{{ state.amounts.receiveAmountHm }}</span>
-        </div>
-      </div>
+      <p v-if="state.amountsError" class="amounts-error">{{ state.amountsError }}</p>
+      <p v-if="state.amounts" class="amounts">
+          Pay Amount: <span>{{ state.amounts.payAmountHm }}</span>
+          Recieve Amount: <span>{{ state.amounts.receiveAmountHm }}</span>
+      </p>
       
       <el-collapse
         class="home-item"
@@ -56,32 +55,39 @@
           :key="index"
         >
         {{ `token: ${item.token.name}, fromChain: ${item.fromChain.name}, toChain: ${item.toChain.name}, amount: ${item.amount}` }}
-        <div class="transfer-list__result">
+        <h1 class="transfer-list__result">
           {{ JSON.stringify(item.result) }}
-        </div>
+        </h1>
       </div>
 
           
         
       </el-collapse>
 
+
+
       <div style="margin-top: 20px; text-align: center; display: flex; justify-content: center; gap: 20px;">
+        <button
+          class="button-light"
+          @click="()=>{closeCallBack()}"
+        >
+          Cancel
+        </button>
         <button
         :disabled="state.amountsError != '' || state.transferring || state.complete"
         size="large"
         
         @click="onConfirmTransfer"
         class="button-dark"
+        style="padding: 0 90px;"
       >
         {{ (state.complete ? 'Complete' : state.transferring ? 'Transferring' : 'Transfer') }}
         <div class="loading" v-if="state.transferring"></div>
     </button>
-    <button
-                    class="button-light"
-                    @click="()=>{closeCallBack()}">
-                        Cancel
-                    </button>
+    
       </div>
+      <a href="https://www.orbiter.finance/?source=Ethereum&dest=Arbitrum%20Nova">Or use to Orbiter</a>
+
     </div>
   </template>
   
@@ -95,6 +101,8 @@
   </script>
   
   <script setup lang="ts">
+import { CURRENT_CHAIN_ID, RPC_URLS } from '@/types'
+import Web3 from 'web3'
 
   const state = reactive({
     tokens: [] as BridgeToken[],
@@ -122,6 +130,10 @@
     collapseActive: 0,
     transferring: false,
     complete: false,
+    sentToBridge: false,
+    sentToDestination: false,
+    fromBalance: '0',
+    toBalance: '0',
   })
 
   //props
@@ -169,6 +181,14 @@
   
   // methods
   //check if current url is handsy.io if so, use mainnet
+  const updateBalances = async () => {
+  if (state.fromChainId) {
+    state.fromBalance = await getBalance(ethereum.selectedAddress, state.fromChainId.toString());
+  }
+  if (state.toChainId) {
+    state.toBalance = await getBalance(ethereum.selectedAddress, '42170');
+  }
+};
   const url = window.location.href;
   //const network = url.includes("handsy.io") ? "Mainnet" : "Testnet";
   const network = "Mainnet";
@@ -189,6 +209,11 @@
     state.toChainId = state.toChains.find(
       (item, index) => (!currentToChain.value && index == 0) || currentToChain.value.id == item.id
     )?.id
+
+    console.log("to chains", state.toChains)
+
+    //update balances
+    //await updateBalances();
   
     // Token deduplicate
     state.tokens = supports.tokens
@@ -203,6 +228,9 @@
       (item, index) =>
         (!currentToken.value && index == 0) || currentToken.value.address == item.address
     )?.address
+
+    //update balances
+    await updateBalances();
 
   }
   refreshBridgeSupports()
@@ -227,6 +255,34 @@
   }
   
   const ethereum = (window as any).ethereum
+
+  const getBalance = async (address: string, chainId: string) => {
+    //convert chainId to hex,
+    // if "1" it should be "0x1"
+    // if "42170" it should be "0xA4B1"
+    let chainId1 = "0x" + Number(chainId).toString(16);
+    let providerEndpoint = RPC_URLS[chainId1] ?? RPC_URLS["0x1"];
+
+    console.log("providerEndpoint", providerEndpoint)
+
+    const web3Instance = new Web3(new Web3.providers.HttpProvider(providerEndpoint))
+    const balance = await web3Instance.eth.getBalance(address);
+    const ethBalance = parseFloat(web3Instance.utils.fromWei(balance, 'ether')).toFixed(6);
+    return ethBalance;
+  };
+
+  const waitForDestination = async (destinationAddress: string, toChainId: string) => {
+    const initialDestinationBalance = await getBalance(destinationAddress, toChainId);
+    while (true) {
+      const newDestinationBalance = await getBalance(destinationAddress, toChainId);
+      if (parseFloat(newDestinationBalance) - parseFloat(initialDestinationBalance) >= (state.amount * 0.6)) {
+        return true;
+      }
+      // Wait for 5 seconds before checking again
+      await new Promise(r => setTimeout(r, 5000));
+    }
+  };
+
   const onConfirmTransfer = async () => {
     try {
       state.transferring = true
@@ -234,12 +290,12 @@
         state.complete = true;
         state.transferring = false;
 
-      //await delay by 1 seconds
-      await new Promise(r => setTimeout(r, 1000));
-      
-      //call callback
-      props.callback()
-      return;
+        //await delay by 1 seconds
+        await new Promise(r => setTimeout(r, 1000));
+        
+        //call callback
+        props.callback()
+        return;
       }
       const result = await bridge.transfer(
         new Web3Provider(ethereum).getSigner(),
@@ -249,16 +305,24 @@
         state.amount
       )
   
-      state.transferList.unshift({
-        token: currentToken.value,
-        fromChain: currentFromChain.value,
-        toChain: currentToChain.value,
-        amount: state.amount,
-        result,
-      })
+      // state.transferList.unshift({
+      //   token: currentToken.value,
+      //   fromChain: currentFromChain.value,
+      //   toChain: currentToChain.value,
+      //   amount: state.amount,
+      //   result,
+      // })
+
+      state.sentToBridge = true;
+
+      await waitForDestination(store.state.activeAccount, currentToChain.value?.networkId as string);
+
+      await updateBalances();
 
       state.complete = true;
       state.transferring = false;
+
+      await store.state.onboard.setChain({chainId: CURRENT_CHAIN_ID})
 
       //await delay by 1 seconds
       await new Promise(r => setTimeout(r, 1000));
@@ -303,15 +367,21 @@
     margin-top: 20px;
   }
   .amounts-error {
-    width: 500px;
+    text-align: start;
     margin-left: auto;
     margin-right: auto;
-    color: var(--el-color-danger);
+    color: #666666;
     font-weight: bold;
+    font-size: small;
+    margin-left: 20px;
+
   }
   .amounts {
     font-weight: bold;
     color: #666666;
+    font-size: small;
+    text-align: start;
+    margin-left: 20px;
   }
   .amounts span {
     color: var(--el-color-success);

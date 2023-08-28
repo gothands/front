@@ -38,13 +38,15 @@ export const CHAIN_ID_TESTNET = "0x118"
 export const CHAIN_ID_LOCALHOST = "0x10e"
 export const CHAIN_ID_LOCALHOST_HARDHAT = "0x7A69"
 export const CHAIN_ID_ARBITRUM_GOERLI = "0x66eed"
+export const CHAIN_ID_ARBITRUM_NOVA = "0xa4ba"
 
 export const RPC_URLS = {
-  [CHAIN_ID_MAINNET]: "https://rpc.ankr.com/eth",
+  [CHAIN_ID_MAINNET]: "https://cloudflare-eth.com",
   [CHAIN_ID_TESTNET]: "https://testnet.era.zksync.dev",
   [CHAIN_ID_LOCALHOST]: "http://localhost:3050/",
   [CHAIN_ID_LOCALHOST_HARDHAT]: "http://localhost:8545",
   [CHAIN_ID_ARBITRUM_GOERLI]: "https://goerli-rollup.arbitrum.io/rpc",
+  [CHAIN_ID_ARBITRUM_NOVA]: "https://nova.arbitrum.io/rpc",
 
 };
 
