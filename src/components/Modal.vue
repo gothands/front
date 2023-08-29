@@ -6,6 +6,7 @@
 
                 <!-- Result text-->
                 <h4 v-if="isWinner">You won! <span style="color:#E19885; font-weight:bold;"> {{getWinnings(bet)}} ETH</span>  <span style="color:#c5edff; font-weight:bold;"> (-{{getApplicationFee(bet)}} ETH)</span> </h4>
+                <h4 v-else-if="isDraw">Nobody wins. <span style="color:#E19885; font-weight:bold;"> {{bet}} ETH</span> </h4>
                 <h4 v-else style="margin-top:60px" >You lose! <span style="color:#E19885; font-weight:bold;"> {{bet}} ETH</span> </h4>
 
                 <p v-if="isLeaver && !noOneLeft">Because you left the game!</p>
@@ -177,6 +178,9 @@ export default {
     computed: {
       isWinner(){
         return this.win || (this.leaver != null && this.leaver.toLowerCase() != this.player.toLowerCase()) || (this.opponentTimedOut && !this.isTimedOut)
+      },
+      isDraw(){
+        return this.timeout == "both";
       },
       isLeaver(){
         console.log("Modal stats: isLeaver: " + this.leaver + " player: " + this.player)
