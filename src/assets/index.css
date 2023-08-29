@@ -678,7 +678,7 @@ flex-shrink: 0;
 }
 
 .None {
-  background: url(rock.svg);
+  background: url(rock-cropped.gif);
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
