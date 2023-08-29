@@ -411,12 +411,12 @@ const store = createStore({
       //Get events from lastFetchedBlock
       const startBlock = state.lastFetchedBlock
       const endBlock = await web3.eth.getBlockNumber()
-      const blockLimit = 100; // Maximum blocks that can be fetched in one request
+      const blockLimit = 1000000; // Maximum blocks that can be fetched in one request
 
       let fromBlock = startBlock;
       let toBlock = Math.min(fromBlock + blockLimit, endBlock);
       while (fromBlock <= endBlock) {
-        console.log("fetching events from block", fromBlock, "to block", toBlock)
+        console.log("fetched fetching events from block", fromBlock, "to block", toBlock)
           const playerRegisteredEvents = await handsContract.getPastEvents("PlayerRegistered", { fromBlock: fromBlock, toBlock: toBlock});
           const playerWaitingEvents = await handsContract.getPastEvents("PlayerWaiting", { fromBlock: fromBlock, toBlock: toBlock});
           const playersMatchedEvents = await handsContract.getPastEvents("PlayersMatched", { fromBlock: fromBlock, toBlock: toBlock});
@@ -429,6 +429,20 @@ const store = createStore({
           const stakeEvents = await stakeContract.getPastEvents("Staked", { fromBlock: fromBlock, toBlock: toBlock});
           const unstakeEvents = await stakeContract.getPastEvents("Unstaked", { fromBlock: fromBlock, toBlock: toBlock});
           const recievedFundsEvents = await stakeContract.getPastEvents("ReceivedFundsForStaking", { fromBlock: fromBlock, toBlock: toBlock});
+
+          console.log("fetched", playerRegisteredEvents.length, "PlayerRegistered events")
+          console.log("fetched", playerWaitingEvents.length, "PlayerWaiting events")
+          console.log("fetched", playersMatchedEvents.length, "PlayersMatched events")
+          console.log("fetched", moveCommittedEvents.length, "MoveCommitted events")
+          console.log("fetched", moveRevealedEvents.length, "MoveRevealed events")
+          console.log("fetched", newRoundEvents.length, "NewRound events")
+          console.log("fetched", gameOutcomeEvents.length, "GameOutcome events")
+          console.log("fetched", playerCancelledEvents.length, "PlayerCancelled events")
+          console.log("fetched", playerLeftEvents.length, "PlayerLeft events")
+          console.log("fetched", stakeEvents.length, "Staked events")
+          console.log("fetched", unstakeEvents.length, "Unstaked events")
+          console.log("fetched", recievedFundsEvents.length, "ReceivedFundsForStaking events")
+
 
           // Add to events
           commit('setPlayerRegisteredEvents', [...state.playerRegisteredEvents, ...playerRegisteredEvents]);
