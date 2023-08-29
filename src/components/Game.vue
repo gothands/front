@@ -68,9 +68,9 @@
         Leave game
       </button> -->
       <!-- Round Id-->
-      <div style="justify-content: center;">
+      <!-- <div style="justify-content: center;">
         Round {{ currentRound }} for <a>{{ currentWager }} ETH</a>
-      </div>
+      </div> -->
       <!-- Game view -->
       <div class="game-view">
           <!-- Selected move-->

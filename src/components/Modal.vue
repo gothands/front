@@ -176,7 +176,7 @@ export default {
 
     computed: {
       isWinner(){
-        return this.win || (this.leaver != null && this.leaver.toLowerCase() != this.player.toLowerCase()) || !this.isTimedOut || this.opponentTimedOut
+        return this.win || (this.leaver != null && this.leaver.toLowerCase() != this.player.toLowerCase()) || this.opponentTimedOut
       },
       isLeaver(){
         console.log("Modal stats: isLeaver: " + this.leaver + " player: " + this.player)
