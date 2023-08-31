@@ -844,7 +844,7 @@ gap: 10px;
 }
 
 .show-for-mobile{
-  visibility: hidden;
+  visibility: hidden !important;
 }
 
 .middle-game-view {
