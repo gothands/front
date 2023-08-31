@@ -19,7 +19,7 @@
 			<router-link v-if="!isInGame && loggedin" to="/staking">Staking</router-link>
 			<button
 			v-if="isInGame"
-			class="button-light"
+			class="button-light hide-for-mobile-real"
 			@click="leaveGame">
 			Leave
 		</button> 

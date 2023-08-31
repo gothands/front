@@ -1050,6 +1050,29 @@ background-position-y: 50%;
     border-radius: 100px;
   }
 
+  .selector {
+    width: 112px;
+    font-size: 18px;
+    font-weight: 1000000;
+    background-image: url("data:image/svg+xml;utf8,<svg fill='black' height='44' viewBox='0 0 24 24' width='12' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+    z-index: 0;
+  }
+
+  #addFundsButton {
+    width: 100%;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  #playButton {
+    width: 100%;
+    margin: 0;
+  }
+
+  .hide-for-mobile-real {
+    display: none !important;
+  }
+
 }
 
 /* Tablet */
@@ -1121,7 +1144,7 @@ background-position-y: 50%;
   }
 
   .hide-for-mobile {
-    display: none;
+    display: none !important;
   }
 
   .show-for-mobile {

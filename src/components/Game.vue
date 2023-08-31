@@ -78,14 +78,14 @@
             class="game-move-controls"
             v-if="shouldMove"
             >
-            <div style="display:flex; gap:20px">
+            <div class="hide-for-mobile-real" style="display:flex; gap:20px">
               <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 1 }"></div>
               <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 2 }"></div>
               <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 3 }"></div>
             </div>
             <GameMove v-if="bothRevealed" :move="selectedMove"/>
             <GameMove v-else :move="4"/>
-            <div class="address-container">
+            <div class="address-container hide-for-mobile-real">
               <div class="profile-mini"><profile-icon :address="yourAddress" :isMini="true" /></div>
                 <p class="address">{{ truncateAddress(yourAddress) }}</p>
             </div>
@@ -106,14 +106,14 @@
             class="game-move-controls"
             v-else
           >
-          <div style="display:flex; gap:20px">
+          <div class="hide-for-mobile-real" style="display:flex; gap:20px">
             <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 1 }"></div>
             <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 2 }"></div>
             <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 3 }"></div>
           </div>
           <GameMove class="hide-for-mobile" v-if="bothRevealed" :move="selectedMove"/>
             <GameMove class="hide-for-mobile" v-else :move="4"/>
-          <div class="address-container">
+          <div class="address-container hide-for-mobile-real">
             <div class="profile-mini"><profile-icon :address="yourAddress" :isMini="true" /></div>
             <p class="address">{{ truncateAddress(yourAddress) }}</p>
           </div>
@@ -186,7 +186,7 @@
               <div
               class="game-move-controls"
               >
-                <div style="display:flex; gap:20px">
+                <div class="hide-for-mobile-real" style="display:flex; gap:20px">
                   <div :class="{ 'point': true, 'point-active': opponentCurrentPoints >= 1 }"></div>
                   <div :class="{ 'point': true, 'point-active': opponentCurrentPoints >= 2 }"></div>
                   <div :class="{ 'point': true, 'point-active': opponentCurrentPoints >= 3 }"></div>
@@ -194,7 +194,7 @@
                 <GameMove v-if="bothRevealed" class="flip" :move="opponentMove"/>
                   <GameMove class="flip" v-else-if="isOpponentMoveSent" :move="5"/>
                   <GameMove class="flip" v-else :move="4"/>
-                <div class="address-container">
+                <div class="address-container hide-for-mobile-real">
                   <div class="profile-mini"><profile-icon :address="opponentAddress" :isMini="true" /></div>
                   <p class="address">{{ truncateAddress(opponentAddress) }}</p>
                 </div>
@@ -244,12 +244,13 @@
 
         
         <div class="button-holder">
-          <button v-if="!isRegistering && !isWaiting" class="button-light" @click="toggleAddFundsModal">
+          <button v-if="!isRegistering && !isWaiting" id="addFundsButton" class="button-light" @click="toggleAddFundsModal">
              <div class="plus-symbol"></div><div>Add Funds</div>
             </button>
             <div>
               
         <button
+        id="playButton"
           class="button-dark"
           v-if="!isWaiting"
           @click="registerGame"
