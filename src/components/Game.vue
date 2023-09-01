@@ -1244,8 +1244,13 @@ async emptyBurnerWallet(retryCount = 0) {
       this.getGame(gameId).states[0][playerAddress.toLowerCase()] = GameStates.Waiting;  
       
       let block = null;
-      while (!block) { block = await this.getWeb3.eth.getBlock(event.blockNumber);}
+      while (!block) { 
+        block = await this.getWeb3.eth.getBlock(event.blockNumber);
+        console.log("setting time: block", block)
+
+      }
       const timestamp = block.timestamp;
+      console.log("setting time:", timestamp)
       this.getGame(gameId).time = timestamp;
       
       //set currentGameId if user is in game
@@ -1849,13 +1854,8 @@ async emptyBurnerWallet(retryCount = 0) {
           throw new Error("User does not have enough funds");
         }
 
-        const gasPrice = await this.getWeb3.eth.getGasPrice()*10;
-        const gasLimit = this.isBurner ? await this.burnerContractInstance.methods.registerWithBurner(this.burnerAddress, betInWei)
-          .estimateGas({
-            from: accounts[0],
-            to: this.contractInstance.options.address,
-            value: this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether")
-        }) : await this.contractInstance.methods.register().estimateGas({
+        const gasPrice = await this.getWeb3.eth.getGasPrice();
+        const gasLimit = await this.contractInstance.methods.register().estimateGas({
             from: accounts[0],
             to: this.contractInstance.options.address,
             value: this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether")
@@ -1932,7 +1932,7 @@ async emptyBurnerWallet(retryCount = 0) {
         const passwordHash = this.getPasswordHash();
 
         const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = await this.getWeb3.eth.getGasPrice()*10;
+        const gasPrice = await this.getWeb3.eth.getGasPrice();
         const gasLimit = await this.contractInstance.methods.createPasswordMatch(passwordHash).estimateGas({
             from: accounts[0],
             to: this.contractInstance.options.address,
