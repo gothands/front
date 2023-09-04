@@ -1258,7 +1258,7 @@ async emptyBurnerWallet(retryCount = 0) {
 
     //Whenever has created a match and is waiting for another player to join
     //We set the bet value and the state to waiting
-    handleWaitingEvent(event) {
+    async handleWaitingEvent(event) {
       console.log("PlayerWaiting event:", event.returnValues);
       const { gameId, bet, playerAddress, first } = event.returnValues;
 
@@ -1280,6 +1280,16 @@ async emptyBurnerWallet(retryCount = 0) {
           this.getGame(gameId).playerB = playerAddress.toLowerCase()
         }
       }
+
+      let block = null;
+      while (!block) { 
+        block = await this.getWeb3.eth.getBlock(event.blockNumber);
+        console.log("setting time: block", block)
+
+      }
+      const timestamp = block.timestamp;
+      console.log("setting time:", timestamp)
+      this.getGame(gameId).time = timestamp;
 
       //set bet amount
       this.getGame(gameId).bet = bet * 10 ** -18;
