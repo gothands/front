@@ -192,7 +192,7 @@
                   <div :class="{ 'point': true, 'point-active': opponentCurrentPoints >= 3 }"></div>
                 </div>
                 <GameMove v-if="bothRevealed" class="flip" :move="opponentMove"/>
-                  <GameMove class="flip" v-else-if="isOpponentMoveSent" :move="5"/>
+                  <GameMove class="flip" v-else-if="isOpponentMoveSent" :move="4"/>
                   <GameMove class="flip" v-else :move="4"/>
                 <div class="address-container hide-for-mobile-real">
                   <div class="profile-mini"><profile-icon :address="opponentAddress" :isMini="true" /></div>
