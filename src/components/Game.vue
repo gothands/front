@@ -256,11 +256,12 @@
           @click="registerGame"
         >   
           <div>
-            {{ isRegistering ? "Creating..." : playWithFriend ? "Create Match" : "Play random" }}
+            {{ isRegistering ? "Creating..." : isJoiningPasswordMatch? `Join ${joiningPassword}` :  playWithFriend ? "Create Match" : "Play random" }}
             &nbsp; 
           </div>
           <!-- <a>{{ this.wagerSteps[this.sliderIndex] }} ETH</a> -->
           <select 
+          v-if="!isJoiningPasswordMatch"
           class="selector" 
           style="margin-right:-25px;"
           :value="this.selectedBet"
@@ -1828,6 +1829,10 @@ async emptyBurnerWallet(retryCount = 0) {
 
     //Join or create a new game
     async registerGame() {
+      if(this.isJoiningPasswordMatch){
+        await this.joinPasswordMatch(this.$store.state.joiningPassword, this.$store.state.joiningBetAmount)
+        return;
+      }
       if(this.playWithFriend){
         await this.createPasswordGame();
         return;
@@ -2726,11 +2731,11 @@ async emptyBurnerWallet(retryCount = 0) {
       const betAmount = urlParams.get('bet');
 
       
-
       if(joiningPassword && !this.isInGame && !this.isJoiningGame && betAmount) {
         this.$store.dispatch("setJoiningPassword", joiningPassword);
+        this.$store.commit("joiningBetAmount", betAmount);
         console.log("joining match with bet amount", betAmount)
-        await this.joinPasswordMatch(joiningPassword, betAmount);
+        //await this.joinPasswordMatch(joiningPassword, betAmount);
 
         
 

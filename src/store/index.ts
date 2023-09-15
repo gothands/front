@@ -47,6 +47,7 @@ const store = createStore({
       isInGame: false,
       isJoiningPasswordMatch: false,
       joiningPassword: null,
+      joiningBetAmount: null,
       leaveGame: () => { console.log("leaveGame not set") },
       addFundsMessage: "Adding Funds...",
 
@@ -105,6 +106,7 @@ const store = createStore({
     setLeaveGame(state, payload) { state.leaveGame = payload },
     setIsJoiningPasswordMatch(state, payload) { state.isJoiningPasswordMatch = payload },
     setJoiningPassword(state, payload) { state.joiningPassword = payload },
+    setJoiningBetAmount(state, payload) { state.joiningBetAmount = payload },
     setAddFundsMessage(state, payload) { state.addFundsMessage = payload },
 
     // Stake
