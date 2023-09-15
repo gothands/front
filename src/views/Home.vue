@@ -126,7 +126,7 @@ export default {
   ]),
   methods:{
     login() {
-      store.dispatch('login')
+      store.dispatch('loginWeb3Auth')
     },
   }
  

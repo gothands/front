@@ -178,6 +178,30 @@ const store = createStore({
         commit("setLoggedIn", false);
       }
     },
+    async loginWeb3Auth ({ commit, state }) {
+      const web3auth = state.web3auth
+      if (!web3auth) {
+        console.error("web3auth not set")
+        return;
+      }
+
+      if (web3auth.provider) {
+        store.dispatch("setProvider", web3auth.provider);
+        console.log("setProvider", web3auth.provider);
+        //const initVal = await torusPlugin.initWithProvider(store.state.provider, userInfo);
+        store.dispatch("setLoggedIn", true);
+
+      }
+      //check if logged in through metamask
+      if (web3auth.connectedAdapterName === "metamask") {
+        store.dispatch("setIsMetamask", true);
+      }
+
+      const provider = await state.web3auth.connect();
+      store.dispatch("setLoading", true);
+      store.dispatch("setProvider", provider);
+
+    },
     // Game
     setGames({ commit }, payload) { commit('setGames', payload) },
     setIsInGame({ commit }, payload) { commit('setIsInGame', payload) },

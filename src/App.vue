@@ -290,37 +290,15 @@ export default {
     })
 
 	store.commit("setOnboard", onboard);
-
+    store.commit('setWeb3Auth', web3auth)
 
 
     onMounted(async () => {
       try {
         console.log("onMounted");
         checkJoiningPassword();
-        store.dispatch("setLoading", true);
-        store.dispatch("setLoggedIn", false);
-        //await web3auth.initModal();
-        //const userInfo: any = await web3auth.getUserInfo();
-        //await web3auth.addPlugin(torusPlugin);
-        const mountedWallets = await onboard.connectWallet({
-          autoSelect: {
-            label: 'Select a wallet to connect',
-            disableModals: true,
-          },
-        })
-        
-        console.log("mointing",onboard.state.get())
-        if (mountedWallets[0]){
-          await onboard.setChain({
-          chainId: CURRENT_CHAIN_ID,
-        })
-          store.commit("setWallets", mountedWallets);
-          store.dispatch("setLoggedIn", true);
-          store.dispatch("setProvider", mountedWallets[0].provider);
-          store.dispatch("setIsMetamask", true);
 
-        }
-        store.dispatch("setLoading", false);
+        store.dispatch('loginWeb3Auth')
 
 
 
@@ -374,7 +352,7 @@ watch(
       store.dispatch("setProvider", provider);
       if (web3auth.provider) {
           store.dispatch("setProvider", web3auth.provider);
-		  console.log("setProvider", web3auth.provider);
+		      console.log("setProvider", web3auth.provider);
           //const initVal = await torusPlugin.initWithProvider(store.state.provider, userInfo);
           store.dispatch("setLoggedIn", true);
 
