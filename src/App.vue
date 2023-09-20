@@ -273,23 +273,24 @@ export default {
       ]
     }
 
-    const onboard = Onboard({
-      wallets: [injected, walletConnect, coinbaseWallet],
-      chains: [
-        {
-          id: CURRENT_CHAIN_ID,
-          token: 'ETH',
-          label: 'Arbitrum Testnet',
-          rpcUrl:  RPC_URLS[CURRENT_CHAIN_ID],
-        }
-      ],
-      appMetadata,
-      connect: {
-        autoConnectLastWallet: true
-      }
-    })
+    // const onboard = Onboard({
+    //   wallets: [injected, walletConnect, coinbaseWallet],
+    //   chains: [
+    //     {
+    //       id: CURRENT_CHAIN_ID,
+    //       token: 'ETH',
+    //       label: 'Arbitrum Testnet',
+    //       rpcUrl:  RPC_URLS[CURRENT_CHAIN_ID],
+    //     }
+    //   ],
+    //   appMetadata,
+    //   connect: {
+    //     autoConnectLastWallet: true
+    //   }
+    // })
 
-	store.commit("setOnboard", onboard);
+	//store.commit("setOnboard", onboard);
+  web3auth.initModal();
     store.commit('setWeb3Auth', web3auth)
 
 

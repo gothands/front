@@ -181,11 +181,16 @@ const store = createStore({
       }
     },
     async loginWeb3Auth ({ commit, state }) {
+      console.log("loginWeb3Auth")
       const web3auth = state.web3auth
       if (!web3auth) {
         console.error("web3auth not set")
         return;
       }
+
+      const provider = await web3auth.connect();
+      store.dispatch("setLoading", true);
+      store.dispatch("setProvider", provider);
 
       if (web3auth.provider) {
         store.dispatch("setProvider", web3auth.provider);
@@ -199,9 +204,9 @@ const store = createStore({
         store.dispatch("setIsMetamask", true);
       }
 
-      const provider = await state.web3auth.connect();
-      store.dispatch("setLoading", true);
-      store.dispatch("setProvider", provider);
+      // const provider = await state.web3auth.connect();
+      // store.dispatch("setLoading", true);
+      // store.dispatch("setProvider", provider);
 
     },
     // Game

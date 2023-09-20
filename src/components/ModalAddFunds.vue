@@ -2,8 +2,18 @@
     <transition name="fade">
         <div class="modal-container" v-if="show">
             <div class="modal-add-funds">
-                    <funds-manager :minimumFundsToAdd="minimumFundsToAdd" :callback="callback" :closeCallBack="toggleShow"></funds-manager>
-                    
+                    <funds-manager 
+                      v-if="isBurner"
+                      :minimumFundsToAdd="minimumFundsToAdd" 
+                      :callback="callback" 
+                      :closeCallBack="toggleShow"
+                    ></funds-manager>
+                    <funds-manager-embedded 
+                      v-else
+                      :minimumFundsToAdd="minimumFundsToAdd" 
+                      :callback="callback" 
+                      :closeCallBack="toggleShow"
+                    ></funds-manager-embedded>
                 </div>
                 
             </div>
@@ -94,6 +104,7 @@ line-height: normal;
 
 <script>
 import FundsManager from './FundsManager.vue'
+import FundsManagerEmbedded from './FundsManagerEmbedded.vue'
 export default {
     data() {
         return {
@@ -101,7 +112,8 @@ export default {
         }
     },
     components: {
-        FundsManager
+        FundsManager,
+        FundsManagerEmbedded
     },
     model: {
         prop: 'show',
@@ -130,6 +142,9 @@ export default {
         },
     },
     computed: {
+      isBurner() {
+        return this.$store.state.isMetaMask
+      }
     },
 
     //output the value of move
