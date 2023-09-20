@@ -149,7 +149,8 @@ export default {
 
       if(joiningPassword && betAmount) {
         store.dispatch("setJoiningPassword", joiningPassword);
-        store.dispatch("setIsJoiningPasswordMatch", false);
+        store.commit("setJoiningBetAmount", betAmount);
+        store.dispatch("setIsJoiningPasswordMatch", true);
       }
       
     }

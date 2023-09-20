@@ -256,7 +256,7 @@
           @click="registerGame"
         >   
           <div>
-            {{ isRegistering ? "Creating..." : isJoiningPasswordMatch? `Join ${joiningPassword}` :  playWithFriend ? "Create Match" : "Play random" }}
+            {{ isRegistering ? "Creating..." : isJoiningPasswordMatch? `Join Match ${joiningPassword?.toUpperCase()}` :  playWithFriend ? "Create Match" : "Play random" }}
             &nbsp; 
           </div>
           <!-- <a>{{ this.wagerSteps[this.sliderIndex] }} ETH</a> -->
@@ -276,7 +276,7 @@
           </select>
         </button>
         <p 
-          v-if="!isRegistering && !isWaiting"
+          v-if="!isRegistering && !isWaiting && !isJoiningPasswordMatch"
           @click="togglePlayWithFriend"
           class="toggle-text"
           style="margin-top: 30px; cursor:pointer;"
@@ -539,8 +539,8 @@ export default {
       burnerContractInstance: null,
       burnerNonce: 0,
 
-      isJoiningPasswordMatch: false,
-      joiningPassword: null,
+      //isJoiningPasswordMatch: false,
+      //joiningPassword: null,
 
       lastFetchedBlock: DEFAULT_FETCH_BLOCK,
 
@@ -552,6 +552,8 @@ export default {
     };
   },
   computed: {
+    isJoiningPasswordMatch() { return this.$store.state.isJoiningPasswordMatch },
+    joiningPassword() { return this.$store.state.joiningPassword },
     triggerProcessEvents() { return this.$store.state.triggerProcessEvents },
     fetchingEvents() { return this.$store.state.isFetchingEvents},
 
@@ -1845,6 +1847,7 @@ async emptyBurnerWallet(retryCount = 0) {
       }
 
       if (!this.selectedBet) {
+        console.log("Please select a bet amount.");
         alert("Please select a bet amount.");
         return;
       }
@@ -2019,6 +2022,7 @@ async emptyBurnerWallet(retryCount = 0) {
       }
       this.selectedBet = betAmount;
       if (!this.selectedBet) {
+        console.log("Please select a bet amount.");
         alert("Please select a bet amount.");
         return;
       }
