@@ -1,1 +1,0 @@
-"use strict";(self["webpackChunkHandsy_io"]=self["webpackChunkHandsy_io"]||[]).push([[9763],{79763:(e,s,a)=>{a.d(s,{Subject:()=>n.x,fromEvent:()=>u.R});var n=a(61173),u=a(55811)}}]);
