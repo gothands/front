@@ -5,7 +5,7 @@
 
         <p class="grey" style="text-align:start">Step 1</p>
         <div class="card-small">
-            <h3>Bridge ETH to Arb Nova</h3>
+            <h4>Bridge ETH to Arb Nova</h4>
             <a
             style="cursor: pointer;"
             target="_blank"
@@ -14,7 +14,7 @@
 
         <p class="grey" style="text-align:start">Step 2</p>
         <div class="card-small">
-            <h3>Deposit to your wallet</h3>
+            <h4>Deposit bridged ETH to wallet</h4>
             <a
             style="cursor: pointer;"
             @click="()=>{copyTextToClipboard(store.state.activeAccount)}"

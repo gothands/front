@@ -66,6 +66,7 @@ line-height: normal;
   .modal {
     color: black;
     padding: 20px;
+    max-width: 95vw;
     width: auto;
     position: fixed;
     align-self: center;

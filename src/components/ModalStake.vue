@@ -71,6 +71,7 @@ line-height: normal;
     color: black;
     padding: 20px;
     width: auto;
+    max-height: 95vw;
     position: fixed;
     align-self: center;
     border-radius: 48px;
