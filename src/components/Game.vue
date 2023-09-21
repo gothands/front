@@ -2304,8 +2304,9 @@ async emptyBurnerWallet(retryCount = 0) {
           .reveal(parseInt(this.currentGameId), clearMove)
           .send({ from: this.burnerAddress, gasPrice, gasLimit, nonce: this.burnerNonce++ });
         }else{
+          const nonce = await this.getWeb3Read.eth.getTransactionCount(accounts[0], 'pending');
         const result = await this.contractInstance.methods
-          .reveal(this.currentGameId, clearMove)
+          .reveal(parseInt(this.currentGameId), clearMove)
           .send({ from: accounts[0], gasPrice, gasLimit });
         }
 
