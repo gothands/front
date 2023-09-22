@@ -1868,7 +1868,7 @@ async emptyBurnerWallet(retryCount = 0) {
         
         const betInWei = this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether");
 
-        if(!await this.userMustHave(betInWei, this.registerGame)){
+        if(!await this.userMustHave(betInWei, () => {})){
           throw new Error("User does not have enough funds");
         }
 
@@ -1941,7 +1941,7 @@ async emptyBurnerWallet(retryCount = 0) {
         const betInWei = this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether");
 
 
-        if(!await this.userMustHave(betInWei, this.createPasswordGame)){
+        if(!await this.userMustHave(betInWei, () => {})){
           throw new Error("User does not have enough funds");
         }
 
@@ -2046,7 +2046,7 @@ async emptyBurnerWallet(retryCount = 0) {
         const betInWei = this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether");
         const totalValue = this.getWeb3.utils.toWei((this.burnerTopUpAmount + parseFloat(this.selectedBet)).toString(), "ether");
 
-        if(!await this.userMustHave(totalValue, (error)=>{this.joinPasswordMatch(password, betAmount, error)})){
+        if(!await this.userMustHave(totalValue, () => {})){
           return;
         }
 

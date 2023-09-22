@@ -78,16 +78,13 @@ import Transak from '@biconomy/transak';
 
 import { ref, onMounted, watch } from "vue";
 import { Web3Auth } from "@web3auth/modal";
-import { CHAIN_NAMESPACES, SafeEventEmitterProvider } from "@web3auth/base";
+import { CHAIN_NAMESPACES } from "@web3auth/base";
 import RPC from "./web3RPC";
 
 // Plugins
-import { TorusWalletConnectorPlugin } from "@web3auth/torus-wallet-connector-plugin";
 
 // Adapters
-import { WalletConnectV1Adapter } from "@web3auth/wallet-connect-v1-adapter";
 import { MetamaskAdapter } from "@web3auth/metamask-adapter";
-import { TorusWalletAdapter } from "@web3auth/torus-evm-adapter";
 import { mapState } from 'vuex';
 import store from '@/store';
 
@@ -191,19 +188,6 @@ export default {
 
     // adding torus wallet connector plugin
 
-    const torusPlugin = new TorusWalletConnectorPlugin({
-      torusWalletOpts: {},
-      walletInitOptions: {
-        whiteLabel: {
-          theme: { isDark: true, colors: { primary: "#00a8ff" } },
-          logoDark: "https://web3auth.io/images/w3a-L-Favicon-1.svg",
-          logoLight: "https://web3auth.io/images/w3a-D-Favicon-1.svg",
-        },
-        useWalletConnect: true,
-        enableLogging: true,
-      },
-    });
-
     // read more about adapters here: https://web3auth.io/docs/sdk/web/adapters/
 
     // adding wallet connect v1 adapter
@@ -252,20 +236,20 @@ export default {
     web3auth.configureAdapter(metamaskAdapter);
 
   
-    const injected = injectedModule()
-    const walletConnect = walletConnectModule({projectId: '731ecc593b8d659e6155e34fb33dd8b2'})
-    const coinbaseWallet = coinbaseModule()
+    // const injected = injectedModule()
+    // const walletConnect = walletConnectModule({projectId: '731ecc593b8d659e6155e34fb33dd8b2'})
+    // const coinbaseWallet = coinbaseModule()
 
-    const appMetadata = {
-      name: 'Web3-Onboard Vanilla JS Demo',
-      icon: '<svg />',
-      logo: '<svg />',
-      description: 'Demo using Onboard',
-      recommendedInjectedWallets: [
-        { name: 'Coinbase', url: 'https://wallet.coinbase.com/' },
-        { name: 'MetaMask', url: 'https://metamask.io' }
-      ]
-    }
+    // const appMetadata = {
+    //   name: 'Web3-Onboard Vanilla JS Demo',
+    //   icon: '<svg />',
+    //   logo: '<svg />',
+    //   description: 'Demo using Onboard',
+    //   recommendedInjectedWallets: [
+    //     { name: 'Coinbase', url: 'https://wallet.coinbase.com/' },
+    //     { name: 'MetaMask', url: 'https://metamask.io' }
+    //   ]
+    // }
 
     // const onboard = Onboard({
     //   wallets: [injected, walletConnect, coinbaseWallet],
@@ -333,6 +317,11 @@ watch(
       await pollBalance();
       await getAccounts();
     }
+
+    if(newValue == null && oldValue != null) {
+      // The provider value has changed, start polling the balance
+      alert("You have disconnected from your wallet. Please reconnect to continue playing.");
+    }
   },
   { immediate: true } // This option triggers the watch callback immediately with the current value
 );
@@ -361,39 +350,39 @@ watch(
       uiConsole("Logged in Successfully!");
     };    
 
-    const buyEth = async () => {
-      console.log("torusPlugin", torusPlugin);
-      if (!web3auth) {
-        uiConsole("web3auth not initialized yet");
-        return;
-      }
-      // await torusPlugin.initiateTopup("moonpay", {
-      //   selectedAddress: activeAccount.value, // User's wallet address
-      //   selectedCurrency: "USD", // Fiat currency
-      //   fiatValue: 100, // Fiat Value
-      //   selectedCryptoCurrency: "ETH", // Crypto currency
-      //   chainNetwork: "mainnet", // Blockchain network
-      // });
+    // const buyEth = async () => {
+    //   console.log("torusPlugin", torusPlugin);
+    //   if (!web3auth) {
+    //     uiConsole("web3auth not initialized yet");
+    //     return;
+    //   }
+    //   // await torusPlugin.initiateTopup("moonpay", {
+    //   //   selectedAddress: activeAccount.value, // User's wallet address
+    //   //   selectedCurrency: "USD", // Fiat currency
+    //   //   fiatValue: 100, // Fiat Value
+    //   //   selectedCryptoCurrency: "ETH", // Crypto currency
+    //   //   chainNetwork: "mainnet", // Blockchain network
+    //   // });
 
-      const userInfo: any = await web3auth.getUserInfo();
+    //   const userInfo: any = await web3auth.getUserInfo();
 
-      const transak = new Transak('PRODUCTION', {
+    //   const transak = new Transak('PRODUCTION', {
 
-        walletAddress: store.state.activeAccount,
-        userData: {
-          firstName: userInfo.name || '',
-          email: userInfo.email || '',
-        },
-        //fiatCurrency: 'USD', // INR
-        //defaultCryptoAmount: 100,
-        //cryptoCurrencyCode: 'USDC',
-        //cryptoAmount: 1000,
-        network: 'arbitrum',
-        exchangeScreenTitle: 'Buy ETH for your Handsy.io account',
+    //     walletAddress: store.state.activeAccount,
+    //     userData: {
+    //       firstName: userInfo.name || '',
+    //       email: userInfo.email || '',
+    //     },
+    //     //fiatCurrency: 'USD', // INR
+    //     //defaultCryptoAmount: 100,
+    //     //cryptoCurrencyCode: 'USDC',
+    //     //cryptoAmount: 1000,
+    //     network: 'arbitrum',
+    //     exchangeScreenTitle: 'Buy ETH for your Handsy.io account',
 
-    }); 
-    transak.init();
-    }
+    // }); 
+    // transak.init();
+    // }
 
 
     const authenticateUser = async () => {
@@ -544,7 +533,6 @@ watch(
       getWeb3: 
       web3auth,
       login,
-      buyEth,
       authenticateUser,
       logout,
       getUserInfo,

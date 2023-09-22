@@ -187,7 +187,7 @@ const store = createStore({
         console.error("web3auth not set")
         return;
       }
-
+      //await web3auth.initModal();
       const provider = await web3auth.connect();
       store.dispatch("setLoading", true);
       store.dispatch("setProvider", provider);

@@ -49,7 +49,8 @@ export default class EthereumRpc {
 
       return balance;
     } catch (error) {
-      return error as string;
+      console.log("error getting balance", error)
+      return "0";
     }
   }
 
