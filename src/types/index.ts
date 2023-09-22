@@ -45,14 +45,14 @@ export const RPC_URLS = {
   [CHAIN_ID_TESTNET]: "https://testnet.era.zksync.dev",
   [CHAIN_ID_LOCALHOST]: "http://localhost:3050/",
   [CHAIN_ID_LOCALHOST_HARDHAT]: "http://localhost:8545",
-  [CHAIN_ID_ARBITRUM_GOERLI]: "https://goerli-rollup.arbitrum.io/rpc",
+  [CHAIN_ID_ARBITRUM_GOERLI]: "https://arb-goerli.g.alchemy.com/v2/4nMlurweValICpl10ChbP5LIk39MSwf1",
   [CHAIN_ID_ARBITRUM_NOVA]: "https://nova.arbitrum.io/rpc",
 
 };
 
 export const CURRENT_CHAIN_ID = CHAIN_ID_ARBITRUM_GOERLI;
 
-export const READ_PROVIDER_URL = "https://goerli-rollup.arbitrum.io/rpc"
+export const READ_PROVIDER_URL = "https://arb-goerli.g.alchemy.com/v2/4nMlurweValICpl10ChbP5LIk39MSwf1"
 
 export const DEFAULT_FETCH_BLOCK = 34700240;
 export const APPLICATION_FEE = 0.05;

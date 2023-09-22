@@ -208,14 +208,14 @@ export default {
 
     // adding wallet connect v1 adapter
 
-    const walletConnectV1Adapter = new WalletConnectV1Adapter({
-      adapterSettings: {
-        //bridge: "https://bridge.walletconnect.org",
-      },
-      clientId,
-    });
+    // const walletConnectV1Adapter = new WalletConnectV1Adapter({
+    //   adapterSettings: {
+    //     //bridge: "https://bridge.walletconnect.org",
+    //   },
+    //   clientId,
+    // });
 
-    web3auth.configureAdapter(walletConnectV1Adapter);
+    // web3auth.configureAdapter(walletConnectV1Adapter);
 
     // adding metamask adapter
 
@@ -250,13 +250,6 @@ export default {
 
     // it will add/update  the metamask adapter in to web3auth class
     web3auth.configureAdapter(metamaskAdapter);
-
-    const torusWalletAdapter = new TorusWalletAdapter({
-      clientId,
-    });
-
-    // it will add/update  the torus-evm adapter in to web3auth class
-    web3auth.configureAdapter(torusWalletAdapter);
 
   
     const injected = injectedModule()
