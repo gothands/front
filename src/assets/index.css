@@ -222,6 +222,16 @@ height: 32px;
 border-radius: 32px;
 background: lightgray -14.029px 0px / 149.927% 100% no-repeat;
 }
+
+.profile-mini-super {
+  width: 20px;
+height: 20px;
+border-radius: 32px;
+background: lightgray -14.029px 0px / 149.927% 100% no-repeat;
+}
+
+
+
 .address{
   margin:0;
   color: #353535;
@@ -745,6 +755,21 @@ align-items: flex-start;
 gap: 10px;
 }
 
+.player-balance-small{
+  border-radius: 32px;
+background: #E19885;
+color: #FFF;
+text-align: center;
+font-size: 14px;
+font-family: Sen;
+font-weight: 800;
+line-height: 160%;
+display: inline-flex;
+padding: 6px 10px;
+align-items: flex-start;
+gap: 10px;
+}
+
 .flip {
   -moz-transform: scaleX(-1);
     -o-transform: scaleX(-1);
@@ -808,8 +833,8 @@ gap: 10px;
 }
 
 .small-loading {
-  width: 40px;
-  height: 40px;
+  width: 20px;
+  height: 20px;
   background:url(loading.svg);
   -webkit-animation: rotating 2s linear infinite;
   -moz-animation: rotating 2s linear infinite;
@@ -824,6 +849,15 @@ gap: 10px;
 .checkmark {
   width: 80px;
   height: 80px;
+  background:url(sent.svg);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+
+.small-checkmark {
+  width: 20px;
+  height: 20px;
   background:url(sent.svg);
   background-repeat: no-repeat;
   background-position: center;
@@ -853,6 +887,7 @@ gap: 10px;
 }
 
 .show-for-mobile{
+  display: none !important;
   visibility: hidden !important;
 }
 
@@ -990,6 +1025,10 @@ background-position-y: 50%;
 
 /* Mobile */
 @media only screen and (max-width: 600px) {
+  .show-for-mobile {
+    display: flex !important;
+    visibility: visible !important;
+  }
   .title {
     font-size: 40px;
   }
@@ -1100,6 +1139,10 @@ background-position-y: 50%;
 
 /* Tablet */
 @media screen and (max-width: 960px) {
+
+  .content {
+    margin-top: 0px;
+  }
   
   .game-view { 
     display: flex;
@@ -1107,7 +1150,8 @@ background-position-y: 50%;
     align-items: center;
     justify-content: space-evenly;
     gap: 20px;
-    height: 70vh;
+    margin-top: -50px;
+
   }
 
 
@@ -1171,7 +1215,6 @@ background-position-y: 50%;
   }
 
   .show-for-mobile {
-    display: block;
     visibility: visible;
   }
 
@@ -1195,6 +1238,9 @@ background-position-y: 50%;
 
   .middle-game-view {
     justify-content: center;
+    align-items: center;
+    flex-direction: column-reverse;
+    gap: 0px;
   }
 
   .opponent-view {}

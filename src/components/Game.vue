@@ -73,11 +73,13 @@
       </div> -->
       <!-- Game view -->
       <div class="game-view">
+       
           <!-- Selected move-->
           <div 
             class="game-move-controls"
             v-if="shouldMove"
             >
+          
             <div class="hide-for-mobile-real" style="display:flex; gap:20px">
               <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 1 }"></div>
               <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 2 }"></div>
@@ -92,20 +94,44 @@
             <div class="player-balance">
               {{ balance }} ETH
             </div>
-            <div v-if="!isMoveSent">{{yourTimeLeft}}</div>
+            <div v-if="!isMoveSent" class="hide-for-mobile">{{yourTimeLeft}}</div>
             <div 
               style="display: flex; flex-direction:column; gap: 10px; align-items: center;"
             >
                   <GameMove class="hide-for-mobile" :isNormal="true" :move="selectedMove"></GameMove>
                   <p>{{selectedMove == 1 ? "Rock" : selectedMove == 2 ? "Paper" : "Scissors"}}</p>
               </div>
-            
+              <div class="show-for-mobile" style="display:flex; flex-direction:row; align-items:center; gap:20px; justify-content:center;">
+                <div class="address-container" style="display:flex; align-items:center;">
+                  <profile-icon :address="yourAddress" :isSuperMini="true" />
+                  <p class="address" style="font-size:18px;">{{ smallTruncate(yourAddress) }}</p>
+                </div>
+      
+                <div class="player-balance-small">
+                  {{ balance }} ETH
+                </div>
+      
+              </div>
           </div>
           <!-- Choose move-->
           <div
             class="game-move-controls"
             v-else
           >
+          
+          <!-- User mobile time controls and score-->
+          <div class="show-for-mobile" style="display:flex; flex-direction:row; align-items:center; gap:15px; justify-content:center;">
+            <div v-if="!isMoveSent"
+                 class="small-loading"></div>
+                <div v-else class="checkmark"></div>
+            <p style="opacity:0.5;" v-if="!isMoveSent">{{yourTimeLeft}}</p>
+                
+
+            <div style="display:flex; align-items:center; gap:1px;">
+              <p style="opacity:0.5;font-weight:bolder;">{{yourCurrentPoints}}</p> 
+              <div class="point"></div>
+            </div>
+          </div>
           <div class="hide-for-mobile-real" style="display:flex; gap:20px">
             <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 1 }"></div>
             <div :class="{ 'point': true, 'point-active': yourCurrentPoints >= 2 }"></div>
@@ -120,7 +146,7 @@
           <div class="player-balance">
             {{ balance }} ETH
           </div>
-          <div v-if="!isMoveSent">{{yourTimeLeft}}</div>
+          <div v-if="!isMoveSent" class="hide-for-mobile">{{yourTimeLeft}}</div>
             <div 
               style="display: flex; justify-content: center; gap: 10px;"
             >
@@ -158,7 +184,22 @@
               Submit
             </button> -->
 
+            <div class="show-for-mobile" style="display:flex; flex-direction:row; align-items:center; gap:20px; justify-content:center;">
+              <div class="address-container" style="display:flex; align-items:center;">
+                <profile-icon :address="yourAddress" :isSuperMini="true" />
+                <p class="address" style="font-size:18px;">{{ smallTruncate(yourAddress) }}</p>
+              </div>
+    
+              <div class="player-balance-small">
+                {{ balance }} ETH
+              </div>
+    
+            </div>
+            
+
           </div>
+
+          
 
           <div class="middle-game-view">
             <p class="hide-for-mobile">Your bet is</p>
@@ -176,13 +217,31 @@
               >ETH</span>
             </h1>
             <p class="hide-for-mobile" style="opacity:0.5;">{{ roundStateString }}</p>
-            <h1 class="show-for-mobile">VS</h1>
+            <p class="show-for-mobile" style="opacity:0.5; font-size:small">{{ roundStateString }}</p>
+            <div style="display:flex; flex-direction:row; align-items:center; gap:20px; justify-content:center;">
+              <!-- <p class="show-for-mobile" style="font-weight:bolder; padding:0;margin:0;">VS</p> -->
+              <h4 class="show-for-mobile" style="margin:0; font-size:25px; letter-spacing: -1px; font-weight:800;">{{ this.selectedBet }} <span class="currency-symbol">ETH</span></h4>
+            </div>
+
+          
           </div>
 
+          
           <!-- Opponent move-->
           <div 
           class="game-move-controls opponent-view"
           >
+          <div class="show-for-mobile" style="display:flex; flex-direction:row; align-items:center; gap:20px; justify-content:center;">
+            <div class="address-container" style="display:flex; align-items:center;">
+              <profile-icon :address="opponentAddress" :isSuperMini="true" />
+              <p class="address" style="font-size:18px;">{{ smallTruncate(opponentAddress) }}</p>
+            </div>
+
+            <div class="player-balance-small">
+              {{ opponentBalance }} ETH
+            </div>
+
+          </div>
               <div
               class="game-move-controls"
               >
@@ -202,20 +261,35 @@
                   {{ opponentBalance }} ETH
                 </div>
 
-                <div v-if="!isOpponentMoveSent">{{opponentTimeLeft}}</div>
+                <div v-if="!isOpponentMoveSent" class="hide-for-mobile">{{opponentTimeLeft}}</div>
 
                 <div v-if="!isOpponentMoveSent"
                  class="loading hide-for-mobile"></div>
                 <div v-else
-                  class="checkmark"
+                  class="checkmark hide-for-mobile"
                 >
 
                 </div>
                   
                   
               </div>
+              <!-- Opponent mobile time controls and score-->
+          <div class="show-for-mobile" style="display:flex; flex-direction:row; align-items:center; gap:15px; justify-content:center;">
+            <div v-if="!isOpponentMoveSent"
+                 class="small-loading"></div>
+                <div v-else class="small-checkmark"></div>
+            <p style="opacity:0.5;" v-if="!isOpponentMoveSent">{{opponentTimeLeft}}</p>
+                
+
+            <div style="display:flex; align-items:center; gap:1px;">
+              <p style="opacity:0.5;font-weight:bolder;">{{opponentCurrentPoints}}</p> 
+              <div class="point"></div>
+            </div>
+          </div>
+
               
           </div>
+          
       </div>
 
     </div>
@@ -1003,6 +1077,9 @@ export default {
     truncateAddress(address) {
       return address?.slice(0, 6) + "..." + address?.slice(-4)
     },
+    smallTruncate(address) {
+      return address?.slice(0, 4) + ".." + address?.slice(-2)
+    },
     onRock() {
       this.selectedMove = Moves.Rock;
       this.sendMove();
@@ -1248,7 +1325,7 @@ async emptyBurnerWallet(retryCount = 0) {
       
       let block = null;
       while (!block) { 
-        block = await this.getWeb3.eth.getBlock(event.blockNumber);
+        block = await this.getWeb3Read.eth.getBlock(event.blockNumber);
         console.log("setting time: block", block)
 
       }
@@ -1286,7 +1363,7 @@ async emptyBurnerWallet(retryCount = 0) {
 
       let block = null;
       while (!block) { 
-        block = await this.getWeb3.eth.getBlock(event.blockNumber);
+        block = await this.getWeb3Read.eth.getBlock(event.blockNumber);
         console.log("setting time: block", block)
 
       }
@@ -1317,7 +1394,7 @@ async emptyBurnerWallet(retryCount = 0) {
 
       //set time of matched
       let block = null;
-      while (!block) { block = await this.getWeb3.eth.getBlock(event.blockNumber);}
+      while (!block) { block = await this.getWeb3Read.eth.getBlock(event.blockNumber);}
       const timestamp = block.timestamp;
       this.getGame(gameId).timeOfMatched = timestamp;
       console.log("setting time of matched", timestamp)
@@ -1397,7 +1474,7 @@ async emptyBurnerWallet(retryCount = 0) {
 
       //set time of matched
       let block = null;
-      while (!block) { block = await this.getWeb3.eth.getBlock(event.blockNumber);}
+      while (!block) { block = await this.getWeb3Read.eth.getBlock(event.blockNumber);}
       const timestamp = block.timestamp;
       this.getGame(gameId).timeOfMatched = timestamp;
       console.log("setting time of matched", timestamp)
@@ -2750,7 +2827,7 @@ async emptyBurnerWallet(retryCount = 0) {
 
     // async fetchPastGames() {
     //   let fromBlock = this.lastFetchedBlock;
-    //   let toBlock = await this.getWeb3.eth.getBlockNumber();
+    //   let toBlock = await this.getWeb3Read.eth.getBlockNumber();
 
     //   console.log("fetching past games from block", fromBlock, "to block", toBlock);
 

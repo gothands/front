@@ -1,8 +1,22 @@
 <template>
 	<nav>
-		<div class="title">
+		<div class="title hide-for-mobile">
 		  Handsy.io
 		</div>
+    <div class="show-for-mobile">
+      <div style="display:flex; align-items:center;">
+        <div class="title" style="">
+          Handsy.io
+        </div>
+        <button
+        v-if="isInGame"
+        class="button-light"
+        style="margin-top: -10px;"
+        @click="leaveGame">
+        Leave
+      </button> 
+      </div>
+    </div>
 
 		<div
 			
