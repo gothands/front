@@ -476,7 +476,7 @@ import GameMove from "./GameMove.vue";
 import GameList from "./GameList.vue";
 import Modal from "./Modal.vue";
 import ProfileItem from "./ProfileItem.vue";
-import { Moves, Outcomes, GameStates, APPLICATION_FEE, DEFAULT_FETCH_BLOCK, MAX_MOVE_TIME } from "../types";
+import { Moves, Outcomes, GameStates, APPLICATION_FEE, DEFAULT_FETCH_BLOCK, MAX_MOVE_TIME, READ_PROVIDER_URL } from "../types";
 import Web3 from "web3";
 import { sha256 } from "js-sha256";
 import RampInstantSDK from "@ramp-network/ramp-instant-sdk";
@@ -649,6 +649,7 @@ export default {
     },
     getWeb3() {return new Web3(this.provider);},
     getWeb3Read() { return new Web3(new Web3.providers.WebsocketProvider("wss://maximum-shy-meme.arbitrum-goerli.discover.quiknode.pro/9e608d37bed73e216df881fc52b358d41236b29e/")) },
+    getWeb3Read2() { return new Web3(new Web3.providers.HttpProvider(READ_PROVIDER_URL)) },
     balance() {
       const value =  this.$store.state.balance;
       return (Math.round(value * 100) / 100).toFixed(2);
@@ -1325,7 +1326,7 @@ async emptyBurnerWallet(retryCount = 0) {
       
       let block = null;
       while (!block) { 
-        block = await this.getWeb3Read.eth.getBlock(event.blockNumber);
+        block = await this.getWeb3Read2.eth.getBlock(event.blockNumber);
         console.log("setting time: block", block)
 
       }
@@ -1363,7 +1364,7 @@ async emptyBurnerWallet(retryCount = 0) {
 
       let block = null;
       while (!block) { 
-        block = await this.getWeb3Read.eth.getBlock(event.blockNumber);
+        block = await this.getWeb3Read2.eth.getBlock(event.blockNumber);
         console.log("setting time: block", block)
 
       }
@@ -1394,7 +1395,7 @@ async emptyBurnerWallet(retryCount = 0) {
 
       //set time of matched
       let block = null;
-      while (!block) { block = await this.getWeb3Read.eth.getBlock(event.blockNumber);}
+      while (!block) { block = await this.getWeb3Read2.eth.getBlock(event.blockNumber);}
       const timestamp = block.timestamp;
       this.getGame(gameId).timeOfMatched = timestamp;
       console.log("setting time of matched", timestamp)
@@ -1474,7 +1475,7 @@ async emptyBurnerWallet(retryCount = 0) {
 
       //set time of matched
       let block = null;
-      while (!block) { block = await this.getWeb3Read.eth.getBlock(event.blockNumber);}
+      while (!block) { block = await this.getWeb3Read2.eth.getBlock(event.blockNumber);}
       const timestamp = block.timestamp;
       this.getGame(gameId).timeOfMatched = timestamp;
       console.log("setting time of matched", timestamp)

@@ -41,6 +41,7 @@ const store = createStore({
       onboard: null as any,
       wallets: null as any,
       isMetamask: false,
+      web3ReadProvider: new Web3(new Web3.providers.HttpProvider(READ_PROVIDER_URL)),
 
       // Game
       games: games,
@@ -429,7 +430,8 @@ const store = createStore({
       dispatch('uncacheEvents')
 
       //initialize web3 Read only provider and contracts
-      const web3 = new Web3(new Web3.providers.HttpProvider(READ_PROVIDER_URL))
+      const web3 = state.web3ReadProvider;
+
       const handsContract = new web3.eth.Contract(
         mainContracts.deployedAbis.Hands as any,
         mainContracts.deployedContracts.Hands
