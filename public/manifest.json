@@ -10,14 +10,9 @@
     "icons": [
       {
         "src": "rock.svg",
-        "sizes": "16x16",
-        "type": "image/svg+xml"
-      },
-      {
-        "src": "rock.svg",
-        "sizes": "72x72",
-        "type": "image/svg+xml"
+        "type": "image/svg+xml",
+        "sizes": "any"
       }
-    ],
-    "splash_pages": null
+    ]
   }
+  
