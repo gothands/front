@@ -1,9 +1,23 @@
 {
     "name": "Handsy.io",
     "short_name": "Handsy.io",
-    "start_url": ".",
+    "theme_color": "#ffffff",
+    "background_color": "#00BAFA",
     "display": "standalone",
-    "background_color": "#fff",
-    "description": "Play Rock Paper Scissors for real money"
+    "orientation": "portrait",
+    "scope": "/",
+    "start_url": "/",
+    "icons": [
+      {
+        "src": "rock.svg",
+        "sizes": "16x16",
+        "type": "image/svg+xml"
+      },
+      {
+        "src": "rock.svg",
+        "sizes": "72x72",
+        "type": "image/svg+xml"
+      }
+    ],
+    "splash_pages": null
   }
-  
