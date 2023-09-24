@@ -2356,52 +2356,58 @@ async emptyBurnerWallet(retryCount = 0) {
       }
     },
 
-    async revealMove() {
-      const prevState = this.gameState;
-      if (!this.contractInstance) {
-        this.contractInstance = new this.getWeb3.eth.Contract(
-          CONTRACT_ABI,
-          CONTRACT_ADDRESS
-        );
-      }
+    async revealMove(retryCount = 0) {
+  const maxRetries = 3; // You can adjust this number as needed
 
-      try {
-        // Update the gameState to Revealing
-        if (!this.games[this.currentGameId]) 
-          this.createGame(this.currentGameId)
-        this.games[this.currentGameId].states[this.getActiveAccount] = GameStates.Revealing;
+  if (retryCount >= maxRetries) {
+    console.log("Max retries reached. Aborting revealMove.");
+    return;
+  }
 
-        const accounts = await this.getWeb3.eth.getAccounts();
-        const clearMove = `${this.selectedMove}${this.randomString}`; // Use saved randomString
-        const gasPrice = this.getWeb3.utils.toWei("0.3", "gwei");
-        const gasLimit = 3000000;
+  const prevState = this.gameState;
+  if (!this.contractInstance) {
+    this.contractInstance = new this.getWeb3.eth.Contract(
+      CONTRACT_ABI,
+      CONTRACT_ADDRESS
+    );
+  }
 
-        if(this.isBurner){
-          this.burnerNonce = await this.getWeb3Read.eth.getTransactionCount(this.burnerAddress, 'pending');
-          const result = await this.burnerContractInstance.methods
-          .reveal(parseInt(this.currentGameId), clearMove)
-          .send({ from: this.burnerAddress, gasPrice, gasLimit, nonce: this.burnerNonce++ });
-        }else{
-          const nonce = await this.getWeb3Read.eth.getTransactionCount(accounts[0], 'pending');
-        const result = await this.contractInstance.methods
-          .reveal(parseInt(this.currentGameId), clearMove)
-          .send({ from: accounts[0], gasPrice, gasLimit });
-        }
+  try {
+    // Update the gameState to Revealing
+    if (!this.games[this.currentGameId]) 
+      this.createGame(this.currentGameId);
+    this.games[this.currentGameId].states[this.getActiveAccount] = GameStates.Revealing;
 
-        //console.log("Move revealed:", result);
+    const accounts = await this.getWeb3.eth.getAccounts();
+    const clearMove = `${this.selectedMove}${this.randomString}`; // Use saved randomString
+    const gasPrice = this.getWeb3.utils.toWei("0.3", "gwei");
+    const gasLimit = 3000000;
 
-        // Automatically update the gameId to get the outcome
+    if(this.isBurner){
+      this.burnerNonce = await this.getWeb3Read.eth.getTransactionCount(this.burnerAddress, 'pending');
+      const result = await this.burnerContractInstance.methods
+      .reveal(parseInt(this.currentGameId), clearMove)
+      .send({ from: this.burnerAddress, gasPrice, gasLimit, nonce: this.burnerNonce++ });
+    } else {
+      const nonce = await this.getWeb3Read.eth.getTransactionCount(accounts[0], 'pending');
+      const result = await this.contractInstance.methods
+      .reveal(parseInt(this.currentGameId), clearMove)
+      .send({ from: accounts[0], gasPrice, gasLimit });
+    }
 
-        
-        console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
-      } catch (error) {
-        //Update the gameState to Matched
-        if (!this.games[this.currentGameId]) 
-          this.createGame(this.currentGameId)
-        this.games[this.currentGameId].states[this.getActiveAccount] = GameStates.Sent
-        console.error("Error revealing move:", error);
-      }
-    },
+    console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
+  } catch (error) {
+    // Update the gameState to Matched
+    if (!this.games[this.currentGameId]) 
+      this.createGame(this.currentGameId);
+    this.games[this.currentGameId].states[this.getActiveAccount] = GameStates.Sent;
+    console.error("Error revealing move:", error);
+
+    console.log("Retrying revealMove...");
+    await this.revealMove(retryCount + 1);
+  }
+},
+
     
     async getGameOutcome() {
       if (!this.contractInstance) {
