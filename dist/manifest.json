@@ -1,0 +1,9 @@
+{
+    "name": "Handsy.io",
+    "short_name": "Handsy.io",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#fff",
+    "description": "Play Rock Paper Scissors for real money"
+  }
+  
