@@ -5,7 +5,7 @@
                 <div class="trophy" v-if="isWinner"></div>
 
                 <!-- Result text-->
-                <h4 v-if="isWinner">You won! <span style="color:#E19885; font-weight:bold;"> {{getWinnings(bet)}} ETH</span>  <span style="color:#c5edff; font-weight:bold;"> (-{{getApplicationFee(bet)}} ETH)</span> </h4>
+                <h4 v-if="isWinner">You won! <span style="color:#E19885; font-weight:bold;"> {{getBaseWinnings(bet)}} ETH</span>  <span style="color:#c5edff; font-weight:bold;"> (-{{getApplicationFee(bet)}} ETH)</span> </h4>
                 <h4 v-else-if="isDraw">Nobody wins. <span style="color:#E19885; font-weight:bold;"> {{bet}} ETH</span> </h4>
                 <h4 v-else style="margin-top:60px" >You lose! <span style="color:#E19885; font-weight:bold;"> {{bet}} ETH</span> </h4>
 
@@ -163,6 +163,9 @@ export default {
       }
     },
     methods: {
+      getBaseWinnings(bet) {
+        return bet
+      },
       getWinnings(bet) {
         return (bet - (bet * 2 * APPLICATION_FEE)).toFixed(4)
       },

@@ -39,7 +39,7 @@
                 <div v-if="wasCancelled(item)" class="grey winnings">Cancelled</div>
                 <div v-else-if="isTimedOut(item, item.playerA)" class="winnings red">Timeout</div>
                 <div v-else-if="isLeaver(item, item.playerA)" class="winnings red">Left</div>
-                <div v-else-if="isWinner(item, item.playerA)" class="winnings green">+{{ getPlayerWinnings(item, item.playerA) }} ETH <span class="blue">(-{{getApplicationFee(item)}})</span> </div>
+                <div v-else-if="isWinner(item, item.playerA)" class="winnings green">+{{ item.bet }} ETH <span class="blue">(-{{getApplicationFee(item)}})</span> </div>
                 <div v-else-if="isLoser(item, item.playerA)" class="winnings red">{{ getPlayerWinnings(item, item.playerA) }} ETH </div>
               </div>
             </td>
@@ -49,7 +49,7 @@
                 <profile-item :address="item.playerB"></profile-item>
                 <div v-if="isLeaver(item, item.playerB)" class="winnings red">Left</div>
                 <div v-else-if="isTimedOut(item, item.playerB)" class="winnings red">Timeout</div>
-                <div v-else-if="isWinner(item, item.playerB)" class="winnings green"> +{{ getPlayerWinnings(item, item.playerB) }} ETH  <span class="blue">(-{{getApplicationFee(item)}})</span> </div>
+                <div v-else-if="isWinner(item, item.playerB)" class="winnings green"> +{{ item.bet }} ETH  <span class="blue">(-{{getApplicationFee(item)}})</span> </div>
                 <div v-else-if="isLoser(item, item.playerB)" class="winnings red">{{ getPlayerWinnings(item, item.playerB) }} ETH </div>
               </div>
             </td>
