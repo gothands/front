@@ -189,6 +189,7 @@ height: 100%;
   justify-content:end; 
   align-items:center; 
   gap:40px;
+  margin-right: 50px;
 }
 
 h1 {
@@ -1143,6 +1144,10 @@ background-position-y: 50%;
 
 /* Tablet */
 @media screen and (max-width: 960px) {
+
+  .nav-right {
+    margin-right: 0px;
+  }
 
   .content {
     margin-top: 0px;
