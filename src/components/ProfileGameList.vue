@@ -26,7 +26,7 @@
             <td class="earned"
                 :class="{ 'earned-positive': isWinner(item, this.address), 'earned-negative': isLoser(item, this.address) }"
             >
-            <div v-if="isWinner(item, this.address)" class="winnings green">+{{ getPlayerWinnings(item, this.address) }} ETH <span class="blue">(-{{getApplicationFee(item)}})</span> </div>
+            <div v-if="isWinner(item, this.address)" class="winnings green">+{{ item.bet }} ETH <span class="blue">(-{{getApplicationFee(item)}})</span> </div>
             <div v-else-if="isLoser(item, this.address)" class="winnings red">{{ getPlayerWinnings(item, this.address) }} ETH </div>
 
           </td>
