@@ -607,7 +607,7 @@ export default {
 
       handledEventIds: new Set(),
 
-      burnerTopUpAmount: 0.001,
+      burnerTopUpAmount: 0.002,
       burnerAddress: null,
       burnerPrivateKey: null,
       burnerContractInstance: null,
@@ -2185,7 +2185,13 @@ async emptyBurnerWallet(retryCount = 0) {
     },
 
     //Send move to the contract
-    async sendMove(){
+    async sendMove(retryCount = 0) {
+    const maxRetries = 3; // You can adjust this number as needed
+
+    if (retryCount >= maxRetries) {
+      console.log("Max retries reached. Aborting revealMove.");
+      return;
+    }
       const prevState = this.gameState;
       if (!this.contractInstance) {
         this.contractInstance = new this.getWeb3.eth.Contract(
@@ -2237,9 +2243,13 @@ async emptyBurnerWallet(retryCount = 0) {
           this.createGame(this.currentGameId ?? "0");
         this.games[this.currentGameId ?? "0"].states[this.getActiveAccount] = prevState
 
+        //retry 
+        console.error("Error sending move:", error);
+        await this.sendMove(retryCount + 1);
+
         //revert selected move
         this.selectedMove = "";
-        console.error("Error registering game:", error);
+        console.error("Error registering move:", error);
       }
     },
 
