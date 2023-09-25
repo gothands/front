@@ -1135,6 +1135,10 @@ background-position-y: 50%;
     display: none !important;
   }
 
+  .hide-for-mobile {
+    display: none !important;
+  }
+
 }
 
 /* Tablet */
@@ -1210,9 +1214,6 @@ background-position-y: 50%;
     flex-direction: column;
   }
 
-  .hide-for-mobile {
-    display: none !important;
-  }
 
   .show-for-mobile {
     visibility: visible;
