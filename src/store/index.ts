@@ -421,88 +421,107 @@ const store = createStore({
     },
 
     async fetchEvents({ commit, state , dispatch }) {
-      //Start fetching events
-      commit('setIsFetchingEvents', true)
+      let retries = 0;
+      const maxRetries = 4;
 
-      //Initialize events from cache
-      dispatch('initLastFetchedBlock')
-      dispatch('initHandledEventIds')
-      dispatch('uncacheEvents')
-
-      //initialize web3 Read only provider and contracts
-      const web3 = state.web3ReadProvider;
-
-      const handsContract = new web3.eth.Contract(
-        mainContracts.deployedAbis.Hands as any,
-        mainContracts.deployedContracts.Hands
-      )
-      const stakeContract = new web3.eth.Contract(
-        mainContracts.deployedAbis.Staking as any,
-        mainContracts.deployedContracts.Staking
-      )
-
-      //Get events from lastFetchedBlock
-      const startBlock = state.lastFetchedBlock
-      const endBlock = await web3.eth.getBlockNumber()
-      const blockLimit = 1000000; // Maximum blocks that can be fetched in one request
-
-      let fromBlock = startBlock;
-      let toBlock = Math.min(fromBlock + blockLimit, endBlock);
-      while (fromBlock <= endBlock) {
-        console.log("fetched fetching events from block", fromBlock, "to block", toBlock)
-          const playerRegisteredEvents = await handsContract.getPastEvents("PlayerRegistered", { fromBlock: fromBlock, toBlock: toBlock});
-          const playerWaitingEvents = await handsContract.getPastEvents("PlayerWaiting", { fromBlock: fromBlock, toBlock: toBlock});
-          const playersMatchedEvents = await handsContract.getPastEvents("PlayersMatched", { fromBlock: fromBlock, toBlock: toBlock});
-          const moveCommittedEvents = await handsContract.getPastEvents("MoveCommitted", { fromBlock: fromBlock, toBlock: toBlock});
-          const moveRevealedEvents = await handsContract.getPastEvents("MoveRevealed", { fromBlock: fromBlock, toBlock: toBlock});
-          const newRoundEvents = await handsContract.getPastEvents("NewRound", { fromBlock: fromBlock, toBlock: toBlock});
-          const gameOutcomeEvents = await handsContract.getPastEvents("GameOutcome", { fromBlock: fromBlock, toBlock: toBlock});
-          const playerCancelledEvents = await handsContract.getPastEvents("PlayerCancelled", { fromBlock: fromBlock, toBlock: toBlock});
-          const playerLeftEvents = await handsContract.getPastEvents("PlayerLeft", { fromBlock: fromBlock, toBlock: toBlock});
-          const stakeEvents = await stakeContract.getPastEvents("Staked", { fromBlock: fromBlock, toBlock: toBlock});
-          const unstakeEvents = await stakeContract.getPastEvents("Unstaked", { fromBlock: fromBlock, toBlock: toBlock});
-          const recievedFundsEvents = await stakeContract.getPastEvents("ReceivedFundsForStaking", { fromBlock: fromBlock, toBlock: toBlock});
-
-          console.log("fetched", playerRegisteredEvents.length, "PlayerRegistered events")
-          console.log("fetched", playerWaitingEvents.length, "PlayerWaiting events")
-          console.log("fetched", playersMatchedEvents.length, "PlayersMatched events")
-          console.log("fetched", moveCommittedEvents.length, "MoveCommitted events")
-          console.log("fetched", moveRevealedEvents.length, "MoveRevealed events")
-          console.log("fetched", newRoundEvents.length, "NewRound events")
-          console.log("fetched", gameOutcomeEvents.length, "GameOutcome events")
-          console.log("fetched", playerCancelledEvents.length, "PlayerCancelled events")
-          console.log("fetched", playerLeftEvents.length, "PlayerLeft events")
-          console.log("fetched", stakeEvents.length, "Staked events")
-          console.log("fetched", unstakeEvents.length, "Unstaked events")
-          console.log("fetched", recievedFundsEvents.length, "ReceivedFundsForStaking events")
-
-
-          // Add to events
-          commit('setPlayerRegisteredEvents', [...state.playerRegisteredEvents, ...playerRegisteredEvents]);
-          commit('setPlayerWaitingEvents', [...state.playerWaitingEvents, ...playerWaitingEvents]);
-          commit('setPlayersMatchedEvents', [...state.playersMatchedEvents, ...playersMatchedEvents]);
-          commit('setMoveCommittedEvents', [...state.moveCommittedEvents, ...moveCommittedEvents]);
-          commit('setMoveRevealedEvents', [...state.moveRevealedEvents, ...moveRevealedEvents]);
-          commit('setNewRoundEvents', [...state.newRoundEvents, ...newRoundEvents]);
-          commit('setGameOutcomeEvents', [...state.gameOutcomeEvents, ...gameOutcomeEvents]);
-          commit('setPlayerCancelledEvents', [...state.playerCancelledEvents, ...playerCancelledEvents]);
-          commit('setPlayerLeftEvents', [...state.playerLeftEvents, ...playerLeftEvents]);
-          commit('setStakeEvents', [...state.stakeEvents, ...stakeEvents]);
-          commit('setUnstakeEvents', [...state.unstakeEvents, ...unstakeEvents]);
-          commit('setRecievedFundsEvents', [...state.recievedFundsEvents, ...recievedFundsEvents]);
-
-          //Cache events and set last fetched block
-          dispatch('setLastFetchBlock', toBlock);
-          dispatch('cacheEvents')
-
-          // Update blocks for the next iteration
-          fromBlock = toBlock + 1;
-          toBlock = Math.min(fromBlock + blockLimit, endBlock);  
-          
-          //process events
-          commit('triggerProcessEvents', !state.triggerProcessEvents);
+      while(retries < maxRetries){
+        try{
+          //Start fetching events
+          commit('setIsFetchingEvents', true)
+  
+          //Initialize events from cache
+          dispatch('initLastFetchedBlock')
+          dispatch('initHandledEventIds')
+          dispatch('uncacheEvents')
+  
+          //initialize web3 Read only provider and contracts
+          const web3 = state.web3ReadProvider;
+  
+          const handsContract = new web3.eth.Contract(
+            mainContracts.deployedAbis.Hands as any,
+            mainContracts.deployedContracts.Hands
+          )
+          const stakeContract = new web3.eth.Contract(
+            mainContracts.deployedAbis.Staking as any,
+            mainContracts.deployedContracts.Staking
+          )
+  
+          //Get events from lastFetchedBlock
+          const startBlock = state.lastFetchedBlock
+          const endBlock = await web3.eth.getBlockNumber()
+          const blockLimit = 1000000; // Maximum blocks that can be fetched in one request
+  
+          let fromBlock = startBlock;
+          let toBlock = Math.min(fromBlock + blockLimit, endBlock);
+          while (fromBlock <= endBlock) {
+            console.log("fetched fetching events from block", fromBlock, "to block", toBlock)
+              const playerRegisteredEvents = await handsContract.getPastEvents("PlayerRegistered", { fromBlock: fromBlock, toBlock: toBlock});
+              const playerWaitingEvents = await handsContract.getPastEvents("PlayerWaiting", { fromBlock: fromBlock, toBlock: toBlock});
+              const playersMatchedEvents = await handsContract.getPastEvents("PlayersMatched", { fromBlock: fromBlock, toBlock: toBlock});
+              const moveCommittedEvents = await handsContract.getPastEvents("MoveCommitted", { fromBlock: fromBlock, toBlock: toBlock});
+              const moveRevealedEvents = await handsContract.getPastEvents("MoveRevealed", { fromBlock: fromBlock, toBlock: toBlock});
+              const newRoundEvents = await handsContract.getPastEvents("NewRound", { fromBlock: fromBlock, toBlock: toBlock});
+              const gameOutcomeEvents = await handsContract.getPastEvents("GameOutcome", { fromBlock: fromBlock, toBlock: toBlock});
+              const playerCancelledEvents = await handsContract.getPastEvents("PlayerCancelled", { fromBlock: fromBlock, toBlock: toBlock});
+              const playerLeftEvents = await handsContract.getPastEvents("PlayerLeft", { fromBlock: fromBlock, toBlock: toBlock});
+              const stakeEvents = await stakeContract.getPastEvents("Staked", { fromBlock: fromBlock, toBlock: toBlock});
+              const unstakeEvents = await stakeContract.getPastEvents("Unstaked", { fromBlock: fromBlock, toBlock: toBlock});
+              const recievedFundsEvents = await stakeContract.getPastEvents("ReceivedFundsForStaking", { fromBlock: fromBlock, toBlock: toBlock});
+  
+              console.log("fetched", playerRegisteredEvents.length, "PlayerRegistered events")
+              console.log("fetched", playerWaitingEvents.length, "PlayerWaiting events")
+              console.log("fetched", playersMatchedEvents.length, "PlayersMatched events")
+              console.log("fetched", moveCommittedEvents.length, "MoveCommitted events")
+              console.log("fetched", moveRevealedEvents.length, "MoveRevealed events")
+              console.log("fetched", newRoundEvents.length, "NewRound events")
+              console.log("fetched", gameOutcomeEvents.length, "GameOutcome events")
+              console.log("fetched", playerCancelledEvents.length, "PlayerCancelled events")
+              console.log("fetched", playerLeftEvents.length, "PlayerLeft events")
+              console.log("fetched", stakeEvents.length, "Staked events")
+              console.log("fetched", unstakeEvents.length, "Unstaked events")
+              console.log("fetched", recievedFundsEvents.length, "ReceivedFundsForStaking events")
+  
+  
+              // Add to events
+              commit('setPlayerRegisteredEvents', [...state.playerRegisteredEvents, ...playerRegisteredEvents]);
+              commit('setPlayerWaitingEvents', [...state.playerWaitingEvents, ...playerWaitingEvents]);
+              commit('setPlayersMatchedEvents', [...state.playersMatchedEvents, ...playersMatchedEvents]);
+              commit('setMoveCommittedEvents', [...state.moveCommittedEvents, ...moveCommittedEvents]);
+              commit('setMoveRevealedEvents', [...state.moveRevealedEvents, ...moveRevealedEvents]);
+              commit('setNewRoundEvents', [...state.newRoundEvents, ...newRoundEvents]);
+              commit('setGameOutcomeEvents', [...state.gameOutcomeEvents, ...gameOutcomeEvents]);
+              commit('setPlayerCancelledEvents', [...state.playerCancelledEvents, ...playerCancelledEvents]);
+              commit('setPlayerLeftEvents', [...state.playerLeftEvents, ...playerLeftEvents]);
+              commit('setStakeEvents', [...state.stakeEvents, ...stakeEvents]);
+              commit('setUnstakeEvents', [...state.unstakeEvents, ...unstakeEvents]);
+              commit('setRecievedFundsEvents', [...state.recievedFundsEvents, ...recievedFundsEvents]);
+  
+              //Cache events and set last fetched block
+              dispatch('setLastFetchBlock', toBlock);
+              dispatch('cacheEvents')
+  
+              // Update blocks for the next iteration
+              fromBlock = toBlock + 1;
+              toBlock = Math.min(fromBlock + blockLimit, endBlock);  
+              
+              //process events
+              commit('triggerProcessEvents', !state.triggerProcessEvents);
+          }
+  
+        } catch (error) {
+          console.error("Error fetching events:", error);
+          retries++;
+          if (retries === maxRetries) {
+              console.error("Max retries reached. Unable to fetch events.");
+              // Optionally, handle the error further or dispatch an action to update the state
+              commit('setIsFetchingEvents', false); // Ensure the fetching state is set to false in case of an error
+          } else {
+              console.log(`Retrying... (${retries}/${maxRetries})`);
+          }
+        }
       }
-
+      
+    
       //Done fetching events
       commit('setIsFetchingEvents', false)
 

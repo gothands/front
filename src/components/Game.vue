@@ -1311,31 +1311,36 @@ async emptyBurnerWallet(retryCount = 0) {
     
     //Whenever a new game is registered
     async handleRegisterEvent(event, userAddress) {
-      console.log("PlayerRegistered event:", event.returnValues);
-      const { gameId, playerAddress } = event.returnValues;
-      
-      //check if gameId is in games
-      if (!this.getGame(gameId, 0)) 
-        this.createGame(gameId, playerAddress);
+  console.log("PlayerRegistered event:", event.returnValues);
+  const { gameId, playerAddress } = event.returnValues;
+  
+  //check if gameId is in games
+  if (!this.getGame(gameId, 0)) 
+    this.createGame(gameId, playerAddress);
 
-      //set playerA
-      //this.getGame(gameId).playerA = playerAddress.toLowerCase()
-      
-      //set players state to waiting if hasnt already
-      this.getGame(gameId).states[0][playerAddress.toLowerCase()] = GameStates.Waiting;  
-      
-      let block = null;
-      while (!block) { 
-        block = await this.getWeb3Read2.eth.getBlock(event.blockNumber);
-        console.log("setting time: block", block)
-
-      }
-      const timestamp = block.timestamp;
-      console.log("setting time:", timestamp)
-      this.getGame(gameId).time = timestamp;
-      
-      //set currentGameId if user is in game
-    },
+  //set playerA
+  //this.getGame(gameId).playerA = playerAddress.toLowerCase()
+  
+  //set players state to waiting if hasn't already
+  this.getGame(gameId).states[0][playerAddress.toLowerCase()] = GameStates.Waiting;  
+  
+  let timestamp = localStorage.getItem(`blockTimestamp_${event.blockNumber}`);
+  if (!timestamp) {
+    let block = null;
+    while (!block) { 
+      block = await this.getWeb3Read2.eth.getBlock(event.blockNumber);
+      console.log("setting time: block", block)
+    }
+    timestamp = block.timestamp.toString();
+    // Cache the timestamp in localStorage for future use
+    localStorage.setItem(`blockTimestamp_${event.blockNumber}`, timestamp);
+  }
+  
+  console.log("setting time:", timestamp)
+  this.getGame(gameId).time = parseInt(timestamp, 10);
+  
+  //set currentGameId if user is in game
+},
 
     //Whenever has created a match and is waiting for another player to join
     //We set the bet value and the state to waiting
@@ -1363,12 +1368,13 @@ async emptyBurnerWallet(retryCount = 0) {
       }
 
       let block = null;
-      while (!block) { 
-        block = await this.getWeb3Read2.eth.getBlock(event.blockNumber);
-        console.log("setting time: block", block)
-
+      let timestamp = localStorage.getItem(`blockTimestamp_${event.blockNumber}`);
+      if (!timestamp) {
+        while (!block) { block = await this.getWeb3Read2.eth.getBlock(event.blockNumber);}
+        timestamp = block.timestamp.toString();
+        // Cache the timestamp in localStorage for future use
+        localStorage.setItem(`blockTimestamp_${event.blockNumber}`, timestamp);
       }
-      const timestamp = block.timestamp;
       console.log("setting time:", timestamp)
       this.getGame(gameId).time = timestamp;
 
@@ -1475,8 +1481,13 @@ async emptyBurnerWallet(retryCount = 0) {
 
       //set time of matched
       let block = null;
-      while (!block) { block = await this.getWeb3Read2.eth.getBlock(event.blockNumber);}
-      const timestamp = block.timestamp;
+      let timestamp = localStorage.getItem(`blockTimestamp_${event.blockNumber}`);
+      if (!timestamp) {
+        while (!block) { block = await this.getWeb3Read2.eth.getBlock(event.blockNumber);}
+        timestamp = block.timestamp.toString();
+        // Cache the timestamp in localStorage for future use
+        localStorage.setItem(`blockTimestamp_${event.blockNumber}`, timestamp);
+      }
       this.getGame(gameId).timeOfMatched = timestamp;
       console.log("setting time of matched", timestamp)
 
