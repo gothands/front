@@ -50,7 +50,14 @@
           </div>
           <p v-if="this.earnings > 0" class="green" style="margin:0;">earned</p>
           <p v-else-if="this.earnings <= 0" class="red" style="margin:0;">earned</p>
+
+          
         </div>
+        <div
+              class="blue"
+              >
+              (-{{ this.feesGenerated?.toFixed(4).toString()}} ETH)
+      </div>
       </div>
       <profile-item :address="address" />
 
@@ -125,6 +132,9 @@ export default {
         const currentTimeInSec = this.$store.state.currentTime
         return timeAgo(time, currentTimeInSec)
       },
+      getBaseWinnings(bet){
+        return bet
+      },
       getWinnings(bet) {
         return (bet - (bet * 2 * APPLICATION_FEE)).toFixed(4)
       },
@@ -134,6 +144,90 @@ export default {
       },
       getPlayerPoints(game, player){
         return game.points[player]
+      },
+
+      getBasePlayerWinnings(game, player){
+        const bet = game.bet
+        const winnings = this.getBaseWinnings(bet)
+        const outcome = game.outcome
+        const isPlayerA = player?.toLowerCase() === game.playerA?.toLowerCase()
+
+        console.log("getting player winnings", game, player, winnings, outcome, isPlayerA)
+        if (outcome == Outcomes.Cancelled) {
+          console.log("cancelled")
+          return 0
+        } else if (outcome == Outcomes.PlayerALeft && isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.PlayerBLeft && isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerALeft && !isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerBLeft && !isPlayerA) {
+          return -bet
+        }
+         else if (outcome == Outcomes.Draw) {
+          return 0
+        } else if (outcome == Outcomes.PlayerA && isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerB && isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.PlayerA && !isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.PlayerB && !isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerATimeout && isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.PlayerBTimeout && isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerATimeout && !isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerBTimeout && !isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.BothTimeout) {
+          return 0
+        }
+      },
+
+      getPlayerProtocolFees(game, player){
+        const bet = game.bet
+        const fee = this.getApplicationFee(game)
+        const outcome = game.outcome
+        
+        const isPlayerA = player?.toLowerCase() === game.playerA?.toLowerCase()
+
+        if (outcome == Outcomes.Cancelled) {
+          console.log("cancelled")
+          return 0
+        } else if (outcome == Outcomes.PlayerALeft && isPlayerA) {
+          return 0
+        } else if (outcome == Outcomes.PlayerBLeft && isPlayerA) {
+          return fee
+        } else if (outcome == Outcomes.PlayerALeft && !isPlayerA) {
+          return fee
+        } else if (outcome == Outcomes.PlayerBLeft && !isPlayerA) {
+          return 0
+        }
+         else if (outcome == Outcomes.Draw) {
+          return 0
+        } else if (outcome == Outcomes.PlayerA && isPlayerA) {
+          return fee
+        } else if (outcome == Outcomes.PlayerB && isPlayerA) {
+          return 0
+        } else if (outcome == Outcomes.PlayerA && !isPlayerA) {
+          return 0
+        } else if (outcome == Outcomes.PlayerB && !isPlayerA) {
+          return fee
+        } else if (outcome == Outcomes.PlayerATimeout && isPlayerA) {
+          return 0
+        } else if (outcome == Outcomes.PlayerBTimeout && isPlayerA) {
+          return fee
+        } else if (outcome == Outcomes.PlayerATimeout && !isPlayerA) {
+          return fee
+        } else if (outcome == Outcomes.PlayerBTimeout && !isPlayerA) {
+          return 0
+        } else if (outcome == Outcomes.BothTimeout) {
+          return 0
+        }
       },
       getPlayerWinnings(game, player){
         const bet = game.bet
@@ -206,7 +300,7 @@ export default {
       let earnings = 0
 
       for (let game of this.games) {
-        const playerWinnings = this.getPlayerWinnings(game, this.address)
+        const playerWinnings = this.getBasePlayerWinnings(game, this.address)
         console.log("earnings value: for", this.address, playerWinnings, game.outcome)
         earnings += parseFloat(playerWinnings)
       }
@@ -214,7 +308,21 @@ export default {
       console.log("earnings", earnings)
 
       return earnings
-    }
+    },
+
+    feesGenerated(){
+      let fees = 0
+
+      for (let game of this.games) {
+        const playerFees = this.getPlayerProtocolFees(game, this.address)
+        console.log("fees value: for", this.address, playerFees, game.outcome)
+        fees += parseFloat(playerFees)
+      }
+
+      console.log("fees", fees)
+
+      return fees
+    },
 
 
   },
