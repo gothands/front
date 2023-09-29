@@ -626,6 +626,8 @@ export default {
     };
   },
   computed: {
+    //can claim checks if any of the users has timeed out
+    canClaim(){ return this.opponentTimeLeft == "time out" || this.yourTimeLeft == "time out" },
     isJoiningPasswordMatch() { return this.$store.state.isJoiningPasswordMatch },
     joiningPassword() { return this.$store.state.joiningPassword },
     triggerProcessEvents() { return this.$store.state.triggerProcessEvents },
@@ -1005,6 +1007,17 @@ export default {
         }
         this.$store.dispatch("setIsInGame",newValue)
         this.$store.dispatch("setLeaveGame", this.leaveGame)
+      },
+      deep: true,
+      immediate: true,
+    },
+    canClaim: {
+      handler(newValue, oldValue) {
+        if (newValue) {
+          this.$store.commit("setLeaveText", "Claim")
+        }else{
+          this.$store.commit("setLeaveText", "Leave")
+        }
       },
       deep: true,
       immediate: true,

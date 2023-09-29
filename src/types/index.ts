@@ -57,4 +57,4 @@ export const READ_PROVIDER_URL = "https://arb-goerli.g.alchemy.com/v2/4nMlurweVa
 export const DEFAULT_FETCH_BLOCK = 34700240;
 export const APPLICATION_FEE = 0.05;
 
-export const MAX_MOVE_TIME = 60*2;
+export const MAX_MOVE_TIME = (60*2) + 15; // 2 minutes 15 seconds

@@ -35,7 +35,7 @@
 			v-if="isInGame"
 			class="button-light hide-for-mobile-real"
 			@click="leaveGame">
-			Leave
+			{{ leaveText }}
 		</button> 
     <profile-icon v-if="loggedin" class="profile" :address="activeAccount" :isMedium="true" />
 
@@ -141,6 +141,7 @@ export default {
 	'isInGame',
   'joiningPassword',
   'isJoiningPasswordMatch',
+    'leaveText'
   ]),
 
   methods : {
