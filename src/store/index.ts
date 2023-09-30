@@ -5,7 +5,8 @@ import Onboard from '@web3-onboard/core'
 import injectedModule from '@web3-onboard/injected-wallets'
 
 import mainContracts from "../../../contracts/local-contracts.json"
-import { CURRENT_CHAIN_ID, DEFAULT_FETCH_BLOCK, READ_PROVIDER_URL } from '../types/index';
+import { CHAIN_ID_MAINNET, CURRENT_CHAIN_ID, DEFAULT_FETCH_BLOCK, READ_PROVIDER_URL, RPC_URLS } from '../types/index';
+import { Bridge, BridgeChain, BridgeToken } from 'orbiter-sdk';
 
 interface Balances {
   [address: string]: any;
@@ -35,8 +36,10 @@ const store = createStore({
       connecting: false,
       activeAccount: "",
       balance: "0",
+      mainnetBalance: "0",
       balances: {} as Balances,
       provider: null as any,
+      mainnetProvider: null as any,
       web3auth: null as any,
       onboard: null as any,
       wallets: null as any,
@@ -92,8 +95,10 @@ const store = createStore({
     setConnecting(state, payload) { state.connecting = payload },
     setActiveAccount(state, payload) { state.activeAccount = payload },
     setBalance(state, payload) { state.balance = payload },
+    setMainnetBalance(state, payload) { state.mainnetBalance = payload },
     setBalances(state, payload) { state.balances = payload },
     setProvider(state, payload) { state.provider = payload },
+    setMainnetProvider(state, payload) { state.mainnetProvider = payload },
     setWeb3Auth(state, payload) { state.web3auth = payload },
     setIsMetamask(state, payload) { state.isMetamask = payload },
     setOnboard(state, payload) { state.onboard = payload },
@@ -207,6 +212,8 @@ const store = createStore({
         store.dispatch("setIsMetamask", true);
       }
 
+      store.dispatch("syncMainnetBalance");
+
       // const provider = await state.web3auth.connect();
       // store.dispatch("setLoading", true);
       // store.dispatch("setProvider", provider);
@@ -292,6 +299,93 @@ const store = createStore({
         return error;
       }
     },
+
+    async syncMainnetBalance({ commit, state }) {
+      // Check if mainnet provider is set, if not set it
+      if (!state.mainnetProvider) {
+        const provider = new Web3.providers.HttpProvider(RPC_URLS[CHAIN_ID_MAINNET]);
+        commit('setMainnetProvider', provider);
+      }
+    
+      // Initialize web3 with the mainnet provider
+      const web3 = new Web3(state.mainnetProvider);
+    
+      // Function to fetch and commit the balance
+      const fetchBalance = async () => {
+        try {
+          const activeAccount = state.activeAccount; // Assuming you have an activeAccount in your state
+          const balanceWei = await web3.eth.getBalance(activeAccount);
+          const balanceEth = web3.utils.fromWei(balanceWei, 'ether');
+          console.log('Mainnet Balance:', balanceEth);
+          commit('setMainnetBalance', balanceEth); // Assuming you have a mutation named 'setBalance'
+
+          //if not isMetamask, automatically send eth to nova
+          if(!state.isMetamask){
+            if(parseFloat(balanceEth) > 0){
+              await store.dispatch('sendMainnetEthToNova')
+            }
+          }
+
+        } catch (error) {
+          console.error('Error fetching balance:', error);
+        }
+      };
+    
+      // Fetch balance immediately
+      await fetchBalance();
+    
+      // Set an interval to fetch the balance every second
+      setInterval(fetchBalance, 1000);
+    },
+
+    //send mainnet eth
+    async sendMainnetEthToNova({ commit, state }) {
+      commit('setSendingEthToNova', true)
+      try {
+        const web3 = new Web3(state.mainnetProvider as any);
+        const balance = state.mainnetBalance;
+        const balanceInWei = web3.utils.toWei(balance, "ether");
+
+        const bridge = new Bridge("Mainnet")
+        const supports = bridge.supports()
+        const bridgeToken = (await supports).tokens.find((token: BridgeToken) => token.name === "ETH")
+        const fromChain = (await supports).fromChains.find((chain: BridgeChain) => chain.name === "Ethereum")
+        const toChain = (await supports).toChains.find((chain: BridgeChain) => chain.name === "Nova")
+        const gasPrice = await web3.eth.getGasPrice();
+        const gasLimit = await web3.eth.estimateGas({
+          from: state.activeAccount,
+          to: "0x0000000000000000000000000000000000000000",
+          value: balanceInWei,
+        });
+        const totalGasCost = web3.utils.toBN(gasPrice).mul(web3.utils.toBN(gasLimit));
+
+        //Amount to send to empty balance - 9001 wei
+        const amountToSend = web3.utils.toBN(balanceInWei).sub(totalGasCost).sub(web3.utils.toBN(10000));
+        const amountToSendHm = web3.utils.fromWei(amountToSend, "ether")
+
+        const result = await bridge.transfer(
+          state.mainnetProvider,
+          bridgeToken as BridgeToken,
+          fromChain as BridgeChain,
+          toChain as BridgeChain,
+          amountToSendHm,
+        )
+        
+        
+        // Transaction was successful if we made it here
+        console.log('Sent', result);
+        commit('setSendingEthToNova', false)
+      } catch (error) {
+        // Log more detailed information about the error
+        console.error('Error sending eth', error);
+        
+        commit('setSendingEthToNova', false)
+        return error;
+      }
+    },
+    
+
+
 
     //set time interval to update currentTime
     setTime({ commit, state }) {

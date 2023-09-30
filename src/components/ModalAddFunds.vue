@@ -142,7 +142,7 @@ export default {
   },
   computed: {
     isBurner() {
-      return this.$store.state.isMetaMask;
+      return this.$store.state.isMetamask;
     },
   },
 

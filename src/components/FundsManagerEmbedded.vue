@@ -3,16 +3,16 @@
       <h2 style="">Fund wallet</h2>
         <p>Get some ETH onto your Arbitrum Nova account</p>
 
-        <p class="grey" style="text-align:start">Step 1</p>
+        <p class="grey" style="text-align:start">Deposit Mainnet ETH</p>
         <div class="card-small">
-            <h4>Bridge ETH to Arb Nova</h4>
+            <h4>Copy address and send funds</h4>
             <a
             style="cursor: pointer;"
-            target="_blank"
-             href="https://www.orbiter.finance/?source=Ethereum&dest=Arbitrum%20Nova">Bridge</a>
+            @click="()=>{copyTextToClipboard(store.state.activeAccount)}"
+            >Copy address</a>
         </div>
 
-        <p class="grey" style="text-align:start">Step 2</p>
+        <p class="grey" style="text-align:start">Or deposit to Arb Nova wallet <a style="cursor: pointer;" target="_blank" href="https://www.orbiter.finance/?source=Ethereum&dest=Arbitrum%20Nova">Bridge first</a></p>
         <div class="card-small">
             <h4>Deposit bridged ETH to wallet</h4>
             <a
