@@ -41,7 +41,7 @@ export const CHAIN_ID_ARBITRUM_GOERLI = "0x66eed"
 export const CHAIN_ID_ARBITRUM_NOVA = "0xa4ba"
 
 export const RPC_URLS = {
-  [CHAIN_ID_MAINNET]: "https://cloudflare-eth.com",
+  [CHAIN_ID_MAINNET]: "https://eth.llamarpc.com",
   [CHAIN_ID_TESTNET]: "https://testnet.era.zksync.dev",
   [CHAIN_ID_LOCALHOST]: "http://localhost:3050/",
   [CHAIN_ID_LOCALHOST_HARDHAT]: "http://localhost:8545",

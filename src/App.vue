@@ -195,7 +195,6 @@ export default {
     });
 
 	
-
     console.log("web3auth provider", web3auth.provider);
 
     // plugins and adapters are optional and can be added as per your requirement

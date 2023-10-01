@@ -7,6 +7,8 @@ import injectedModule from '@web3-onboard/injected-wallets'
 import mainContracts from "../../../contracts/local-contracts.json"
 import { CHAIN_ID_MAINNET, CURRENT_CHAIN_ID, DEFAULT_FETCH_BLOCK, READ_PROVIDER_URL, RPC_URLS } from '../types/index';
 import { Bridge, BridgeChain, BridgeToken } from 'orbiter-sdk';
+import { Web3Provider } from '@ethersproject/providers';
+import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
 
 interface Balances {
   [address: string]: any;
@@ -212,6 +214,7 @@ const store = createStore({
         store.dispatch("setIsMetamask", true);
       }
 
+      //get private key
       store.dispatch("syncMainnetBalance");
 
       // const provider = await state.web3auth.connect();
@@ -303,8 +306,23 @@ const store = createStore({
     async syncMainnetBalance({ commit, state }) {
       // Check if mainnet provider is set, if not set it
       if (!state.mainnetProvider) {
-        const provider = new Web3.providers.HttpProvider(RPC_URLS[CHAIN_ID_MAINNET]);
-        commit('setMainnetProvider', provider);
+        const privateKey = await state.provider.request({ method: 'eth_private_key' });
+        const mainnetPrivateKeyProvider = new EthereumPrivateKeyProvider({
+          config: {
+            chainConfig: {
+              chainId: CHAIN_ID_MAINNET,
+              rpcTarget: RPC_URLS[CHAIN_ID_MAINNET],
+              // Avoid using public rpcTarget in production.
+              // Use services like Infura, Quicknode etc
+              displayName: "Mainnet",
+              blockExplorer: "https://etherscan.io/",
+              ticker: "ETH",
+              tickerName: "Ether",
+            },
+          },
+        });
+        await mainnetPrivateKeyProvider.setupProvider(privateKey);
+        commit('setMainnetProvider', mainnetPrivateKeyProvider.provider);
       }
     
       // Initialize web3 with the mainnet provider
@@ -340,46 +358,66 @@ const store = createStore({
 
     //send mainnet eth
     async sendMainnetEthToNova({ commit, state }) {
-      commit('setSendingEthToNova', true)
+      //commit('setSendingEthToNova', true)
       try {
         const web3 = new Web3(state.mainnetProvider as any);
         const balance = state.mainnetBalance;
-        const balanceInWei = web3.utils.toWei(balance, "ether");
+        const balanceInWei:any = web3.utils.toWei(balance, "ether");
+
+        //return if balance less than 0.01 eth
+        if(parseFloat(balance) < 0.005){
+          console.log("balance less than 0.01 eth")
+          return;
+        }
 
         const bridge = new Bridge("Mainnet")
         const supports = bridge.supports()
         const bridgeToken = (await supports).tokens.find((token: BridgeToken) => token.name === "ETH")
-        const fromChain = (await supports).fromChains.find((chain: BridgeChain) => chain.name === "Ethereum")
-        const toChain = (await supports).toChains.find((chain: BridgeChain) => chain.name === "Nova")
-        const gasPrice = await web3.eth.getGasPrice();
-        const gasLimit = await web3.eth.estimateGas({
-          from: state.activeAccount,
-          to: "0x0000000000000000000000000000000000000000",
-          value: balanceInWei,
-        });
-        const totalGasCost = web3.utils.toBN(gasPrice).mul(web3.utils.toBN(gasLimit));
+        const fromChain = (await supports).fromChains.find((chain: BridgeChain) => chain.name === "mainnet")
+        const toChain = (await supports).toChains.find((chain: BridgeChain) => chain.name === "nova")
+        const gasPrice:any = await web3.eth.getGasPrice();
+        const gasLimit = 22000;
+        const totalGasCost = gasPrice * gasLimit;
 
         //Amount to send to empty balance - 9001 wei
-        const amountToSend = web3.utils.toBN(balanceInWei).sub(totalGasCost).sub(web3.utils.toBN(10000));
-        const amountToSendHm = web3.utils.fromWei(amountToSend, "ether")
+        const amountToSend:any = balanceInWei - totalGasCost;
+        const amountToSendHm = web3.utils.fromWei(amountToSend.toString(), "ether");
+        const amountToSendConcat = amountToSend.toString().slice(0, -4) + "9016";
 
-        const result = await bridge.transfer(
-          state.mainnetProvider,
-          bridgeToken as BridgeToken,
-          fromChain as BridgeChain,
-          toChain as BridgeChain,
-          amountToSendHm,
-        )
+
+        console.log("mainnet amountToSendhm", amountToSendHm)
+        console.log("mainnet fromChain", fromChain)
+        console.log("mainnet toChain", toChain)
+        console.log("mainnet bridgeToken", bridgeToken)
+
+
+        // const result = await bridge.transfer(
+        //   new Web3Provider(state.mainnetProvider as any).getSigner(),
+        //   bridgeToken as BridgeToken,
+        //   fromChain as BridgeChain,
+        //   toChain as BridgeChain,
+        //   amountToSendHm,
+        // )
+
+        const transaction  = {
+          from: state.activeAccount,
+          to: bridgeToken?.makerAddress,
+          value: web3.utils.toHex(amountToSendConcat),
+          gasPrice: gasPrice,
+          gasLimit: gasLimit,
+        }
+
+        const tx = await web3.eth.sendTransaction(transaction);
         
         
         // Transaction was successful if we made it here
-        console.log('Sent', result);
-        commit('setSendingEthToNova', false)
+        //console.log('Sent', result);
+        //commit('setSendingEthToNova', false)
       } catch (error) {
         // Log more detailed information about the error
         console.error('Error sending eth', error);
         
-        commit('setSendingEthToNova', false)
+        //commit('setSendingEthToNova', false)
         return error;
       }
     },
