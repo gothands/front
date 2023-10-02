@@ -31,12 +31,14 @@
         <template v-else>
           <input
           v-model="state.amountToWithdraw"
+          :disabled="!canWithdraw"
           type="number"
           placeholder="Amount"
           style="width: 100%; height: 50px; border-radius: 10px; border: 1px solid #E19885; padding: 10px; font-size: 20px; font-weight: bold; color: #E19885; text-align: center; margin-top: 20px; margin-bottom: 20px;"
           />
           <input
            v-model="state.withdrawAddress"
+           :disabled="!canWithdraw"
             type="text"
             placeholder="Address"
             style="width: 100%; height: 50px; border-radius: 10px; border: 1px solid #E19885; padding: 10px; font-size: 20px; font-weight: bold; color: #E19885; text-align: center; margin-top: 20px; margin-bottom: 20px;"
@@ -44,16 +46,16 @@
           <p class="grey">Your Nova balance {{balance}} ETH</p>
           <p class="grey">Your Mainnet balance {{mainnetBalance}} ETH</p>
 
-          <!-- Show withdrawal progress based on state.withdrawStepper. Show a form stepper indicating which step the user is on. And all of the remaining steps and previous steps. And where the user is currently at. -->
-          <div class="card-small">
+          <!-- Show withdrawal progress based on state.withdrawalStepper. Show a form stepper indicating which step the user is on. And all of the remaining steps and previous steps. And where the user is currently at. -->
+          <div class="card-small" v-if="!canWithdraw">
             <h4>Withdraw ETH from Nova to Mainnet</h4>
-            <p v-if="!bridgingEthToMainnetFromNova && !completedBridgingEthToMainnetFromNova && !withdrawingToAddress && !completedWithdrawingToAddress">Click withdraw to start the process</p>
-            <p v-if="bridgingEthToMainnetFromNova && !completedBridgingEthToMainnetFromNova && !withdrawingToAddress && !completedWithdrawingToAddress">Bridging ETH from Nova to Mainnet</p>
-            <p v-if="!bridgingEthToMainnetFromNova && completedBridgingEthToMainnetFromNova && !withdrawingToAddress && !completedWithdrawingToAddress">Bridged ETH from Nova to Mainnet</p>
-            <p v-if="!bridgingEthToMainnetFromNova && !completedBridgingEthToMainnetFromNova && withdrawingToAddress && !completedWithdrawingToAddress">Withdrawing ETH from Nova to Mainnet</p>
-            <p v-if="!bridgingEthToMainnetFromNova && !completedBridgingEthToMainnetFromNova && !withdrawingToAddress && completedWithdrawingToAddress">Withdrew ETH from Nova to Mainnet</p>
-          </div>
-            
+            <p v-if="withdrawalStepper == 0">Click withdraw to start the process</p>
+            <p v-if="withdrawalStepper == 1">Bridging Eth from nova to mainnet</p>
+            <p v-if="withdrawalStepper == 2">Completed bridging Eth from nova to mainnet</p>
+            <p v-if="withdrawalStepper == 3">Sending mainnet ETH to address</p>
+            <p v-if="withdrawalStepper == 4">Completed sending mainnet ETH to address</p>
+            <div class="small-loading"></div>
+          </div>            
 
         </template>
 
@@ -64,8 +66,9 @@
           class="button-dark"
           v-if="state.isWithdrawPage"
           @click="withdraw"
+          :disabled="!canWithdraw"
         >
-          Withdraw
+          {{ withdrawalStepper == 0 || withdrawalStepper == 4 ? "Withdraw" : "Withdrawing..." }}
         </button>
         <button
           class="button-light"
@@ -173,6 +176,9 @@ import { copyTextToClipboard } from '@/utils'
       return 4;
     }
     return 0;
+  })
+  const canWithdraw = computed(() => {
+    return withdrawalStepper.value == 0 || withdrawalStepper.value == 4;
   })
   const addFundsMessage = computed(() =>{
     if(props.minimumFundsToAdd){
