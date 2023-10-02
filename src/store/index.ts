@@ -855,7 +855,11 @@ const store = createStore({
     async sendNotification({ commit, state }, {title, body}) {
       const img = '/rock.svg';
       //send notification,
-      const notification = new Notification(title, { body , icon: img });
+      // make sure to only send notification if tab is not focused
+      if (!document.hasFocus()) {
+        const notification = new Notification(title, { body , icon: img });
+        console.log("notification", notification)
+      }
     }
 
 

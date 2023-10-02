@@ -1396,7 +1396,7 @@ async emptyBurnerWallet(retryCount = 0) {
     },
 
 
-    async handlePlayersMatchedEvent(event) {
+    async handlePlayersMatchedEvent(event, isSubscription = false) {
       console.log("PlayersMatched event:", event.returnValues);
       const { gameId, playerA, playerB } = event.returnValues;
 
@@ -1421,9 +1421,17 @@ async emptyBurnerWallet(retryCount = 0) {
 
       //Check if player is in game
       console.log("setting game to matched");
+
+      //create notification if is your match and a subscription
+      if(isSubscription && (playerA.toLowerCase() == this.activeAccount.toLowerCase() || playerB.toLowerCase() == this.activeAccount.toLowerCase())){
+        store.dispatch("sendNotification", {
+          title: "You match has begun",
+          body: `You have begun a match with ${playerA.toLowerCase() == this.activeAccount.toLowerCase() ? playerB : playerA} for ${this.getGame(gameId).bet} ETH`,
+        });
+      }
     },
 
-    handleMoveSentEvent(event) {
+    handleMoveSentEvent(event, isSubscription = false) {
       console.log("MoveSent event:", event.returnValues);
       const { gameId, round, playerAddress } = event.returnValues;
 
@@ -1441,6 +1449,17 @@ async emptyBurnerWallet(retryCount = 0) {
 
       //set player state
       this.getGame(gameId).states[round][playerAddress.toLowerCase()] = GameStates.Sent;
+
+      //check if user is in game and is a subscription and is an opponents move and you have not sent your move yet
+      if(this.isInGame && isSubscription && playerAddress.toLowerCase() != this.activeAccount.toLowerCase() && !this.isMoveSent){
+        store.dispatch("sendNotification", {
+          title: "Your opponent has sent their move.",
+          body: `Get back in the game to send yours.`,
+        });
+      }
+
+
+
     },
 
     handleRevealedEvent(event) {
@@ -1634,6 +1653,25 @@ async emptyBurnerWallet(retryCount = 0) {
         console.log("Modal States outcome", outcome);
         //empty burner wallet
         this.emptyBurnerWallet()
+
+        //send notification. notify play if he lost, won or draw. And if it was a timeout or someone left and notify who left or timed out
+        const opponentTruncated = this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() ? this.truncateAddress(this.games[gameId].playerB) : this.truncateAddress(this.games[gameId].playerA)
+        const youWon = this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() ? outcome == Outcomes.PlayerA : outcome == Outcomes.PlayerB
+        const opponentWon = this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() ? outcome == Outcomes.PlayerB : outcome == Outcomes.PlayerA
+        const youLeft = this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() ? outcome == Outcomes.PlayerALeft : outcome == Outcomes.PlayerBLeft
+        const opponentLeft = this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() ? outcome == Outcomes.PlayerBLeft : outcome == Outcomes.PlayerALeft
+        const youTimedOut = this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() ? outcome == Outcomes.PlayerATimeout : outcome == Outcomes.PlayerBTimeout
+        const opponentTimedOut = this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() ? outcome == Outcomes.PlayerBTimeout : outcome == Outcomes.PlayerATimeout
+        const bothTimedOut = outcome == Outcomes.BothTimeout
+        const betAmountString = this.games[gameId].bet.toString() + " ETH"
+        const notificationBody = youWon ? `You won ${betAmountString} from ${opponentTruncated}` : opponentWon ? `You lost ${betAmountString} to ${opponentTruncated}` : youLeft ? `You left the game with ${opponentTruncated} and lost ${betAmountString}` : opponentLeft ? `${opponentTruncated} left the game and you won ${betAmountString}` : youTimedOut ? `You timed out against ${opponentTruncated} and lost ${betAmountString}` : opponentTimedOut ? `${opponentTruncated} timed out and you won ${betAmountString}` : bothTimedOut ? `You both timed out and nobody won ${betAmountString}` : null
+        //notification title simply tells you if you won or lost
+        const notificationTitle = youWon ? "You won!" : opponentWon ? "You lost!" : youLeft ? "You left the game" : opponentLeft ? `${opponentTruncated} left the game` : youTimedOut ? "You timed out" : opponentTimedOut ? `${opponentTruncated} timed out` : bothTimedOut ? "You both timed out" : null
+
+        store.dispatch("sendNotification", {
+          title: notificationTitle,
+          body: notificationBody,
+        });
       }
 
       //check if gameId is in games
@@ -1742,7 +1780,7 @@ async emptyBurnerWallet(retryCount = 0) {
             }
 
             console.log(`New ${eventName} event detected:`, event);
-            if(eventName == "GameOutcome" || eventName == "PlayerCancelled" || eventName == "PlayerLeft"){
+            if(eventName == "GameOutcome" || eventName == "PlayerCancelled" || eventName == "PlayerLeft" || eventName == "PlayersMatched" || eventName == "MoveCommitted"){
                 eventHandlers[eventName].call(this, event, true);
             }
             if (eventName === "NewRound") {
