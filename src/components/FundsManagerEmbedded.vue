@@ -1,6 +1,9 @@
 <template>
     <div class="home">
-      <h2 style="">Fund wallet</h2>
+      <h2 style=""> {{ state.isWithdrawPage ? "Withdraw Funds" : "Fund wallet" }}
+        <span @click="toggleWithdraw" style="cursor:pointer;font-size:20px; font-weight:100; letter-spacing:normal; text-decoration:underline;">{{ state.isWithdrawPage ? "or deposit" : "or withdraw" }}</span></h2>
+
+      <template v-if="!state.isWithdrawPage">
         <p>Get some ETH onto your Arbitrum Nova account</p>
 
         <p class="grey" style="text-align:start">Deposit Mainnet ETH</p>
@@ -24,8 +27,46 @@
 
         <p class="grey">Your balance {{balance}} ETH</p>
 
+        </template>
+        <template v-else>
+          <input
+          v-model="state.amountToWithdraw"
+          type="number"
+          placeholder="Amount"
+          style="width: 100%; height: 50px; border-radius: 10px; border: 1px solid #E19885; padding: 10px; font-size: 20px; font-weight: bold; color: #E19885; text-align: center; margin-top: 20px; margin-bottom: 20px;"
+          />
+          <input
+           v-model="state.withdrawAddress"
+            type="text"
+            placeholder="Address"
+            style="width: 100%; height: 50px; border-radius: 10px; border: 1px solid #E19885; padding: 10px; font-size: 20px; font-weight: bold; color: #E19885; text-align: center; margin-top: 20px; margin-bottom: 20px;"
+          />
+          <p class="grey">Your Nova balance {{balance}} ETH</p>
+          <p class="grey">Your Mainnet balance {{mainnetBalance}} ETH</p>
+
+          <!-- Show withdrawal progress based on state.withdrawStepper. Show a form stepper indicating which step the user is on. And all of the remaining steps and previous steps. And where the user is currently at. -->
+          <div class="card-small">
+            <h4>Withdraw ETH from Nova to Mainnet</h4>
+            <p v-if="!bridgingEthToMainnetFromNova && !completedBridgingEthToMainnetFromNova && !withdrawingToAddress && !completedWithdrawingToAddress">Click withdraw to start the process</p>
+            <p v-if="bridgingEthToMainnetFromNova && !completedBridgingEthToMainnetFromNova && !withdrawingToAddress && !completedWithdrawingToAddress">Bridging ETH from Nova to Mainnet</p>
+            <p v-if="!bridgingEthToMainnetFromNova && completedBridgingEthToMainnetFromNova && !withdrawingToAddress && !completedWithdrawingToAddress">Bridged ETH from Nova to Mainnet</p>
+            <p v-if="!bridgingEthToMainnetFromNova && !completedBridgingEthToMainnetFromNova && withdrawingToAddress && !completedWithdrawingToAddress">Withdrawing ETH from Nova to Mainnet</p>
+            <p v-if="!bridgingEthToMainnetFromNova && !completedBridgingEthToMainnetFromNova && !withdrawingToAddress && completedWithdrawingToAddress">Withdrew ETH from Nova to Mainnet</p>
+          </div>
+            
+
+        </template>
+
+        <p class="grey" style="text-align:start">Withdraw Mainnet ETH</p>
 
       <div style="margin-top: 20px; text-align: center; display: flex; justify-content: end; gap: 20px;">
+        <button
+          class="button-dark"
+          v-if="state.isWithdrawPage"
+          @click="withdraw"
+        >
+          Withdraw
+        </button>
         <button
           class="button-light"
           @click="()=>{closeCallBack()}"
@@ -83,6 +124,9 @@ import { copyTextToClipboard } from '@/utils'
     sentToDestination: false,
     fromBalance: '0',
     toBalance: '0',
+    isWithdrawPage: false,
+    amountToWithdraw: 0,
+    withdrawAddress: '',
   })
 
   //props
@@ -107,6 +151,29 @@ import { copyTextToClipboard } from '@/utils'
   
   // computeds
   const balance = computed(() => store.state.balance)
+  const mainnetBalance = computed(() => store.state.mainnetBalance)
+  const bridgingEthToMainnetFromNova = computed(() => store.state.bridgingEthToMainnetFromNova)
+  const completedBridgingEthToMainnetFromNova = computed(() => store.state.completedBridgingEthToMainnetFromNova)
+  const withdrawingToAddress = computed(() => store.state.withdrawingToAddress)
+  const completedWithdrawingToAddress = computed(() => store.state.completedWithdrawingToAddress)
+  //Create a stepper computed function that determines the current step
+  //Bridging to mainnet from nova is the first step
+  //Withdrawing to address is the second step
+  const withdrawalStepper = computed(() => {
+    if(bridgingEthToMainnetFromNova.value){
+      return 1;
+    }
+    if(completedBridgingEthToMainnetFromNova.value){
+      return 2;
+    }
+    if(withdrawingToAddress.value){
+      return 3;
+    }
+    if(completedWithdrawingToAddress.value){
+      return 4;
+    }
+    return 0;
+  })
   const addFundsMessage = computed(() =>{
     if(props.minimumFundsToAdd){
       const isJoiningMatch = store.state.isJoiningPasswordMatch;
@@ -130,6 +197,14 @@ import { copyTextToClipboard } from '@/utils'
   const currentToChain = computed(() => state.toChains.find((item) => item.id == state.toChainId))
   
   // methods
+  const withdraw = async () => {
+    await store.dispatch('withdrawNovaEth', {amount: state.amountToWithdraw, address: state.withdrawAddress})
+  }
+  const toggleWithdraw = () => {
+    state.isWithdrawPage = !state.isWithdrawPage;
+    store.commit('shouldAutoBridgeToNova', !state.isWithdrawPage)
+
+  }
   //check if current url is handsy.io if so, use mainnet
   const updateBalances = async () => {
   const maxRetries = 3;

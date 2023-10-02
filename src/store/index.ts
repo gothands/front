@@ -47,6 +47,15 @@ const store = createStore({
       wallets: null as any,
       isMetamask: false,
       web3ReadProvider: new Web3(new Web3.providers.HttpProvider(READ_PROVIDER_URL)),
+      shouldAutoBridgeToNova: true,
+      sendingEthToNova: false,
+      completedSendingEthToNova: false,
+      bridgingEthToMainnetFromNova: false,
+      completedBridgingEthToMainnetFromNova: false,
+      withdrawingToAddress: false,
+      completedWithdrawingToAddress: false,
+
+
 
       // Game
       games: games,
@@ -105,6 +114,13 @@ const store = createStore({
     setIsMetamask(state, payload) { state.isMetamask = payload },
     setOnboard(state, payload) { state.onboard = payload },
     setWallets(state, payload) { state.wallets = payload },
+    setShouldAutoBridgeToNova(state, payload) { state.shouldAutoBridgeToNova = payload },
+    setSendingEthToNova(state, payload) { state.sendingEthToNova = payload },
+    setCompletedSendingEthToNova(state, payload) { state.completedSendingEthToNova = payload },
+    setBridgingEthToMainnetfromNova(state, payload) { state.bridgingEthToMainnetFromNova = payload },
+    setCompletedBridgingEthToMainnetfromNova(state, payload) { state.completedBridgingEthToMainnetFromNova = payload },
+    setWithdrawingToAddress(state, payload) { state.withdrawingToAddress = payload },
+    setCompletedWithdrawingToAddress(state, payload) { state.completedWithdrawingToAddress = payload },
 
     // Game
     setGames(state, payload) { 
@@ -338,7 +354,7 @@ const store = createStore({
           commit('setMainnetBalance', balanceEth); // Assuming you have a mutation named 'setBalance'
 
           //if not isMetamask, automatically send eth to nova
-          if(!state.isMetamask){
+          if(!state.isMetamask && state.shouldAutoBridgeToNova){
             if(parseFloat(balanceEth) > 0){
               await store.dispatch('sendMainnetEthToNova')
             }
@@ -358,7 +374,8 @@ const store = createStore({
 
     //send mainnet eth
     async sendMainnetEthToNova({ commit, state }) {
-      //commit('setSendingEthToNova', true)
+      commit('setSendingEthToNova', true)
+      commit('setCompletedSendingEthToNova', false)
       try {
         const web3 = new Web3(state.mainnetProvider as any);
         const balance = state.mainnetBalance;
@@ -378,6 +395,7 @@ const store = createStore({
         const gasPrice:any = await web3.eth.getGasPrice();
         const gasLimit = 22000;
         const totalGasCost = gasPrice * gasLimit;
+        const initialNovaBalance = state.balance;
 
         //Amount to send to empty balance - 9001 wei
         const amountToSend:any = balanceInWei - totalGasCost;
@@ -408,21 +426,161 @@ const store = createStore({
         }
 
         const tx = await web3.eth.sendTransaction(transaction);
+
+        //wait for transaction to go through
+        await web3.eth.getTransactionReceipt(tx.transactionHash);
+
+        //wait for nova balance to update. make sure balance is greater than initial balance by almost the amount sent
+        while(parseFloat(state.balance) - parseFloat(initialNovaBalance)  < parseFloat(balance) - 0.01){
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
+        //update state
+        commit('setSendingEthToNova', false)
+        commit('setCompletedSendingEthToNova', true)
         
         
         // Transaction was successful if we made it here
         //console.log('Sent', result);
-        //commit('setSendingEthToNova', false)
       } catch (error) {
         // Log more detailed information about the error
         console.error('Error sending eth', error);
         
         //commit('setSendingEthToNova', false)
+        commit('setSendingEthToNova', false)
+        commit('setCompletedSendingEthToNova', false)
         return error;
       }
     },
-    
 
+    //send nova eth to mainnet
+    async sendNovaEthToMainnet({ commit, state }, amount) {
+      commit('setBridgingEthToMainnetfromNova', true)
+      commit('setCompletedBridgingEthToMainnetfromNova', false)
+      try {
+        const web3 = new Web3(state.provider as any);
+        const balance = amount;
+        const balanceInWei:any = web3.utils.toWei(balance, "ether");
+
+        const initialMainnetBalance = state.mainnetBalance;
+
+        //return if balance less than 0.01 eth
+        if(parseFloat(balance) < 0.005){
+          console.log("balance less than 0.01 eth")
+          return;
+        }
+
+        const bridge = new Bridge("Mainnet")
+        const supports = bridge.supports()
+        const bridgeToken = (await supports).tokens.find((token: BridgeToken) => token.name === "ETH")
+        const fromChain = (await supports).fromChains.find((chain: BridgeChain) => chain.name === "nova")
+        const toChain = (await supports).toChains.find((chain: BridgeChain) => chain.name === "mainnet")
+        const gasPrice:any = await web3.eth.getGasPrice();
+        const gasLimit = 22000;
+        const totalGasCost = gasPrice * gasLimit;
+
+        //Calculate amount to send and append 9001 wei
+        const amountToSend:any = balanceInWei - totalGasCost;
+        const amountToSendHm = web3.utils.fromWei(amountToSend.toString(), "ether");
+        const amountToSendConcat = amountToSend.toString().slice(0, -4) + "9001";
+
+
+        console.log("mainnet amountToSendhm", amountToSendHm)
+        console.log("mainnet fromChain", fromChain)
+        console.log("mainnet toChain", toChain)
+        console.log("mainnet bridgeToken", bridgeToken)
+
+
+        // const result = await bridge.transfer(
+        //   new Web3Provider(state.mainnetProvider as any).getSigner(),
+        //   bridgeToken as BridgeToken,
+        //   fromChain as BridgeChain,
+        //   toChain as BridgeChain,
+        //   amountToSendHm,
+        // )
+
+        const transaction  = {
+          from: state.activeAccount,
+          to: bridgeToken?.makerAddress,
+          value: web3.utils.toHex(amountToSendConcat),
+          gasPrice: gasPrice,
+          gasLimit: gasLimit,
+        }
+
+        const tx = await web3.eth.sendTransaction(transaction);
+
+        //wait for transaction to go through
+        await web3.eth.getTransactionReceipt(tx.transactionHash);
+
+        //wait for mainnet balance to update. make sure balance is greater than initial balance by almost the amount sent
+        while(parseFloat(state.mainnetBalance) - parseFloat(initialMainnetBalance)  < parseFloat(amount) - 0.001){
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
+        //update state
+        commit('setBridgingEthToMainnetfromNova', false)
+        commit('setCompletedBridgingEthToMainnetfromNova', true)
+
+        // Transaction was successful if we made it here
+        //console.log('Sent', result);
+        //commit('setSendingEthToNova', false)
+      }
+      catch (error) {
+        // Log more detailed information about the error
+        console.error('Error sending eth', error);
+        
+        //commit('setSendingEthToNova', false)
+        commit('setBridgingEthToMainnetfromNova', false)
+        commit('setCompletedBridgingEthToMainnetfromNova', false)
+        return error;
+      }
+    },
+
+    //withdraw eth from nova to address
+    async withdrawNovaEth({ commit, state }, {amount, address}) {
+      commit('setShouldAutoBridgeToNova', false)
+      commit('setCompletedWithdrawingToAddress', false)
+      commit('setWithdrawingToAddress', false)
+      try {
+        await store.dispatch('sendNovaEthToMainnet', amount)
+
+        //send mainnet eth to address
+        commit('setWithdrawingToAddress', true)
+        const web3 = new Web3(state.mainnetProvider as any);
+        const gasPrice:any = await web3.eth.getGasPrice();
+        const gasLimit = 22000;
+
+        const transaction  = {
+          from: state.activeAccount,
+          to: address,
+          value: web3.utils.toHex(web3.utils.toWei(amount, "ether")),
+          gasPrice: gasPrice,
+          gasLimit: gasLimit,
+        }
+
+        const tx = await web3.eth.sendTransaction(transaction);
+
+        //wait for transaction to go through
+        await web3.eth.getTransactionReceipt(tx.transactionHash);
+
+        //update state
+        commit('setWithdrawingToAddress', false)
+        commit('setCompletedWithdrawingToAddress', true)
+        commit('setShouldAutoBridgeToNova', true)
+
+        
+      } catch (error) {
+        //update state
+        commit('setWithdrawingToAddress', false)
+        commit('setCompletedWithdrawingToAddress', false)
+        commit('setShouldAutoBridgeToNova', true)
+
+        
+      }
+    },
+        
+      
+        
 
 
     //set time interval to update currentTime
