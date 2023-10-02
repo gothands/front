@@ -91,6 +91,9 @@ const store = createStore({
       stakeEvents: [],
       unstakeEvents: [],
       recievedFundsEvents: [],
+
+      //Notifications
+      isNotificationsEnabled: false,
     }
   },
   getters: {
@@ -160,6 +163,8 @@ const store = createStore({
     setUnstakeEvents(state, payload) { state.unstakeEvents = payload },
     setRecievedFundsEvents(state, payload) { state.recievedFundsEvents = payload },
 
+    //Notifications
+    setIsNotificationsEnabled(state, payload) { state.isNotificationsEnabled = payload },
   },
   actions: {
     // Auth
@@ -822,6 +827,35 @@ const store = createStore({
     clearAndReload(){
       localStorage.clear()
       location.reload()
+    },
+
+    //Notifications
+    async checkNotficationsEnabled({ commit, state }) {
+      const permission = Notification.permission;
+      //check if permission granted
+      if (permission !== 'granted') {
+        console.error('We weren\'t granted permission.');
+        commit('setIsNotificationsEnabled', false)
+        return;
+      }
+      commit('setIsNotificationsEnabled', true)
+    },
+
+
+    async requestNotificationPermission({ commit, state }) {
+      const permissionResult = await Notification.requestPermission();
+      //check if permission granted
+      if (permissionResult !== 'granted') {
+        console.error('We weren\'t granted permission.');
+        return;
+      }
+      commit('setIsNotificationsEnabled', true)
+    },
+
+    async sendNotification({ commit, state }, {title, body}) {
+      const img = '/rock.svg';
+      //send notification,
+      const notification = new Notification(title, { body , icon: img });
     }
 
 
@@ -833,5 +867,6 @@ const store = createStore({
 
 store.dispatch('setTime')
 store.dispatch('fetchEvents')
+store.dispatch('checkNotficationsEnabled')
 
 export default store
