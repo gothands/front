@@ -1,4 +1,5 @@
 <template>
+  <modal-enable-notifications/>
 	<nav>
 		<div class="title hide-for-mobile">
 		  Handsy.io
@@ -94,6 +95,7 @@ import { ref, onMounted, watch } from "vue";
 import { Web3Auth } from "@web3auth/modal";
 import { CHAIN_NAMESPACES } from "@web3auth/base";
 import RPC from "./web3RPC";
+import ModalEnableNotifications from "./components/ModalEnableNotifications.vue";
 
 // Plugins
 
@@ -129,6 +131,7 @@ export default {
     Game,
     Staking,
     ProfileIcon,
+    ModalEnableNotifications,
   },
   computed: mapState([
     'loggedin',

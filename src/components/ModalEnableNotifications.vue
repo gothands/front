@@ -111,7 +111,7 @@ export default {
       enableNotifications() {this.$store.dispatch('requestNotificationPermission')},      
     },
     computed: {
-        show() {return !this.$store.state.isNotificationsEnabled},
+        show() {return !this.$store.state.isNotificationsEnabled && this.$store.state.loggedin},
     },
 
     //output the value of move
