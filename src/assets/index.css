@@ -1039,6 +1039,9 @@ background-position-y: 50%;
 
 /* Mobile */
 @media only screen and (max-width: 600px) {
+  .nav-right {
+    margin-right: 0px;
+  }
   .card{
     margin: 0;
     max-width: 50vw;
@@ -1194,9 +1197,9 @@ background-position-y: 50%;
     flex-direction: column;
     gap: 60px;
   }
-  .nav-right {
+  /* .nav-right {
     margin-right: 0px;
-  }
+  } */
 
   .content {
     margin-top: 0px;
