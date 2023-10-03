@@ -65,7 +65,7 @@ export default {
         updateJazzicon() {
             const seed = parseInt(this.address?.slice(2, 10), 16); // Convert the address slice to a number
             console.log("isSuperMini", this.isSuperMini)
-            const size = this.isMini ? 32 : this.isMedium ? 72 : this.isLarge ? 250 : this.isSuperMini ? 20 : 32;
+            const size = this.isMini ? 32 : this.isMedium ? 72 : this.isLarge ? 160 : this.isSuperMini ? 20 : 32;
             const icon = jazzicon(size, seed); // Use the seed to generate the Jazzicon
             const profileMini = this.$refs.profileAppend;
             profileMini.innerHTML = ''; // Clear previous jazzicon

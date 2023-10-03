@@ -86,8 +86,8 @@
 
 <style>
 .profile-big {
-width: 240px;
-height: 240px;
+width: 150px;
+height: 150px;
 flex-shrink: 0;
 border-radius: 240px;
 background:  #E9E9E9 -105.215px 0px / 149.927% 100% no-repeat;

@@ -1452,8 +1452,9 @@ async emptyBurnerWallet(retryCount = 0) {
 
       //check if user is in game and is a subscription and is an opponents move and you have not sent your move yet
       if(this.isInGame && isSubscription && playerAddress.toLowerCase() != this.activeAccount.toLowerCase() && !this.isMoveSent){
+        const opponentTruncated = this.truncateAddress(this.opponentAddress)
         store.dispatch("sendNotification", {
-          title: "Your opponent has sent their move.",
+          title: `Your opponent ${opponentTruncated} has sent their move.`,
           body: `Get back in the game to send yours.`,
         });
       }

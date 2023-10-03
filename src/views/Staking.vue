@@ -22,7 +22,7 @@
           Buy HANDS
         </button>
 
-        <div style="width:100%;display:grid; grid-template-columns: 1fr auto 1fr; margin-bottom:70px;">
+        <div class="stake-statistics">
             <div style="display:flex; gap:20px; align-items:center; flex-direction:column;">
                 <p>Total staked</p>
                 <h2>{{totalHandsStakedBalance}} HANDS</h2>
@@ -42,7 +42,7 @@
             </div>
         </div>
 
-        <div style="display:flex; justify-content:space-between; gap:40px;">
+        <div class="reward-statistics">
             <div class="card">
                 <p>Your stake</p>
                 <h1>
@@ -129,8 +129,8 @@
 
   <style>
 .profile-big {
-  width: 240px;
-  height: 240px;
+  width: 150px;
+  height: 150px;
   flex-shrink: 0;
   border-radius: 1240px;
   background:  #E9E9E9 -105.215px 0px / 149.927% 100% no-repeat;
