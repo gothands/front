@@ -17,12 +17,9 @@
             <td class="player">
               <profile-item :address="item.address"></profile-item>
             </td>
-            <td class="earnings"
-              :class="{ 'earned-positive': item.earnings > 0, 'earned-negative': item.earnings < 0 }"
-            >
-              <div v-if="item.earnings > 0" class="winnings green">+{{ item.earnings }} ETH</div>
-              <div v-else-if="item.earnings <= 0" class="winnings red">{{ item.earnings }} ETH </div>
-            </td>
+            
+            <td v-if="item.earnings > 0" class="winnings green">+{{ item.earnings }} ETH</td>
+            <td v-else-if="item.earnings <= 0" class="winnings red">{{ item.earnings }} ETH </td>
             <td class="games-played">{{ item.gamesPlayed }}</td>
             <td class="points">{{ item.points }}</td>
           </tr>
