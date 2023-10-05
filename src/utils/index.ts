@@ -72,6 +72,6 @@ export function copyTextToClipboard(text: string) {
 
 
 export const calculatePoints = (bet:number, earnings:number):number => {
-    return (earnings * 100) + (bet * 100);
+    return (earnings * 1000) + (bet * 1000);
 }
   
