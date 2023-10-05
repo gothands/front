@@ -69,4 +69,9 @@ export function copyTextToClipboard(text: string) {
 
   document.body.removeChild(textArea);
 }
+
+
+export const calculatePoints = (bet:number, earnings:number):number => {
+    return (earnings * 100) + (bet * 100);
+}
   

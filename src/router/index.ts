@@ -2,7 +2,7 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import Home from '../views/Home.vue'
 import Profile from '../views/Profile.vue'
 import Staking from '../views/Staking.vue'
-import Affiliate from '../views/Affiliate.vue'
+import Rankings from '../views/Rankings.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -21,9 +21,9 @@ const routes: Array<RouteRecordRaw> = [
     component: Staking
   },
   {
-    path: '/affiliate',
-    name: 'affiliate',
-    component: Affiliate
+    path: '/rankings',
+    name: 'rankings',
+    component: Rankings
   }
 ]
 

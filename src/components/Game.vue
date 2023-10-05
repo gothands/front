@@ -487,6 +487,7 @@ import { getBurnerWallet, privateKeyToAccount } from '@/utils/burner'
 import ProfileItemBurner from './ProfileItemBurner.vue'
 import ProfileIcon from './ProfileIcon.vue'
 import ModalAddFunds from './ModalAddFunds.vue'
+import { calculatePoints } from '@/utils'
 
 const CONTRACT_ADDRESS = mainContracts.deployedContracts.Hands
 const CONTRACT_ABI = mainContracts.deployedAbis.Hands
@@ -573,6 +574,7 @@ export default {
       contractInstance: null,
       contractReadInstance: null,
       pastGames: [],
+      gameIdsFinished: {},
 
       // playerRegisteredEvents: [],
       // playerWaitingEvents: [],
@@ -928,6 +930,7 @@ export default {
     console.log("provider", this.provider)
     this.initialized = false
     
+    store.commit("setProfiles", {})
 
     console.log("ramp sdk", RampInstantSDK)
 
@@ -1584,6 +1587,13 @@ async emptyBurnerWallet(retryCount = 0) {
       getWinnings(bet) {
         return (bet - (bet * 2 * APPLICATION_FEE)).toFixed(4)
       },
+      getBaseWinnings(bet){
+        return bet
+      },
+      getApplicationFee(game) {
+        const bet = game.bet
+        return bet * 2 * APPLICATION_FEE
+      },
       getPlayerWinnings(game, player){
         const bet = game.bet
         const winnings = this.getWinnings(bet)
@@ -1621,6 +1631,88 @@ async emptyBurnerWallet(retryCount = 0) {
           return winnings
         } else if (outcome == Outcomes.PlayerBTimeout && !isPlayerA) {
           return -bet
+        } else if (outcome == Outcomes.BothTimeout) {
+          return 0
+        }
+      },
+      getBasePlayerWinnings(game, player){
+        const bet = game.bet
+        const winnings = this.getBaseWinnings(bet)
+        const outcome = game.outcome
+        const isPlayerA = player?.toLowerCase() === game.playerA?.toLowerCase()
+
+        console.log("getting player winnings", game, player, winnings, outcome, isPlayerA)
+        if (outcome == Outcomes.Cancelled) {
+          console.log("cancelled")
+          return 0
+        } else if (outcome == Outcomes.PlayerALeft && isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.PlayerBLeft && isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerALeft && !isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerBLeft && !isPlayerA) {
+          return -bet
+        }
+         else if (outcome == Outcomes.Draw) {
+          return 0
+        } else if (outcome == Outcomes.PlayerA && isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerB && isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.PlayerA && !isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.PlayerB && !isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerATimeout && isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.PlayerBTimeout && isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerATimeout && !isPlayerA) {
+          return winnings
+        } else if (outcome == Outcomes.PlayerBTimeout && !isPlayerA) {
+          return -bet
+        } else if (outcome == Outcomes.BothTimeout) {
+          return 0
+        }
+      },
+      getPlayerProtocolFees(game, player){
+        const bet = game.bet
+        const fee = this.getApplicationFee(game)
+        const outcome = game.outcome
+        
+        const isPlayerA = player?.toLowerCase() === game.playerA?.toLowerCase()
+
+        if (outcome == Outcomes.Cancelled) {
+          console.log("cancelled")
+          return 0
+        } else if (outcome == Outcomes.PlayerALeft && isPlayerA) {
+          return 0
+        } else if (outcome == Outcomes.PlayerBLeft && isPlayerA) {
+          return fee
+        } else if (outcome == Outcomes.PlayerALeft && !isPlayerA) {
+          return fee
+        } else if (outcome == Outcomes.PlayerBLeft && !isPlayerA) {
+          return 0
+        }
+         else if (outcome == Outcomes.Draw) {
+          return 0
+        } else if (outcome == Outcomes.PlayerA && isPlayerA) {
+          return fee
+        } else if (outcome == Outcomes.PlayerB && isPlayerA) {
+          return 0
+        } else if (outcome == Outcomes.PlayerA && !isPlayerA) {
+          return 0
+        } else if (outcome == Outcomes.PlayerB && !isPlayerA) {
+          return fee
+        } else if (outcome == Outcomes.PlayerATimeout && isPlayerA) {
+          return 0
+        } else if (outcome == Outcomes.PlayerBTimeout && isPlayerA) {
+          return fee
+        } else if (outcome == Outcomes.PlayerATimeout && !isPlayerA) {
+          return fee
+        } else if (outcome == Outcomes.PlayerBTimeout && !isPlayerA) {
+          return 0
         } else if (outcome == Outcomes.BothTimeout) {
           return 0
         }
@@ -1686,6 +1778,35 @@ async emptyBurnerWallet(retryCount = 0) {
       if (this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() || this.games[gameId].playerB.toLowerCase() == this.activeAccount.toLowerCase()) {
         this.createGame("0");
       }
+
+      //set player data
+      this.setPlayerData(gameId)
+      
+    },
+
+    setPlayerData(gameId){
+      if(this.gameIdsFinished[gameId.toLowerCase()]) return
+      //add player profile points, earnings and fees generated
+      const playerA = this.games[gameId].playerA.toLowerCase()
+      const playerB = this.games[gameId].playerB.toLowerCase()
+      const playerAEarnings = this.getBasePlayerWinnings(this.games[gameId], playerA)
+      const playerBEarnings = this.getBasePlayerWinnings(this.games[gameId], playerB)
+      const playerAFees = this.getPlayerProtocolFees(this.games[gameId], playerA)
+      const playerBFees = this.getPlayerProtocolFees(this.games[gameId], playerB)
+      const playerAPoints = calculatePoints(this.games[gameId].bet, playerAEarnings)
+      const playerBPoints = calculatePoints(this.games[gameId].bet, playerBEarnings)
+
+      store.commit('addProfileEarnings', { address: playerA, earnings: playerAEarnings })
+      store.commit('addProfileEarnings', { address: playerB, earnings: playerBEarnings })
+      store.commit('addProfileFeesGenerated', { address: playerA, fees: playerAFees })
+      store.commit('addProfileFeesGenerated', { address: playerB, fees: playerBFees })
+      store.commit('addProfilePoints', { address: playerA, points: playerAPoints})
+      store.commit('addProfilePoints', { address: playerB, points: playerBPoints })
+
+      store.commit('addGamesPlayed', { address: playerA })
+      store.commit('addGamesPlayed', { address: playerB })
+
+      this.gameIdsFinished[gameId.toLowerCase()] = true
     },
 
     //If the game id that was cancelled was yours then reset the current game id and remove the game

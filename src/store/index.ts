@@ -14,13 +14,22 @@ interface Balances {
   [address: string]: any;
 }
 
-//Util functions
-function getGameContract(){
-
+interface PointStats {
+  totalPoints: number;
 }
 
-function getStakeContract(){
+interface Profile {
+  name: string;
+  avatar: string;
+  address: string;
+  earnings: number;
+  feesGenerated: number;
+  points: number;
+  gamesPlayed: number;
+}
 
+interface Profiles {
+  [address: string]: Profile;
 }
 
 const store = createStore({
@@ -94,6 +103,9 @@ const store = createStore({
 
       //Notifications
       isNotificationsEnabled: false,
+
+      //Profiles
+      profiles: {} as Profiles,
     }
   },
   getters: {
@@ -165,6 +177,149 @@ const store = createStore({
 
     //Notifications
     setIsNotificationsEnabled(state, payload) { state.isNotificationsEnabled = payload },
+
+    //Profiles
+    setProfiles(state, payload) { state.profiles = payload },
+    setProfile(state, payload) {
+      let profiles = {...state.profiles}
+      profiles[payload.address.toLowerCase()] = payload
+      state.profiles = profiles
+    },
+    setProfileName(state, payload) {
+      let profiles = {...state.profiles}
+      if(!profiles[payload.address.toLowerCase()]){
+        profiles[payload.address.toLowerCase()] = {
+          name: "",
+          avatar: "",
+          address: payload.address,
+          earnings: 0,
+          feesGenerated: 0,
+          points: 0,
+          gamesPlayed: 0,
+        }
+      }
+      profiles[payload.address.toLowerCase()].name = payload.name
+      state.profiles = profiles
+    },
+    setProfileAvatar(state, payload) {
+      let profiles = {...state.profiles}
+      profiles[payload.address.toLowerCase()].avatar = payload.avatar
+      state.profiles = profiles
+    },
+    setProfileEarnings(state, payload) {
+      let profiles = {...state.profiles}
+      if(!profiles[payload.address.toLowerCase()]){
+        profiles[payload.address.toLowerCase()] = {
+          name: "",
+          avatar: "",
+          address: payload.address,
+          earnings: 0,
+          feesGenerated: 0,
+          points: 0,
+          gamesPlayed: 0,
+        }
+      }
+      profiles[payload.address.toLowerCase()].earnings = payload.earnings
+      state.profiles = profiles
+    },
+    setProfileFeesGenerated(state, payload) {
+      let profiles = {...state.profiles}
+      if(!profiles[payload.address.toLowerCase()]){
+        profiles[payload.address.toLowerCase()] = {
+          name: "",
+          avatar: "",
+          address: payload.address,
+          earnings: 0,
+          feesGenerated: 0,
+          points: 0,
+          gamesPlayed: 0,
+        }
+      }
+      profiles[payload.address.toLowerCase()].feesGenerated = payload.feesGenerated
+      state.profiles = profiles
+    },
+    setProfilePoints(state, payload) {
+      let profiles = {...state.profiles}
+      if(!profiles[payload.address.toLowerCase()]){
+        profiles[payload.address.toLowerCase()] = {
+          name: "",
+          avatar: "",
+          address: payload.address,
+          earnings: 0,
+          feesGenerated: 0,
+          points: 0,
+          gamesPlayed: 0,
+        }
+      }
+      profiles[payload.address.toLowerCase()].points = payload.points
+      state.profiles = profiles
+    },
+    addProfileEarnings(state, payload) {
+      let profiles = {...state.profiles}
+      if(!profiles[payload.address.toLowerCase()]){
+        profiles[payload.address.toLowerCase()] = {
+          name: "",
+          avatar: "",
+          address: payload.address,
+          earnings: 0,
+          feesGenerated: 0,
+          points: 0,
+          gamesPlayed: 0,
+        }
+      }
+      profiles[payload.address.toLowerCase()].earnings += payload.earnings
+      state.profiles = profiles
+    },
+    //if profile doesn't exist, create it
+    addProfilePoints(state, payload) {
+      let profiles = {...state.profiles}
+      if(!profiles[payload.address.toLowerCase()]){
+        profiles[payload.address.toLowerCase()] = {
+          name: "",
+          avatar: "",
+          address: payload.address,
+          earnings: 0,
+          feesGenerated: 0,
+          points: 0,
+          gamesPlayed: 0,
+        }
+      }
+      profiles[payload.address.toLowerCase()].points += payload.points
+      state.profiles = profiles
+    },
+    addProfileFeesGenerated(state, payload) {
+      let profiles = {...state.profiles}
+      if(!profiles[payload.address.toLowerCase()]){
+        profiles[payload.address.toLowerCase()] = {
+          name: "",
+          avatar: "",
+          address: payload.address,
+          earnings: 0,
+          feesGenerated: 0,
+          points: 0,
+          gamesPlayed: 0,
+        }
+      }
+      profiles[payload.address.toLowerCase()].feesGenerated += payload.feesGenerated
+      state.profiles = profiles
+    },
+    addGamesPlayed(state, payload) {
+      let profiles = {...state.profiles}
+      if(!profiles[payload.address.toLowerCase()]){
+        profiles[payload.address.toLowerCase()] = {
+          name: "",
+          avatar: "",
+          address: payload.address,
+          earnings: 0,
+          feesGenerated: 0,
+          points: 0,
+          gamesPlayed: 0,
+        }
+      }
+      profiles[payload.address.toLowerCase()].gamesPlayed++
+      state.profiles = profiles
+      console.log("profiles list", profiles)
+    }
   },
   actions: {
     // Auth
