@@ -2,7 +2,7 @@
     <div class="content profile-view">
       <router-link class="back" to="/">
       </router-link>
-        <h1>Rankings</h1>  
+        <h2>Rankings</h2>  
     </div>
     <ranking-list :rankings="rankings" />
   

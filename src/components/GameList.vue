@@ -1,5 +1,5 @@
 <template>
-    <div style="margin: 120px 50px; overflow:auto;">
+    <div class="table-content">
       <table style="border-collapse: collapse;">
         <thead>
         

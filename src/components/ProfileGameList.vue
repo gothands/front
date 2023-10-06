@@ -1,5 +1,5 @@
 <template>
-    <div style="margin: 120px 80px; overflow:auto;">
+    <div class="table-content">
       <table style="">
         <thead>
         
