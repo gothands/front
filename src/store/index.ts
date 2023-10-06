@@ -1000,6 +1000,7 @@ const store = createStore({
     async requestNotificationPermission({ commit, state }) {
       const permissionResult = await Notification.requestPermission();
       //check if permission granted
+      alert(`permissionResult ${permissionResult}`)
       if (permissionResult !== 'granted') {
         console.error('We weren\'t granted permission.');
         return;
