@@ -74,4 +74,8 @@ export function copyTextToClipboard(text: string) {
 export const calculatePoints = (bet:number, earnings:number):number => {
     return (earnings * 1000) + (bet * 1000);
 }
+
+export const truncateAddress = (address:string):string => {
+    return address.slice(0, 6) + "..." + address.slice(-4);
+}
   

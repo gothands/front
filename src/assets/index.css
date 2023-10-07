@@ -1009,6 +1009,7 @@ background-position-y: 50%;
   border-radius: 24px;
   background: #FFF;
   gap: 20px;
+  font-size: 15px;
 
 }
 
@@ -1041,9 +1042,36 @@ background-position-y: 50%;
   overflow:auto;
 }
 
+.copy {
+  width: 20px;
+  height: 20px;
+  background: url('copy.png') no-repeat;
+  background-size: contain;
+}
+
+.modal-button-holder {
+  margin-top: 20px; text-align: center; display: flex; justify-content: end; gap: 20px;
+}
 
 /* Mobile */
 @media only screen and (max-width: 600px) {
+  .modal-button-holder {
+    margin-top: 20px; text-align: center; display: flex; justify-content: center; gap: 20px;
+  }
+  .funds-manager {
+    text-align: start;
+  }
+  .modal-add-funds {
+    height: 100vh;
+  }
+  .modal-container{
+    font-size: 15px;
+    height: 100vh;
+  }
+
+  .modal-container h2 {
+    font-size: 40px;
+  }
   .table-content {
     margin: 80px 15px; 
     overflow:auto;

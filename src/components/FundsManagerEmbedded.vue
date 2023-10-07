@@ -1,27 +1,28 @@
 <template>
-    <div class="home">
+    <div class="home funds-manager">
       <h2 style=""> {{ state.isWithdrawPage ? "Withdraw Funds" : "Fund wallet" }}
         <span @click="toggleWithdraw" style="cursor:pointer;font-size:20px; font-weight:100; letter-spacing:normal; text-decoration:underline;">{{ state.isWithdrawPage ? "or deposit" : "or withdraw" }}</span></h2>
 
       <template v-if="!state.isWithdrawPage">
         <p>Get some ETH onto your Arbitrum Nova account</p>
 
-        <p class="grey" style="text-align:start">Deposit Mainnet ETH</p>
+        <p class="grey" style="text-align:start">Deposit ETH from Mainnet</p>
         <div class="card-small">
-            <h4>Copy address and send funds</h4>
+            <h4>Copy address and send funds (ETA:2min)</h4>
             <a
-            style="cursor: pointer;"
+            style="cursor: pointer; display:flex; gap:10px;"
             @click="()=>{copyTextToClipboard(store.state.activeAccount)}"
-            >Copy address</a>
+            ><div>{{ truncateAddress(store.state.activeAccount) }}</div> <div class="copy"></div></a>
+
         </div>
 
-        <p class="grey" style="text-align:start">Or deposit to Arb Nova wallet <a style="cursor: pointer;" target="_blank" href="https://www.orbiter.finance/?source=Ethereum&dest=Arbitrum%20Nova">Bridge first</a></p>
+        <p class="grey" style="text-align:start">Or deposit directly from Arbitrum Nova wallet <a style="cursor: pointer;" target="_blank" href="https://www.orbiter.finance/?source=Ethereum&dest=Arbitrum%20Nova">Bridge first</a></p>
         <div class="card-small">
             <h4>Deposit bridged ETH to wallet</h4>
             <a
-            style="cursor: pointer;"
+            style="cursor: pointer; display:flex; gap:10px;"
             @click="()=>{copyTextToClipboard(store.state.activeAccount)}"
-            >Copy address</a>
+            ><div>{{ truncateAddress(store.state.activeAccount) }}</div> <div class="copy"></div></a>
         </div>
 
 
@@ -56,12 +57,12 @@
             <p v-if="withdrawalStepper == 4">Completed sending mainnet ETH to address</p>
             <div class="small-loading"></div>
           </div>            
+          <p class="grey" style="text-align:start">Withdraw Mainnet ETH</p>
 
         </template>
 
-        <p class="grey" style="text-align:start">Withdraw Mainnet ETH</p>
 
-      <div style="margin-top: 20px; text-align: center; display: flex; justify-content: end; gap: 20px;">
+      <div class="modal-button-holder">
         <button
           class="button-dark"
           v-if="state.isWithdrawPage"
@@ -95,7 +96,7 @@
   <script setup lang="ts">
 import { CURRENT_CHAIN_ID, RPC_URLS } from '@/types'
 import Web3 from 'web3'
-import { copyTextToClipboard } from '@/utils'
+import { copyTextToClipboard, truncateAddress } from '@/utils'
 
   const state = reactive({
     tokens: [] as BridgeToken[],
