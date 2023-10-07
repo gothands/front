@@ -11,9 +11,15 @@
                 <div class="modal-button-holder">
                     <button
                     class="button-dark"
+                    style="width: 200px;"
                     @click="enableNotifications">
                         Enable
                     </button> 
+                    <button
+                    class="button-light"
+                    @click="close">
+                        Close
+                    </button>
                 </div>
             </div>
         </div>
@@ -108,7 +114,8 @@ const APPLICATION_FEE = 0.05;
 
 export default {
     methods: {
-      enableNotifications() {this.$store.dispatch('requestNotificationPermission')},      
+      enableNotifications() {this.$store.dispatch('requestNotificationPermission')},   
+      close() {this.$store.commit('setIsNotificationsEnabled', true)},   
     },
     computed: {
         show() {return !this.$store.state.isNotificationsEnabled && this.$store.state.loggedin},
