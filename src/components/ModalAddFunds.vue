@@ -1,6 +1,6 @@
 <template>
   <transition name="fade">
-    <div class="modal-container" v-if="show">
+    <div class="modal-container" v-if="false">
       <div class="modal-add-funds">
         <funds-manager
           v-if="isBurner"

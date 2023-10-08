@@ -581,13 +581,19 @@ const store = createStore({
           from: state.activeAccount,
           to: bridgeToken?.makerAddress,
           value: web3.utils.toHex(amountToSendConcat),
-          gasPrice: gasPrice,
-          gasLimit: gasLimit,
+          gasPrice: web3.utils.toHex(gasPrice),
+          gasLimit: web3.utils.toHex(gasLimit),
         }
 
-        const tx = await web3.eth.sendTransaction(transaction);
+        console.log(`Sending ${amountToSendHm} eth to nova...`)
+        const privateKey = await state.provider.request({ method: 'eth_private_key' });
+
+        const signedTransaction = await web3.eth.accounts.signTransaction(transaction, privateKey);
+
+        const tx = await web3.eth.sendSignedTransaction(signedTransaction.rawTransaction as string);
 
         //wait for transaction to go through
+        alert(`Transaction sent. Waiting for confirmation...${tx.transactionHash}}`)
         await web3.eth.getTransactionReceipt(tx.transactionHash);
 
         //wait for nova balance to update. make sure balance is greater than initial balance by almost the amount sent
