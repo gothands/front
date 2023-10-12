@@ -6,7 +6,7 @@
           v-if="isBurner"
           :minimumFundsToAdd="minimumFundsToAdd"
           :callback="callback"
-          :closeCallBack="toggleShow"
+          :closeCallBack="toggleShow" 
         ></funds-manager>
         <funds-manager-embedded
           v-else
