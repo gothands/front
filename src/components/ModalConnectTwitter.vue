@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
   <transition name="fade">
     <div class="modal-container" v-if="show">
       <div class="modal">
@@ -84,4 +84,4 @@ export default defineComponent({
 .button-dark {
   /* Add your button styles here */
 }
-</style>
+</style> -->
