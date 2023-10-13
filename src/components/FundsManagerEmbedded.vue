@@ -1,76 +1,47 @@
 <template>
     <div class="home funds-manager">
-      <h2 style=""> {{ state.isWithdrawPage ? "Withdraw Funds" : "Fund wallet" }}
-        <span @click="toggleWithdraw" style="cursor:pointer;font-size:20px; font-weight:100; letter-spacing:normal; text-decoration:underline;">{{ state.isWithdrawPage ? "or deposit" : "or withdraw" }}</span></h2>
-
+      <h2 style=""> {{ state.isWithdrawPage ? "Withdraw" : "Fund wallet" }}
+        <span @click="toggleWithdraw" style="cursor:pointer;font-size:20px; font-weight:100; letter-spacing:normal; text-decoration:underline;">{{ state.isWithdrawPage ? "or deposit" : "or withdraw" }}</span>
+      </h2>
       <template v-if="!state.isWithdrawPage">
-        <p>Get some ETH onto your Arbitrum Nova account</p>
+        <p style="padding-bottom:20px;">Get some ETH onto your Arbitrum Goerli account</p>
 
-        <p class="grey" style="text-align:start">Deposit ETH from Mainnet</p>
+        <p class="grey" style="font-size:15px; text-align:start">Deposit Arb Goerli ETH to your Handsy.io wallet <a href="https://discord.gg/ZjqqaZvw" target="_blank">Join Discord</a></p>
         <div class="card-small">
-            <h4>Copy address and send funds (ETA:2min)</h4>
+            <h4>Copy address and send funds</h4>
+
+            
             <a
             style="cursor: pointer; display:flex; gap:10px;"
             @click="()=>{copyTextToClipboard(store.state.activeAccount)}"
             ><div>{{ truncateAddress(store.state.activeAccount) }}</div> <div class="copy"></div></a>
 
         </div>
-
-        <p class="grey" style="text-align:start">Or deposit directly from Arbitrum Nova wallet <a style="cursor: pointer;" target="_blank" href="https://www.orbiter.finance/?source=Ethereum&dest=Arbitrum%20Nova">Bridge first</a></p>
-        <div class="card-small">
-            <h4>Deposit bridged ETH to wallet</h4>
-            <a
-            style="cursor: pointer; display:flex; gap:10px;"
-            @click="()=>{copyTextToClipboard(store.state.activeAccount)}"
-            ><div>{{ truncateAddress(store.state.activeAccount) }}</div> <div class="copy"></div></a>
-        </div>
-
-
-        <p class="grey">Your balance {{balance}} ETH</p>
+        <p class="grey" style="font-size:15px;text-align:start">Your balance {{balance}} ETH</p>
 
         </template>
         <template v-else>
-          <input
-          v-model="state.amountToWithdraw"
-          :disabled="!canWithdraw"
-          type="number"
-          placeholder="Amount"
-          style="width: 100%; height: 50px; border-radius: 10px; border: 1px solid #E19885; padding: 10px; font-size: 20px; font-weight: bold; color: #E19885; text-align: center; margin-top: 20px; margin-bottom: 20px;"
-          />
-          <input
-           v-model="state.withdrawAddress"
-           :disabled="!canWithdraw"
-            type="text"
-            placeholder="Address"
-            style="width: 100%; height: 50px; border-radius: 10px; border: 1px solid #E19885; padding: 10px; font-size: 20px; font-weight: bold; color: #E19885; text-align: center; margin-top: 20px; margin-bottom: 20px;"
-          />
-          <p class="grey">Your Nova balance {{balance}} ETH</p>
-          <p class="grey">Your Mainnet balance {{mainnetBalance}} ETH</p>
+          
+          <p style="padding-bottom:20px;">Get your funds to an external account</p>
 
-          <!-- Show withdrawal progress based on state.withdrawalStepper. Show a form stepper indicating which step the user is on. And all of the remaining steps and previous steps. And where the user is currently at. -->
-          <div class="card-small" v-if="!canWithdraw">
-            <h4>Withdraw ETH from Nova to Mainnet</h4>
-            <p v-if="withdrawalStepper == 0">Click withdraw to start the process</p>
-            <p v-if="withdrawalStepper == 1">Bridging Eth from nova to mainnet</p>
-            <p v-if="withdrawalStepper == 2">Completed bridging Eth from nova to mainnet</p>
-            <p v-if="withdrawalStepper == 3">Sending mainnet ETH to address</p>
-            <p v-if="withdrawalStepper == 4">Completed sending mainnet ETH to address</p>
-            <div class="small-loading"></div>
-          </div>            
-          <p class="grey" style="text-align:start">Withdraw Mainnet ETH</p>
+        <p class="grey" style="font-size:15px; text-align:start">Export your private key and import it into an external wallet</p>
+        <div class="card-small">
+            <h4>Copy your private key</h4>
+
+            
+            <a
+            style="cursor: pointer; display:flex; gap:10px;"
+            @click="()=>{store.dispatch(`exportPrivateKey`)}"
+            ><div>Copy PK</div> <div class="copy"></div></a>
+
+        </div>
+        <p class="grey" style="font-size:15px;text-align:start">Your balance {{balance}} ETH</p>
 
         </template>
 
 
       <div class="modal-button-holder">
-        <button
-          class="button-dark"
-          v-if="state.isWithdrawPage"
-          @click="withdraw"
-          :disabled="!canWithdraw"
-        >
-          {{ withdrawalStepper == 0 || withdrawalStepper == 4 ? "Withdraw" : "Withdrawing..." }}
-        </button>
+        
         <button
           class="button-light"
           @click="()=>{closeCallBack()}"

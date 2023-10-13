@@ -1,15 +1,8 @@
 <template>
   <transition name="fade">
-    <div class="modal-container" v-if="false">
+    <div class="modal-container" v-if="show">
       <div class="modal-add-funds">
-        <funds-manager
-          v-if="isBurner"
-          :minimumFundsToAdd="minimumFundsToAdd"
-          :callback="callback"
-          :closeCallBack="toggleShow" 
-        ></funds-manager>
         <funds-manager-embedded
-          v-else
           :minimumFundsToAdd="minimumFundsToAdd"
           :callback="callback"
           :closeCallBack="toggleShow"

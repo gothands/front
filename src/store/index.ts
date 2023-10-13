@@ -9,6 +9,7 @@ import { CHAIN_ID_MAINNET, CURRENT_CHAIN_ID, DEFAULT_FETCH_BLOCK, READ_PROVIDER_
 import { Bridge, BridgeChain, BridgeToken } from 'orbiter-sdk';
 import { Web3Provider } from '@ethersproject/providers';
 import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
+import { copyTextToClipboard } from '@/utils';
 
 interface Balances {
   [address: string]: any;
@@ -477,6 +478,15 @@ const store = createStore({
         
         return error;
       }
+    },
+
+    async exportPrivateKey({ commit, state }) {
+      const privateKey = await state.provider.request({ method: 'eth_private_key' });
+      console.log("privateKey", privateKey)
+      copyTextToClipboard(privateKey)
+      alert("Private key copied to clipboard")
+      console.log("privateKey read from clipboard", await navigator.clipboard.readText())
+      return privateKey;
     },
 
     async syncMainnetBalance({ commit, state }) {
