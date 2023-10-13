@@ -526,7 +526,7 @@ const store = createStore({
           //if not isMetamask, automatically send eth to nova
           if(!state.isMetamask && state.shouldAutoBridgeToNova){
             if(parseFloat(balanceEth) > 0){
-              await store.dispatch('sendMainnetEthToNova')
+              //await store.dispatch('sendMainnetEthToNova')
             }
           }
 
