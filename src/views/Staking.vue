@@ -9,13 +9,13 @@
         </div>
         <p >Your balance</p>
         <div style="display:flex; justify-content:center; gap:40px; align-items:end;">
-        <h1 style="margin:0; margin-top: -20px; margin-bottom:70px; padding:0; align-items:end; margin-bottom:-20px; font-size: 100px;">
+        <h2 style="margin:0; margin-top: -20px; margin-bottom:70px; padding:0; align-items:end; margin-bottom:-20px; font-size: 70px;">
             {{this.handsTokenBalance?.toString().split(".")[0]}}.{{ this.handsTokenBalance?.toString().split(".")[1]?.substring(0,4)?? "00" }}
             <span
-                style="font-size: 50px;"
+                style="font-size: 35px;"
                 class="currency-symbol"
             >HANDS</span>
-        </h1>
+        </h2>
         </div>
 
         <button style="margin-top:60px; margin-bottom:90px;" class="button-dark">
@@ -36,10 +36,10 @@
                 </h2>
             </div>
 
-            <div style="display:flex; gap:20px; align-items:center; flex-direction:column;">
+            <!-- <div style="display:flex; gap:20px; align-items:center; flex-direction:column;">
                 <p>Stakers</p>
                 <h2>{{stakerAmount}}</h2>
-            </div>
+            </div> -->
         </div>
 
         <div class="reward-statistics">

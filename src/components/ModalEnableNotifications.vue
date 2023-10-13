@@ -61,7 +61,6 @@ line-height: normal;
     align-self: center;
     border-radius: 48px;
 background: #FFF;
-width: 678px;
 flex-shrink: 0;
     display: flex;
     flex-direction: column;

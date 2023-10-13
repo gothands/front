@@ -3,15 +3,15 @@
         <div class="modal-container" v-if="show">
             <div class="modal">
                 <!-- Result text-->
-                <h4 style="margin-top:60px" v-if="isStake">Stake<span style="color:#E19885; font-weight:bold;">HANDS</span> </h4>
-                <h4 style="margin-top:60px" v-else>Unstake<span style="color:#E19885; font-weight:bold;">HANDS</span> </h4>
+                <h2 style="margin-top:30px" v-if="isStake">Stake <span style="color:#E19885;">HANDS</span> </h2>
+                <h2 style="margin-top:30px" v-else>Unstake <span style="color:#E19885;">HANDS</span> </h2>
 
                 <!-- Input binded to amount data object -->
                 <input
                 v-model="amount"
                 type="number"
                 placeholder="Amount"
-                style="width: 100%; height: 50px; border-radius: 10px; border: 1px solid #E19885; padding: 10px; font-size: 20px; font-weight: bold; color: #E19885; text-align: center; margin-top: 20px; margin-bottom: 20px;"
+                class="input"
                 />
                 
 
@@ -68,15 +68,13 @@ line-height: normal;
   }
   
   .modal {
-    color: black;
     padding: 20px;
     width: auto;
     max-height: 95vw;
     position: fixed;
     align-self: center;
     border-radius: 48px;
-background: #FFF;
-width: 678px;
+background: #ffffff;
 flex-shrink: 0;
     display: flex;
     flex-direction: column;

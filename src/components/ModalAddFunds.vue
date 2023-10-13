@@ -46,7 +46,6 @@ h4 {
   align-self: center;
   border-radius: 48px;
   background: #fff;
-  width: 678px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
