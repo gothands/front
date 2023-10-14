@@ -21,7 +21,11 @@
             <td v-if="item.earnings > 0" class="winnings green">+{{ item.earnings }} ETH</td>
             <td v-else-if="item.earnings <= 0" class="winnings red">{{ item.earnings }} ETH </td>
             <td class="games-played">{{ item.gamesPlayed }}</td>
-            <td class="points">{{ item.points }}</td>
+            <td class="points">
+              <div>
+                <div style="" class="points-button">{{ item.points }} points</div>
+              </div>
+            </td>
           </tr>
         </tbody>
       </table>

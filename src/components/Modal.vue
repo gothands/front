@@ -15,8 +15,13 @@
                 <p v-else-if="opponentTimedOut">Because your opponent didn't make a move in time!</p>
 
                 <!-- Points ratio -->
-                <h1 style="margin:0; margin-bottom:24px; padding:0;" v-if="isWinner"><span style="color:#E19885">{{winnerPoints}}</span> : {{loserPoints}}</h1>
-                <h1 style="margin:0; margin-bottom:24px; padding:0;" v-else><span style="color:#E19885">{{loserPoints}}</span> : {{winnerPoints}}</h1>
+                <h1 style="margin:0; margin-bottom:24px; padding:0;" v-if="isWinner"><span style="color:#E19885">{{parseInt(winnerPoints) + 1}}</span> : {{loserPoints}}</h1>
+                <h1 style="margin:0; margin-bottom:24px; padding:0;" v-else><span style="color:#E19885">{{loserPoints}}</span> : {{parseInt(winnerPoints) + 1}}</h1>
+
+                <!-- show points earned -->
+                <div class="points-button">
+                  +{{ pointsEarned }} points
+                </div>
 
                 <!-- Buttons-->
                 <div class="modal-button-holder">
@@ -120,7 +125,9 @@ line-height: normal;
 </style>
 
 <script>
+import { calculatePoints } from '@/utils';
 const APPLICATION_FEE = 0.05;
+
 
 export default {
     model: {
@@ -159,7 +166,7 @@ export default {
       timeout: {
           type: String,
           default: null
-      }
+      },
     },
     methods: {
       getBaseWinnings(bet) {
@@ -173,6 +180,29 @@ export default {
       },
       toggleShow() {
         this.$emit('update:show', !this.show)
+      },
+      getBasePlayerWinnings(){
+        const winnings = this.getBaseWinnings(this.bet)
+        
+        //do and if else statement using isWinner, isDraw, isLeaver, isTimeout, isBothTimeout, isOpponentLeaver, isOpponentTimeout
+        if (this.isWinner){
+          return winnings
+        } else if (this.isDraw){
+          return 0
+        } else if (this.isLeaver){
+          return -bet
+        } else if (this.isTimedOut){
+          return -bet
+        } else if (this.bothTimedOut){
+          return 0
+        } else if (this.opponentIsLeaver){
+          return winnings
+        } else if (this.opponentTimedOut){
+          return winnings
+        } else if (this.noOneLeft){
+          return 0
+        }
+
       },
       
             
@@ -205,6 +235,10 @@ export default {
       noOneLeft(){
         console.log("Modal stats: isLeaver: " + this.leaver + " player: " + this.player)
         return this.leaver == null
+      },
+
+      pointsEarned(){
+        return calculatePoints(this.bet, this.getBasePlayerWinnings())
       }
     },
 

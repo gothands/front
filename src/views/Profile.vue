@@ -59,6 +59,7 @@
               (-{{ this.feesGenerated?.toFixed(4).toString()}} ETH)
       </div>
       </div>
+      <div class="points-button">{{points}} points</div>
       <profile-item :address="address" />
 
   </div>
@@ -274,6 +275,9 @@ export default {
   computed: {
     provider() {
       return this.$store.state.provider
+    },
+    points(){
+      return this.$store.getters.getPoints(this.address)
     },
     address() {
       return this.$route.params.id

@@ -184,6 +184,31 @@ font-weight: 800;
 height: 100%;
 }
 
+.points-button {
+  width: fit-content;
+  min-width: 160px;
+  border-radius: 100px;
+  background: linear-gradient(270deg, #ff000044, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8f00ff);
+  background-size: 1800% 1800%;
+  animation: rainbow 3s ease infinite;
+flex-shrink: 0;
+color: #FFF;
+text-align: center;
+font-size: 25px;
+font-family: Sen;
+font-weight: bolder;
+letter-spacing: -2px;
+padding:10px;
+opacity: 0.8;
+}
+
+@keyframes rainbow {
+  0%{background-position:0% 82%}
+  50%{background-position:100% 19%}
+  100%{background-position:0% 82%}
+}
+
+
 .nav-right {
   display:flex; 
   justify-content:end; 

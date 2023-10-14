@@ -112,6 +112,9 @@ const store = createStore({
   getters: {
     balance: (state) => (address: any) => {
       return state.balances[address] || "0"
+    },
+    getPoints: (state) => (address: any) => {
+      return state.profiles[address.toLowerCase()]?.points || 0
     }
   },
   mutations: {
@@ -1032,7 +1035,9 @@ const store = createStore({
         const notification = new Notification(title, { body , icon: img });
         console.log("notification", notification)
       }
-    }
+    },
+
+    
 
 
   },
