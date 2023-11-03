@@ -837,6 +837,21 @@ const store = createStore({
       }
 
     },
+    clearCachedEvents({ commit, state }) {
+      localStorage.setItem('playerRegisteredEvents', "")
+      localStorage.setItem('playerWaitingEvents', "")
+      localStorage.setItem('playersMatchedEvents', "")
+      localStorage.setItem('moveCommittedEvents', "")
+      localStorage.setItem('moveRevealedEvents', "")
+      localStorage.setItem('newRoundEvents', "")
+      localStorage.setItem('gameOutcomeEvents', "")
+      localStorage.setItem('playerCancelledEvents', "")
+      localStorage.setItem('playerLeftEvents', "")
+      localStorage.setItem('stakeEvents', "")
+      localStorage.setItem('unstakeEvents', "")
+      localStorage.setItem('recievedFundsEvents', "")
+      localStorage.setItem('lastFetchedBlock', "")
+    },
     cacheEvents({ commit, state }) {
       localStorage.setItem('playerRegisteredEvents', JSON.stringify(state.playerRegisteredEvents))
       localStorage.setItem('playerWaitingEvents', JSON.stringify(state.playerWaitingEvents))
@@ -916,6 +931,14 @@ const store = createStore({
             mainContracts.deployedAbis.Staking as any,
             mainContracts.deployedContracts.Staking
           )
+
+          //check if new hands contract address is detected, if so, clear cached events
+          const handsContractAddress = mainContracts.deployedContracts.Hands;
+          const cachedHandsContractAddress = localStorage.getItem('handsContractAddress') || "";
+          if(cachedHandsContractAddress && cachedHandsContractAddress !== handsContractAddress){
+            dispatch('clearCachedEvents')
+            localStorage.setItem('handsContractAddress', handsContractAddress)
+          }
   
           //Get events from lastFetchedBlock
           const startBlock = state.lastFetchedBlock
