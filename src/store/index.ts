@@ -910,6 +910,14 @@ const store = createStore({
       let retries = 0;
       const maxRetries = 4;
 
+      //check if new hands contract address is detected, if so, clear cached events
+      const handsContractAddress = mainContracts.deployedContracts.Hands;
+      const cachedHandsContractAddress = localStorage.getItem('handsContractAddress');
+      if(cachedHandsContractAddress != handsContractAddress.toLowerCase()){
+        dispatch('clearCachedEvents')
+        localStorage.setItem('handsContractAddress', handsContractAddress.toLowerCase())
+      }
+
       while(retries < maxRetries){
         try{
           //Start fetching events
@@ -932,13 +940,7 @@ const store = createStore({
             mainContracts.deployedContracts.Staking
           )
 
-          //check if new hands contract address is detected, if so, clear cached events
-          const handsContractAddress = mainContracts.deployedContracts.Hands;
-          const cachedHandsContractAddress = localStorage.getItem('handsContractAddress') || "";
-          if(cachedHandsContractAddress && cachedHandsContractAddress !== handsContractAddress){
-            dispatch('clearCachedEvents')
-            localStorage.setItem('handsContractAddress', handsContractAddress)
-          }
+          
   
           //Get events from lastFetchedBlock
           const startBlock = state.lastFetchedBlock
