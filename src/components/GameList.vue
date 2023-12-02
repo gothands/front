@@ -73,7 +73,7 @@
 import GameMove from './GameMove.vue'
 import ProfileItem from './ProfileItem.vue'
 import {timeAgo} from '../utils/index.ts'
-import { Outcomes } from '@/types'
+import { Outcomes } from '../types'
 
 
 const APPLICATION_FEE = 0.05;

@@ -35,7 +35,7 @@
   <script>
 import GameMove from './GameMove.vue'
 import ProfileItem from './ProfileItem.vue'
-import { timeAgo } from '@/utils'
+import { timeAgo } from '../utils'
 
   export default {
     components: {

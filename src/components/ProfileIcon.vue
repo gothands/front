@@ -22,7 +22,6 @@
 </style>
 
 <script>
-import { Outcomes } from '@/types'
 import jazzicon from '@metamask/jazzicon'
 
 export default {

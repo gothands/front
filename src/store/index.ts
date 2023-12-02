@@ -1,4 +1,6 @@
 import { createStore } from 'vuex'
+import { createPublicClient, http } from 'viem'
+import { arbitrumNova } from 'viem/chains'
 import RPC from '../web3RPC'
 import Web3 from 'web3';
 import Onboard from '@web3-onboard/core'
@@ -6,10 +8,17 @@ import injectedModule from '@web3-onboard/injected-wallets'
 
 import mainContracts from "../../../contracts/local-contracts.json"
 import { CHAIN_ID_MAINNET, CURRENT_CHAIN_ID, DEFAULT_FETCH_BLOCK, READ_PROVIDER_URL, RPC_URLS } from '../types/index';
-import { Bridge, BridgeChain, BridgeToken } from 'orbiter-sdk';
+// import { Bridge, BridgeChain, BridgeToken } from 'orbiter-sdk';
 import { Web3Provider } from '@ethersproject/providers';
 import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
-import { copyTextToClipboard } from '@/utils';
+import { copyTextToClipboard } from '../utils';
+
+export const client: any = createPublicClient({
+  chain: arbitrumNova,
+  transport: http(RPC_URLS[CURRENT_CHAIN_ID]),
+})
+
+
 
 interface Balances {
   [address: string]: any;
@@ -32,6 +41,9 @@ interface Profile {
 interface Profiles {
   [address: string]: Profile;
 }
+
+//async delay function
+const delay = (ms:number) => new Promise(res => setTimeout(res, ms));
 
 const store = createStore({
   state() {
@@ -384,6 +396,7 @@ const store = createStore({
 
       if (web3auth.provider) {
         store.dispatch("setProvider", web3auth.provider);
+        console.log("setProviderTest", (window as any).ethereum);
         console.log("setProvider", web3auth.provider);
         //const initVal = await torusPlugin.initWithProvider(store.state.provider, userInfo);
         store.dispatch("setLoggedIn", true);
@@ -392,10 +405,11 @@ const store = createStore({
       //check if logged in through metamask
       if (web3auth.connectedAdapterName === "metamask") {
         store.dispatch("setIsMetamask", true);
+        store.dispatch("setProvider", (window as any).ethereum);
       }
 
       //get private key
-      store.dispatch("syncMainnetBalance");
+      // store.dispatch("syncMainnetBalance");
 
       // const provider = await state.web3auth.connect();
       // store.dispatch("setLoading", true);
@@ -547,215 +561,215 @@ const store = createStore({
 
     //send mainnet eth
     async sendMainnetEthToNova({ commit, state }) {
-      commit('setSendingEthToNova', true)
-      commit('setCompletedSendingEthToNova', false)
-      try {
-        const web3 = new Web3(state.mainnetProvider as any);
-        const balance = state.mainnetBalance;
-        const balanceInWei:any = web3.utils.toWei(balance, "ether");
+    //   commit('setSendingEthToNova', true)
+    //   commit('setCompletedSendingEthToNova', false)
+    //   try {
+    //     const web3 = new Web3(state.mainnetProvider as any);
+    //     const balance = state.mainnetBalance;
+    //     const balanceInWei:any = web3.utils.toWei(balance, "ether");
 
-        //return if balance less than 0.01 eth
-        if(parseFloat(balance) < 0.005){
-          console.log("balance less than 0.01 eth")
-          return;
-        }
+    //     //return if balance less than 0.01 eth
+    //     if(parseFloat(balance) < 0.005){
+    //       console.log("balance less than 0.01 eth")
+    //       return;
+    //     }
 
-        const bridge = new Bridge("Mainnet")
-        const supports = bridge.supports()
-        const bridgeToken = (await supports).tokens.find((token: BridgeToken) => token.name === "ETH")
-        const fromChain = (await supports).fromChains.find((chain: BridgeChain) => chain.name === "mainnet")
-        const toChain = (await supports).toChains.find((chain: BridgeChain) => chain.name === "nova")
-        const gasPrice:any = await web3.eth.getGasPrice();
-        const gasLimit = 22000;
-        const totalGasCost = gasPrice * gasLimit;
-        const initialNovaBalance = state.balance;
+    //     const bridge = new Bridge("Mainnet")
+    //     const supports = bridge.supports()
+    //     const bridgeToken = (await supports).tokens.find((token: BridgeToken) => token.name === "ETH")
+    //     const fromChain = (await supports).fromChains.find((chain: BridgeChain) => chain.name === "mainnet")
+    //     const toChain = (await supports).toChains.find((chain: BridgeChain) => chain.name === "nova")
+    //     const gasPrice:any = await web3.eth.getGasPrice();
+    //     const gasLimit = 22000;
+    //     const totalGasCost = gasPrice * gasLimit;
+    //     const initialNovaBalance = state.balance;
 
-        //Amount to send to empty balance - 9001 wei
-        const amountToSend:any = balanceInWei - totalGasCost;
-        const amountToSendHm = web3.utils.fromWei(amountToSend.toString(), "ether");
-        const amountToSendConcat = amountToSend.toString().slice(0, -4) + "9016";
-
-
-        console.log("mainnet amountToSendhm", amountToSendHm)
-        console.log("mainnet fromChain", fromChain)
-        console.log("mainnet toChain", toChain)
-        console.log("mainnet bridgeToken", bridgeToken)
+    //     //Amount to send to empty balance - 9001 wei
+    //     const amountToSend:any = balanceInWei - totalGasCost;
+    //     const amountToSendHm = web3.utils.fromWei(amountToSend.toString(), "ether");
+    //     const amountToSendConcat = amountToSend.toString().slice(0, -4) + "9016";
 
 
-        // const result = await bridge.transfer(
-        //   new Web3Provider(state.mainnetProvider as any).getSigner(),
-        //   bridgeToken as BridgeToken,
-        //   fromChain as BridgeChain,
-        //   toChain as BridgeChain,
-        //   amountToSendHm,
-        // )
+    //     console.log("mainnet amountToSendhm", amountToSendHm)
+    //     console.log("mainnet fromChain", fromChain)
+    //     console.log("mainnet toChain", toChain)
+    //     console.log("mainnet bridgeToken", bridgeToken)
 
-        const transaction  = {
-          from: state.activeAccount,
-          to: bridgeToken?.makerAddress,
-          value: web3.utils.toHex(amountToSendConcat),
-          gasPrice: web3.utils.toHex(gasPrice),
-          gasLimit: web3.utils.toHex(gasLimit),
-        }
 
-        console.log(`Sending ${amountToSendHm} eth to nova...`)
-        const privateKey = await state.provider.request({ method: 'eth_private_key' });
+    //     // const result = await bridge.transfer(
+    //     //   new Web3Provider(state.mainnetProvider as any).getSigner(),
+    //     //   bridgeToken as BridgeToken,
+    //     //   fromChain as BridgeChain,
+    //     //   toChain as BridgeChain,
+    //     //   amountToSendHm,
+    //     // )
 
-        const signedTransaction = await web3.eth.accounts.signTransaction(transaction, privateKey);
+    //     const transaction  = {
+    //       from: state.activeAccount,
+    //       to: bridgeToken?.makerAddress,
+    //       value: web3.utils.toHex(amountToSendConcat),
+    //       gasPrice: web3.utils.toHex(gasPrice),
+    //       gasLimit: web3.utils.toHex(gasLimit),
+    //     }
 
-        const tx = await web3.eth.sendSignedTransaction(signedTransaction.rawTransaction as string);
+    //     console.log(`Sending ${amountToSendHm} eth to nova...`)
+    //     const privateKey = await state.provider.request({ method: 'eth_private_key' });
 
-        //wait for transaction to go through
-        alert(`Transaction sent. Waiting for confirmation...${tx.transactionHash}}`)
-        await web3.eth.getTransactionReceipt(tx.transactionHash);
+    //     const signedTransaction = await web3.eth.accounts.signTransaction(transaction, privateKey);
 
-        //wait for nova balance to update. make sure balance is greater than initial balance by almost the amount sent
-        while(parseFloat(state.balance) - parseFloat(initialNovaBalance)  < parseFloat(balance) - 0.01){
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
+    //     const tx = await web3.eth.sendSignedTransaction(signedTransaction.rawTransaction as string);
 
-        //update state
-        commit('setSendingEthToNova', false)
-        commit('setCompletedSendingEthToNova', true)
+    //     //wait for transaction to go through
+    //     alert(`Transaction sent. Waiting for confirmation...${tx.transactionHash}}`)
+    //     await web3.eth.getTransactionReceipt(tx.transactionHash);
+
+    //     //wait for nova balance to update. make sure balance is greater than initial balance by almost the amount sent
+    //     while(parseFloat(state.balance) - parseFloat(initialNovaBalance)  < parseFloat(balance) - 0.01){
+    //       await new Promise(resolve => setTimeout(resolve, 1000));
+    //     }
+
+    //     //update state
+    //     commit('setSendingEthToNova', false)
+    //     commit('setCompletedSendingEthToNova', true)
         
         
-        // Transaction was successful if we made it here
-        //console.log('Sent', result);
-      } catch (error) {
-        // Log more detailed information about the error
-        console.error('Error sending eth', error);
+    //     // Transaction was successful if we made it here
+    //     //console.log('Sent', result);
+    //   } catch (error) {
+    //     // Log more detailed information about the error
+    //     console.error('Error sending eth', error);
         
-        //commit('setSendingEthToNova', false)
-        commit('setSendingEthToNova', false)
-        commit('setCompletedSendingEthToNova', false)
-        return error;
-      }
+    //     //commit('setSendingEthToNova', false)
+    //     commit('setSendingEthToNova', false)
+    //     commit('setCompletedSendingEthToNova', false)
+    //     return error;
+    //   }
     },
 
     //send nova eth to mainnet
     async sendNovaEthToMainnet({ commit, state }, amount) {
-      commit('setBridgingEthToMainnetfromNova', true)
-      commit('setCompletedBridgingEthToMainnetfromNova', false)
-      try {
-        const web3 = new Web3(state.provider as any);
-        const balance = amount;
-        const balanceInWei:any = web3.utils.toWei(balance, "ether");
+    //   commit('setBridgingEthToMainnetfromNova', true)
+    //   commit('setCompletedBridgingEthToMainnetfromNova', false)
+    //   try {
+    //     const web3 = new Web3(state.provider as any);
+    //     const balance = amount;
+    //     const balanceInWei:any = web3.utils.toWei(balance, "ether");
 
-        const initialMainnetBalance = state.mainnetBalance;
+    //     const initialMainnetBalance = state.mainnetBalance;
 
-        //return if balance less than 0.01 eth
-        if(parseFloat(balance) < 0.005){
-          console.log("balance less than 0.01 eth")
-          return;
-        }
+    //     //return if balance less than 0.01 eth
+    //     if(parseFloat(balance) < 0.005){
+    //       console.log("balance less than 0.01 eth")
+    //       return;
+    //     }
 
-        const bridge = new Bridge("Mainnet")
-        const supports = bridge.supports()
-        const bridgeToken = (await supports).tokens.find((token: BridgeToken) => token.name === "ETH")
-        const fromChain = (await supports).fromChains.find((chain: BridgeChain) => chain.name === "nova")
-        const toChain = (await supports).toChains.find((chain: BridgeChain) => chain.name === "mainnet")
-        const gasPrice:any = await web3.eth.getGasPrice();
-        const gasLimit = 22000;
-        const totalGasCost = gasPrice * gasLimit;
+    //     const bridge = new Bridge("Mainnet")
+    //     const supports = bridge.supports()
+    //     const bridgeToken = (await supports).tokens.find((token: BridgeToken) => token.name === "ETH")
+    //     const fromChain = (await supports).fromChains.find((chain: BridgeChain) => chain.name === "nova")
+    //     const toChain = (await supports).toChains.find((chain: BridgeChain) => chain.name === "mainnet")
+    //     const gasPrice:any = await web3.eth.getGasPrice();
+    //     const gasLimit = 22000;
+    //     const totalGasCost = gasPrice * gasLimit;
 
-        //Calculate amount to send and append 9001 wei
-        const amountToSend:any = balanceInWei - totalGasCost;
-        const amountToSendHm = web3.utils.fromWei(amountToSend.toString(), "ether");
-        const amountToSendConcat = amountToSend.toString().slice(0, -4) + "9001";
-
-
-        console.log("mainnet amountToSendhm", amountToSendHm)
-        console.log("mainnet fromChain", fromChain)
-        console.log("mainnet toChain", toChain)
-        console.log("mainnet bridgeToken", bridgeToken)
+    //     //Calculate amount to send and append 9001 wei
+    //     const amountToSend:any = balanceInWei - totalGasCost;
+    //     const amountToSendHm = web3.utils.fromWei(amountToSend.toString(), "ether");
+    //     const amountToSendConcat = amountToSend.toString().slice(0, -4) + "9001";
 
 
-        // const result = await bridge.transfer(
-        //   new Web3Provider(state.mainnetProvider as any).getSigner(),
-        //   bridgeToken as BridgeToken,
-        //   fromChain as BridgeChain,
-        //   toChain as BridgeChain,
-        //   amountToSendHm,
-        // )
+    //     console.log("mainnet amountToSendhm", amountToSendHm)
+    //     console.log("mainnet fromChain", fromChain)
+    //     console.log("mainnet toChain", toChain)
+    //     console.log("mainnet bridgeToken", bridgeToken)
 
-        const transaction  = {
-          from: state.activeAccount,
-          to: bridgeToken?.makerAddress,
-          value: web3.utils.toHex(amountToSendConcat),
-          gasPrice: gasPrice,
-          gasLimit: gasLimit,
-        }
 
-        const tx = await web3.eth.sendTransaction(transaction);
+    //     // const result = await bridge.transfer(
+    //     //   new Web3Provider(state.mainnetProvider as any).getSigner(),
+    //     //   bridgeToken as BridgeToken,
+    //     //   fromChain as BridgeChain,
+    //     //   toChain as BridgeChain,
+    //     //   amountToSendHm,
+    //     // )
 
-        //wait for transaction to go through
-        await web3.eth.getTransactionReceipt(tx.transactionHash);
+    //     const transaction  = {
+    //       from: state.activeAccount,
+    //       to: bridgeToken?.makerAddress,
+    //       value: web3.utils.toHex(amountToSendConcat),
+    //       gasPrice: gasPrice,
+    //       gasLimit: gasLimit,
+    //     }
 
-        //wait for mainnet balance to update. make sure balance is greater than initial balance by almost the amount sent
-        while(parseFloat(state.mainnetBalance) - parseFloat(initialMainnetBalance)  < parseFloat(amount) - 0.001){
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
+    //     const tx = await web3.eth.sendTransaction(transaction);
 
-        //update state
-        commit('setBridgingEthToMainnetfromNova', false)
-        commit('setCompletedBridgingEthToMainnetfromNova', true)
+    //     //wait for transaction to go through
+    //     await web3.eth.getTransactionReceipt(tx.transactionHash);
 
-        // Transaction was successful if we made it here
-        //console.log('Sent', result);
-        //commit('setSendingEthToNova', false)
-      }
-      catch (error) {
-        // Log more detailed information about the error
-        console.error('Error sending eth', error);
+    //     //wait for mainnet balance to update. make sure balance is greater than initial balance by almost the amount sent
+    //     while(parseFloat(state.mainnetBalance) - parseFloat(initialMainnetBalance)  < parseFloat(amount) - 0.001){
+    //       await new Promise(resolve => setTimeout(resolve, 1000));
+    //     }
+
+    //     //update state
+    //     commit('setBridgingEthToMainnetfromNova', false)
+    //     commit('setCompletedBridgingEthToMainnetfromNova', true)
+
+    //     // Transaction was successful if we made it here
+    //     //console.log('Sent', result);
+    //     //commit('setSendingEthToNova', false)
+    //   }
+    //   catch (error) {
+    //     // Log more detailed information about the error
+    //     console.error('Error sending eth', error);
         
-        //commit('setSendingEthToNova', false)
-        commit('setBridgingEthToMainnetfromNova', false)
-        commit('setCompletedBridgingEthToMainnetfromNova', false)
-        return error;
-      }
+    //     //commit('setSendingEthToNova', false)
+    //     commit('setBridgingEthToMainnetfromNova', false)
+    //     commit('setCompletedBridgingEthToMainnetfromNova', false)
+    //     return error;
+    //   }
     },
 
     //withdraw eth from nova to address
     async withdrawNovaEth({ commit, state }, {amount, address}) {
-      commit('setShouldAutoBridgeToNova', false)
-      commit('setCompletedWithdrawingToAddress', false)
-      commit('setWithdrawingToAddress', false)
-      try {
-        await store.dispatch('sendNovaEthToMainnet', amount)
+    //   commit('setShouldAutoBridgeToNova', false)
+    //   commit('setCompletedWithdrawingToAddress', false)
+    //   commit('setWithdrawingToAddress', false)
+    //   try {
+    //     await store.dispatch('sendNovaEthToMainnet', amount)
 
-        //send mainnet eth to address
-        commit('setWithdrawingToAddress', true)
-        const web3 = new Web3(state.mainnetProvider as any);
-        const gasPrice:any = await web3.eth.getGasPrice();
-        const gasLimit = 22000;
+    //     //send mainnet eth to address
+    //     commit('setWithdrawingToAddress', true)
+    //     const web3 = new Web3(state.mainnetProvider as any);
+    //     const gasPrice:any = await web3.eth.getGasPrice();
+    //     const gasLimit = 22000;
 
-        const transaction  = {
-          from: state.activeAccount,
-          to: address,
-          value: web3.utils.toHex(web3.utils.toWei(amount, "ether")),
-          gasPrice: gasPrice,
-          gasLimit: gasLimit,
-        }
+    //     const transaction  = {
+    //       from: state.activeAccount,
+    //       to: address,
+    //       value: web3.utils.toHex(web3.utils.toWei(amount, "ether")),
+    //       gasPrice: gasPrice,
+    //       gasLimit: gasLimit,
+    //     }
 
-        const tx = await web3.eth.sendTransaction(transaction);
+    //     const tx = await web3.eth.sendTransaction(transaction);
 
-        //wait for transaction to go through
-        await web3.eth.getTransactionReceipt(tx.transactionHash);
+    //     //wait for transaction to go through
+    //     await web3.eth.getTransactionReceipt(tx.transactionHash);
 
-        //update state
-        commit('setWithdrawingToAddress', false)
-        commit('setCompletedWithdrawingToAddress', true)
-        commit('setShouldAutoBridgeToNova', true)
-
-        
-      } catch (error) {
-        //update state
-        commit('setWithdrawingToAddress', false)
-        commit('setCompletedWithdrawingToAddress', false)
-        commit('setShouldAutoBridgeToNova', true)
+    //     //update state
+    //     commit('setWithdrawingToAddress', false)
+    //     commit('setCompletedWithdrawingToAddress', true)
+    //     commit('setShouldAutoBridgeToNova', true)
 
         
-      }
+    //   } catch (error) {
+    //     //update state
+    //     commit('setWithdrawingToAddress', false)
+    //     commit('setCompletedWithdrawingToAddress', false)
+    //     commit('setShouldAutoBridgeToNova', true)
+
+        
+    //   }
     },
         
       
@@ -940,42 +954,221 @@ const store = createStore({
             mainContracts.deployedContracts.Staking
           )
 
+          // 2. Set up your client with desired chain & transport.
+        
+
+          const blockNumber = await client.getBlockNumber()
+          console.log("viem blockNumber", blockNumber)
           
   
           //Get events from lastFetchedBlock
           const startBlock = state.lastFetchedBlock
-          const endBlock = await web3.eth.getBlockNumber()
-          const blockLimit = 1000000; // Maximum blocks that can be fetched in one request
+          const endBlock = await client.getBlockNumber()
+          const blockLimit = 10000; // Maximum blocks that can be fetched in one request
+
+          // const playerRegisteredEvents = await client.getContractEvents({
+          //   abi: mainContracts.deployedAbis.Hands,
+          //   address: mainContracts.deployedContracts.Hands,
+          //   eventName: "PlayerRegistered",
+          //   fromBlock: BigInt(startBlock),
+          //   toBlock: BigInt(toBlock)
+          // })
+
+          //console.log("playerRegisteredEvents", playerRegisteredEvents)
+
   
           let fromBlock = startBlock;
-          let toBlock = Math.min(fromBlock + blockLimit, endBlock);
-          while (fromBlock <= endBlock) {
+          let toBlock = Math.min(Number(fromBlock) + blockLimit, Number(endBlock));
+          while (fromBlock <= toBlock) {
             console.log("fetched fetching events from block", fromBlock, "to block", toBlock)
-              const playerRegisteredEvents = await handsContract.getPastEvents("PlayerRegistered", { fromBlock: fromBlock, toBlock: toBlock});
-              const playerWaitingEvents = await handsContract.getPastEvents("PlayerWaiting", { fromBlock: fromBlock, toBlock: toBlock});
-              const playersMatchedEvents = await handsContract.getPastEvents("PlayersMatched", { fromBlock: fromBlock, toBlock: toBlock});
-              const moveCommittedEvents = await handsContract.getPastEvents("MoveCommitted", { fromBlock: fromBlock, toBlock: toBlock});
-              const moveRevealedEvents = await handsContract.getPastEvents("MoveRevealed", { fromBlock: fromBlock, toBlock: toBlock});
-              const newRoundEvents = await handsContract.getPastEvents("NewRound", { fromBlock: fromBlock, toBlock: toBlock});
-              const gameOutcomeEvents = await handsContract.getPastEvents("GameOutcome", { fromBlock: fromBlock, toBlock: toBlock});
-              const playerCancelledEvents = await handsContract.getPastEvents("PlayerCancelled", { fromBlock: fromBlock, toBlock: toBlock});
-              const playerLeftEvents = await handsContract.getPastEvents("PlayerLeft", { fromBlock: fromBlock, toBlock: toBlock});
-              const stakeEvents = await stakeContract.getPastEvents("Staked", { fromBlock: fromBlock, toBlock: toBlock});
-              const unstakeEvents = await stakeContract.getPastEvents("Unstaked", { fromBlock: fromBlock, toBlock: toBlock});
-              const recievedFundsEvents = await stakeContract.getPastEvents("ReceivedFundsForStaking", { fromBlock: fromBlock, toBlock: toBlock});
+              const playerRegisteredEvents = (await client.getContractEvents({
+                abi: mainContracts.deployedAbis.Hands,
+                address: mainContracts.deployedContracts.Hands,
+                eventName: "PlayerRegistered",
+                fromBlock: BigInt(fromBlock),
+                toBlock: BigInt(toBlock)
+              })).map((event: any) => {
+                console.log("real playerRegisteredEvent", event)
+                return {
+                  blockHash: event.blockHash,
+                  transactionHash: event.transactionHash,
+                  logIndex: Number(event.logIndex),
+                  blockNumber: Number(event.blockNumber),
+                  gameId: Number(event.args.gameId),
+                  playerAddress: event.args.playerAddress,
+                }
+              })
+              const playerWaitingEvents = (await client.getContractEvents({
+                abi: mainContracts.deployedAbis.Hands,
+                address: mainContracts.deployedContracts.Hands,
+                eventName: "PlayerWaiting",
+                fromBlock: BigInt(fromBlock),
+                toBlock: BigInt(toBlock)
+              })).map((event: any) => {
+                console.log("real playerWaitingEvent", event)
+                return {
+                  blockHash: event.blockHash,
+                  transactionHash: event.transactionHash,
+                  logIndex: Number(event.logIndex),
+                  blockNumber: Number(event.blockNumber),
+                  gameId: Number(event.args.gameId),
+                  bet: Number(event.args.bet),
+                  playerAddress: event.args.playerAddress,
+                }
+              })
+              const playersMatchedEvents = (await client.getContractEvents({
+                abi: mainContracts.deployedAbis.Hands,
+                address: mainContracts.deployedContracts.Hands,
+                eventName: "PlayersMatched",
+                fromBlock: BigInt(fromBlock),
+                toBlock: BigInt(toBlock)
+              })).map((event: any) => {
+                return {
+                  blockHash: event.blockHash,
+                  transactionHash: event.transactionHash,
+                  logIndex: Number(event.logIndex),
+                  blockNumber: Number(event.blockNumber),
+                  gameId: Number(event.args.gameId),
+                  playerA: event.args.playerA,
+                  playerB: event.args.playerB,
+                }
+              })
+              const moveCommittedEvents = (await client.getContractEvents({
+                abi: mainContracts.deployedAbis.Hands,
+                address: mainContracts.deployedContracts.Hands,
+                eventName: "MoveCommitted",
+                fromBlock: BigInt(fromBlock),
+                toBlock: BigInt(toBlock)
+              })).map((event: any) => {
+                return {
+                  blockHash: event.blockHash,
+                  transactionHash: event.transactionHash,
+                  logIndex: Number(event.logIndex),
+                  blockNumber: Number(event.blockNumber),
+                  gameId: Number(event.args.gameId),
+                  playerAddress: event.args.playerAddress,
+                  round: Number(event.args.round),
+                }
+              });
+              const moveRevealedEvents = (await client.getContractEvents({
+                abi: mainContracts.deployedAbis.Hands,
+                address: mainContracts.deployedContracts.Hands,
+                eventName: "MoveRevealed",
+                fromBlock: BigInt(fromBlock),
+                toBlock: BigInt(toBlock)
+              })).map((event: any) => {
+                return {
+                  blockHash: event.blockHash,
+                  transactionHash: event.transactionHash,
+                  logIndex: Number(event.logIndex),
+                  blockNumber: Number(event.blockNumber),
+                  gameId: Number(event.args.gameId),
+                  playerAddress: event.args.playerAddress,
+                  round: Number(event.args.round),
+                  move: Number(event.args.move),
+                }
+              })
+              const newRoundEvents = (await client.getContractEvents({
+                abi: mainContracts.deployedAbis.Hands,
+                address: mainContracts.deployedContracts.Hands,
+                eventName: "NewRound",
+                fromBlock: BigInt(fromBlock),
+                toBlock: BigInt(toBlock)
+              })).map((event: any) => {
+                
+                return {
+                  blockHash: event.blockHash,
+                  transactionHash: event.transactionHash,
+                  logIndex: Number(event.logIndex),
+                  blockNumber: Number(event.blockNumber),
+                  gameId: Number(event.args.gameId),
+                  round: Number(event.args.playerAddress),
+                  pointsA: Number(event.args.pointsA),
+                  pointsB: Number(event.args.pointsB),
+                }
+              })
+              const gameOutcomeEvents = (await client.getContractEvents({
+                abi: mainContracts.deployedAbis.Hands,
+                address: mainContracts.deployedContracts.Hands,
+                eventName: "GameOutcome",
+                fromBlock: BigInt(fromBlock),
+                toBlock: BigInt(toBlock)
+              })).map((event: any) => {
+                return {
+                  blockHash: event.blockHash,
+                  transactionHash: event.transactionHash,
+                  logIndex: Number(event.logIndex),
+                  blockNumber: Number(event.blockNumber),
+                  gameId: Number(event.args.gameId),
+                  outcome: Number(event.args.outcome),
+                }
+              })
+              const playerCancelledEvents = (await client.getContractEvents({
+                abi: mainContracts.deployedAbis.Hands,
+                address: mainContracts.deployedContracts.Hands,
+                eventName: "PlayerCancelled",
+                fromBlock: BigInt(fromBlock),
+                toBlock: BigInt(toBlock)
+              })).map((event: any) => {
+                return {
+                  blockHash: event.blockHash,
+                  transactionHash: event.transactionHash,
+                  logIndex: Number(event.logIndex),
+                  blockNumber: Number(event.blockNumber),
+                  gameId: Number(event.args.gameId),
+                  playerAddress: event.args.playerAddress,
+                }
+              })
+              const playerLeftEvents = (await client.getContractEvents({
+                abi: mainContracts.deployedAbis.Hands,
+                address: mainContracts.deployedContracts.Hands,
+                eventName: "PlayerLeft",
+                fromBlock: BigInt(fromBlock),
+                toBlock: BigInt(toBlock)
+              })).map((event: any) => {
+                return {
+                  blockHash: event.blockHash,
+                  transactionHash: event.transactionHash,
+                  logIndex: Number(event.logIndex),
+                  blockNumber: Number(event.blockNumber),
+                  gameId: Number(event.args.gameId),
+                  playerAddress: event.args.playerAddress,
+                }
+              })
+              // const stakeEvents = await client.getContractEvents({
+              //   abi: mainContracts.deployedAbis.Staking,
+              //   address: mainContracts.deployedContracts.Staking,
+              //   eventName: "Staked",
+              //   fromBlock: BigInt(fromBlock),
+              //   toBlock: BigInt(toBlock)
+              // })
+              // const unstakeEvents = await client.getContractEvents({
+              //   abi: mainContracts.deployedAbis.Staking,
+              //   address: mainContracts.deployedContracts.Staking,
+              //   eventName: "Unstaked",
+              //   fromBlock: BigInt(fromBlock),
+              //   toBlock: BigInt(toBlock)
+              // })
+              // const recievedFundsEvents = await client.getContractEvents({
+              //   abi: mainContracts.deployedAbis.Staking,
+              //   address: mainContracts.deployedContracts.Staking,
+              //   eventName: "ReceivedFundsForStaking",
+              //   fromBlock: BigInt(fromBlock),
+              //   toBlock: BigInt(toBlock)
+              // })
   
-              console.log("fetched", playerRegisteredEvents.length, "PlayerRegistered events")
-              console.log("fetched", playerWaitingEvents.length, "PlayerWaiting events")
-              console.log("fetched", playersMatchedEvents.length, "PlayersMatched events")
-              console.log("fetched", moveCommittedEvents.length, "MoveCommitted events")
-              console.log("fetched", moveRevealedEvents.length, "MoveRevealed events")
-              console.log("fetched", newRoundEvents.length, "NewRound events")
-              console.log("fetched", gameOutcomeEvents.length, "GameOutcome events")
-              console.log("fetched", playerCancelledEvents.length, "PlayerCancelled events")
-              console.log("fetched", playerLeftEvents.length, "PlayerLeft events")
-              console.log("fetched", stakeEvents.length, "Staked events")
-              console.log("fetched", unstakeEvents.length, "Unstaked events")
-              console.log("fetched", recievedFundsEvents.length, "ReceivedFundsForStaking events")
+              console.log("fetched", playerRegisteredEvents, "PlayerRegistered events")
+              console.log("fetched", playerWaitingEvents, "PlayerWaiting events")
+              console.log("fetched", playersMatchedEvents, "PlayersMatched events")
+              console.log("fetched", moveCommittedEvents, "MoveCommitted events")
+              console.log("fetched", moveRevealedEvents, "MoveRevealed events")
+              console.log("fetched", newRoundEvents, "NewRound events")
+              console.log("fetched", gameOutcomeEvents, "GameOutcome events")
+              console.log("fetched", playerCancelledEvents, "PlayerCancelled events")
+              console.log("fetched", playerLeftEvents, "PlayerLeft events")
+              // console.log("fetched", stakeEvents, "Staked events")
+              // console.log("fetched", unstakeEvents, "Unstaked events")
+              // console.log("fetched", recievedFundsEvents, "ReceivedFundsForStaking events")
   
   
               // Add to events
@@ -988,20 +1181,22 @@ const store = createStore({
               commit('setGameOutcomeEvents', [...state.gameOutcomeEvents, ...gameOutcomeEvents]);
               commit('setPlayerCancelledEvents', [...state.playerCancelledEvents, ...playerCancelledEvents]);
               commit('setPlayerLeftEvents', [...state.playerLeftEvents, ...playerLeftEvents]);
-              commit('setStakeEvents', [...state.stakeEvents, ...stakeEvents]);
-              commit('setUnstakeEvents', [...state.unstakeEvents, ...unstakeEvents]);
-              commit('setRecievedFundsEvents', [...state.recievedFundsEvents, ...recievedFundsEvents]);
+              // commit('setStakeEvents', [...state.stakeEvents, ...stakeEvents]);
+              // commit('setUnstakeEvents', [...state.unstakeEvents, ...unstakeEvents]);
+              // commit('setRecievedFundsEvents', [...state.recievedFundsEvents, ...recievedFundsEvents]);
   
               //Cache events and set last fetched block
-              dispatch('setLastFetchBlock', toBlock);
+              dispatch('setLastFetchBlock', Number(endBlock));
               dispatch('cacheEvents')
   
               // Update blocks for the next iteration
-              fromBlock = toBlock + 1;
-              toBlock = Math.min(fromBlock + blockLimit, endBlock);  
+              fromBlock += blockLimit;
+              toBlock = Math.min(Number(toBlock) + blockLimit, Number(endBlock));
               
               //process events
               commit('triggerProcessEvents', !state.triggerProcessEvents);
+              //await delay(1000)
+              retries = maxRetries;
           }
   
         } catch (error) {

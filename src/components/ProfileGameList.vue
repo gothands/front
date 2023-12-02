@@ -51,10 +51,10 @@
 </style>
   
   <script>
-import { timeAgo } from '@/utils'
+import { timeAgo } from '../utils'
 import GameMove from './GameMove.vue'
 import ProfileItem from './ProfileItem.vue'
-import { APPLICATION_FEE, Outcomes } from '@/types'
+import { APPLICATION_FEE, Outcomes } from '../types'
 
 
 

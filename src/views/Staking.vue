@@ -207,10 +207,9 @@ align-items: end;
     import { sha256 } from "js-sha256";
     
     import mainContracts from "../../../contracts/local-contracts.json"
-import GameMove from '@/components/GameMove.vue';
-import ModalStake from '@/components/ModalStake.vue';
-import ListStaking from '@/components/ListStaking.vue';
-import ProfileIcon from '@/components/ProfileIcon.vue';
+import ModalStake from '../components/ModalStake.vue';
+import ListStaking from '../components/ListStaking.vue';
+import ProfileIcon from '../components/ProfileIcon.vue';
     
     //EXAMPLE Game.
     // {

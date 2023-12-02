@@ -96,10 +96,10 @@ align-items: end;
 </style>
 
 <script>
-import ProfileItem from '@/components/ProfileItem.vue'
-import ProfileIcon from '@/components/ProfileIcon.vue'
-import ProfileGameList from '@/components/ProfileGameList.vue'
-import { Outcomes } from '@/types'
+import ProfileItem from '../components/ProfileItem.vue'
+import ProfileIcon from '../components/ProfileIcon.vue'
+import ProfileGameList from '../components/ProfileGameList.vue'
+import { Outcomes } from '../types'
 import RPC from '../web3RPC'
 const APPLICATION_FEE = 0.05;
 

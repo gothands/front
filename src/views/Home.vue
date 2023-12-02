@@ -65,26 +65,14 @@
 <script lang="ts">
 import Game from "../components/Game.vue";
 import Staking from "../components/Staking.vue";
-import Web3 from "web3";
 
-
-import Transak from '@biconomy/transak';
-
-
-import { ref, onMounted, watch } from "vue";
-import { Web3Auth } from "@web3auth/modal";
-import { CHAIN_NAMESPACES, SafeEventEmitterProvider } from "@web3auth/base";
-import RPC from "../web3RPC";
 
 // Plugins
-import { TorusWalletConnectorPlugin } from "@web3auth/torus-wallet-connector-plugin";
 
 // Adapters
-import { WalletConnectV1Adapter } from "@web3auth/wallet-connect-v1-adapter";
-import { MetamaskAdapter } from "@web3auth/metamask-adapter";
-import { TorusWalletAdapter } from "@web3auth/torus-evm-adapter";
+
 import { mapState } from 'vuex';
-import store from '@/store';
+import store from '../store';
 
 const CHAIN_ID_MAINNET = "0x1"
 const CHAIN_ID_TESTNET = "0x118"
@@ -123,6 +111,7 @@ export default {
     'provider',
     'isJoiningPasswordMatch',
     'joiningPassword',
+    'staking'
   ]),
   methods:{
     login() {

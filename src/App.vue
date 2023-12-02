@@ -29,7 +29,7 @@
       >
         Ranking 
       </router-link>
-			<router-link v-if="!isInGame && loggedin" to="/staking">Staking</router-link>
+			<router-link v-if="!isInGame && loggedin" to="/" aria-disabled="">&#x1F512; Staking</router-link>
 			<button
 			v-if="isInGame"
 			class="button-light hide-for-mobile-real"
@@ -75,19 +75,6 @@ a:visited {
 import Game from "./components/Game.vue";
 import ProfileIcon from "./components/ProfileIcon.vue";
 import Staking from "./components/Staking.vue";
-import Web3 from "web3";
-import Onboard from '@web3-onboard/core'
-import injectedModule from '@web3-onboard/injected-wallets'
-import walletConnectModule from '@web3-onboard/walletconnect'
-import coinbaseModule from '@web3-onboard/coinbase'
-
-
-
-
-
-
-import Transak from '@biconomy/transak';
-
 
 import { ref, onMounted, watch } from "vue";
 import { Web3Auth } from "@web3auth/modal";
@@ -100,13 +87,14 @@ import ModalEnableNotifications from "./components/ModalEnableNotifications.vue"
 // Adapters
 import { MetamaskAdapter } from "@web3auth/metamask-adapter";
 import { mapState } from 'vuex';
-import store from '@/store';
+import store from './store';
 
 const CHAIN_ID_MAINNET = "0x1"
 const CHAIN_ID_TESTNET = "0x118"
 const CHAIN_ID_LOCALHOST = "0x10e"
 const CHAIN_ID_LOCALHOST_HARDHAT = "0x7A69"
 const CHAIN_ID_ARBITRUM_GOERLI = "0x66eed"
+const CHAIN_ID_ARBITRUM_NOVA = "0xa4ba"
 
 export const RPC_URLS = {
   [CHAIN_ID_MAINNET]: "https://rpc.ankr.com/eth",
@@ -114,10 +102,10 @@ export const RPC_URLS = {
   [CHAIN_ID_LOCALHOST]: "http://localhost:3050/",
   [CHAIN_ID_LOCALHOST_HARDHAT]: "http://localhost:8545",
   [CHAIN_ID_ARBITRUM_GOERLI]: "https://goerli-rollup.arbitrum.io/rpc",
-
+  [CHAIN_ID_ARBITRUM_NOVA]: "https://empty-proportionate-sunset.nova-mainnet.quiknode.pro/b34c277e5b6c584250278d2aad9b63452bb2188f/",
 };
 
-const CURRENT_CHAIN_ID = CHAIN_ID_ARBITRUM_GOERLI;
+const CURRENT_CHAIN_ID = CHAIN_ID_ARBITRUM_NOVA;
 
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
@@ -169,7 +157,6 @@ export default {
     }
   
     const staking = ref<boolean>(false);
-    const rampInstantSdk = ref<any>(null);
 
 
     const clientId =
@@ -179,19 +166,20 @@ export default {
 
     const web3auth = new Web3Auth({
       clientId,
+      web3AuthNetwork: "mainnet",
       chainConfig: {
         chainNamespace: CHAIN_NAMESPACES.EIP155,
         chainId: CURRENT_CHAIN_ID,
         rpcTarget: RPC_URLS[CURRENT_CHAIN_ID], // This is the public RPC we have added, please pass on your own endpoint while creating an app
-        displayName: "Arbitrum Testnet",
-        blockExplorer: "https://goerli.arbiscan.io/", 
+        displayName: "Arbitrum Nova",
+        blockExplorer: "https://nova.arbiscan.io/", 
         ticker: "ETH",
         tickerName: "ETH",
       },
       uiConfig: {
         defaultLanguage: "en",
       },
-      web3AuthNetwork: "testnet",
+      
       //provider: new web3.providers.WebsocketProvider("ws://localhost:8545"),
     });
 
@@ -218,37 +206,23 @@ export default {
 
     // adding metamask adapter
 
-    const metamaskAdapter = new MetamaskAdapter({
-      clientId,
-      sessionTime: 3600, // 1 hour in seconds
-      web3AuthNetwork: "testnet",
-      chainConfig: {
-        chainNamespace: CHAIN_NAMESPACES.EIP155,
-        chainId: CURRENT_CHAIN_ID,
-        rpcTarget: RPC_URLS[CURRENT_CHAIN_ID] ,
-        blockExplorer: "https://goerli.arbiscan.io/",  
-        displayName: "Arbitrum Testnet",
-        ticker: "ETH",
-        tickerName: "ETH",
-      },
-    });
-    // we can change the above settings using this function
-    metamaskAdapter.setAdapterSettings({
-      sessionTime: 86400, // 1 day in seconds
-      chainConfig: {
-        chainNamespace: CHAIN_NAMESPACES.EIP155,
-        chainId: CURRENT_CHAIN_ID,
-        rpcTarget: RPC_URLS[CURRENT_CHAIN_ID],
-        blockExplorer: "https://goerli.arbiscan.io/", 
-        displayName: "Arbitrum Testnet",
-        ticker: "ETH",
-        tickerName: "ETH",
-      },
-      web3AuthNetwork: "testnet",
-    });
+    // const metamaskAdapter = new MetamaskAdapter({
+    //   clientId,
+    //   sessionTime: 360000, // 1 hour in seconds
+    //   web3AuthNetwork: "mainnet",
+    //   chainConfig: {
+    //     chainNamespace: CHAIN_NAMESPACES.EIP155,
+    //     chainId: CURRENT_CHAIN_ID,
+    //     rpcTarget: RPC_URLS[CURRENT_CHAIN_ID] ,
+    //     blockExplorer: "https://nova.arbiscan.io/",  
+    //     displayName: "Arbitrum Nova",
+    //     ticker: "ETH",
+    //     tickerName: "ETH",
+    //   },
+    // });
 
     // it will add/update  the metamask adapter in to web3auth class
-    web3auth.configureAdapter(metamaskAdapter);
+    //web3auth.configureAdapter(metamaskAdapter);
 
   
     // const injected = injectedModule()
@@ -351,6 +325,7 @@ watch(
       store.dispatch("setProvider", provider);
       if (web3auth.provider) {
           store.dispatch("setProvider", web3auth.provider);
+          console.log("setProviderTest", (window as any).ethereum);
 		      console.log("setProvider", web3auth.provider);
           //const initVal = await torusPlugin.initWithProvider(store.state.provider, userInfo);
           store.dispatch("setLoggedIn", true);

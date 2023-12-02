@@ -20,7 +20,9 @@
     <!-- <button
       class="button-dark"
       @click="emptyBurnerWallet"
-      >emptyBurnerWallet</button>
+      >emptyBurnerWallet</button> -->
+    <!-- 
+      
       <button
             class="button-dark"
             @click="cancelGame"
@@ -430,6 +432,7 @@
 </style>
 
 <script>
+import { createWalletClient, custom } from 'viem'
 import mainContracts from "../../../contracts/local-contracts.json"
 
 function gameStateToString(state) {
@@ -472,6 +475,7 @@ function opponentGameStateToString(state) {
 }
 import RPC from "../web3RPC";
 
+import { client } from "../store"
 import GameMove from "./GameMove.vue";
 import GameList from "./GameList.vue";
 import Modal from "./Modal.vue";
@@ -479,18 +483,20 @@ import ProfileItem from "./ProfileItem.vue";
 import { Moves, Outcomes, GameStates, APPLICATION_FEE, DEFAULT_FETCH_BLOCK, MAX_MOVE_TIME, READ_PROVIDER_URL } from "../types";
 import Web3 from "web3";
 import { sha256 } from "js-sha256";
-import RampInstantSDK from "@ramp-network/ramp-instant-sdk";
 import { ethers } from 'ethers'
 import GameListVue from './GameList.vue'
-import store from '@/store'
-import { getBurnerWallet, privateKeyToAccount } from '@/utils/burner'
+import store from '../store'
+import { getBurnerWallet, privateKeyToAccount } from '../utils/burner'
 import ProfileItemBurner from './ProfileItemBurner.vue'
 import ProfileIcon from './ProfileIcon.vue'
 import ModalAddFunds from './ModalAddFunds.vue'
-import { calculatePoints } from '@/utils'
+import { calculatePoints } from '../utils'
+import { arbitrumNova } from 'viem/chains'
 
 const CONTRACT_ADDRESS = mainContracts.deployedContracts.Hands
 const CONTRACT_ABI = mainContracts.deployedAbis.Hands
+
+console.log("CONTRACT_ADDRESS", CONTRACT_ADDRESS)
 
 //EXAMPLE Game.
 // {
@@ -652,6 +658,12 @@ export default {
       return this.activeAccount?.toLowerCase()
     },
     getWeb3() {return new Web3(this.provider);},
+    walletClient() {
+      return createWalletClient({
+        chain: arbitrumNova,
+        transport: custom(this.provider),
+      })
+    },
     getWeb3Read() { return new Web3(new Web3.providers.WebsocketProvider("wss://maximum-shy-meme.arbitrum-goerli.discover.quiknode.pro/9e608d37bed73e216df881fc52b358d41236b29e/")) },
     getWeb3Read2() { return new Web3(new Web3.providers.HttpProvider(READ_PROVIDER_URL)) },
     balance() {
@@ -763,7 +775,7 @@ export default {
 
       console.log("games ordered by gameId", games)
       console.log("currentGameId", currentGame)
-      return currentGame?.gameId ?? "0"
+      return currentGame?.gameId.toString() ?? "0"
     },
 
     previousGame() { 
@@ -803,14 +815,13 @@ export default {
     },
     opponentMove() {
       const opponentAddress = this.opponentAddress?.toLowerCase()
-      const currentGameId = this.currentGameId
+      const currentGameId = this.currentGameId ?? "0"
       return this.games[currentGameId?.toLowerCase()]?.moves[this.currentRound]?.[opponentAddress?.toLowerCase()] ?? Moves.None
     },
     opponentState() {
-      const opponentAddress = this.opponentAddress?.toLowerCase()
-      const currentGameId = this?.currentGameId
+      const opponentAddress = this.opponentAddress?.toLowerCase() ?? "";
+      const currentGameId = this?.currentGameId ?? "0"
       const currentRound = this.games[this.currentGameId ?? "0"]?.round ?? 0
-      console.log("opponentState", this.games[currentGameId?.toLowerCase()]?.states[currentRound][opponentAddress?.toLowerCase()])
       return this.games[currentGameId?.toLowerCase()]?.states[currentRound][opponentAddress?.toLowerCase()] ?? GameStates.Initial
     },
 
@@ -932,7 +943,6 @@ export default {
     
     store.commit("setProfiles", {})
 
-    console.log("ramp sdk", RampInstantSDK)
 
     // Load the last sentMove and betAmount from the localStorage
     const lastSentMove = localStorage.getItem("lastSentMove");
@@ -1129,21 +1139,21 @@ export default {
       }
       
     },
-    async getStripeClientSecret(){
-      if(this.activeAccount){
-        fetch("/api/stripe_intent", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            address,
-          }),
-        })
-          .then((res) => res.json())
-          .then((data) => {
-            setClientSecret(data.client_secret);
-          });
-      }
-    },
+    // async getStripeClientSecret(){
+    //   if(this.activeAccount){
+    //     fetch("/api/stripe_intent", {
+    //       method: "POST",
+    //       headers: { "Content-Type": "application/json" },
+    //       body: JSON.stringify({
+    //         address,
+    //       }),
+    //     })
+    //       .then((res) => res.json())
+    //       .then((data) => {
+    //         setClientSecret(data.client_secret);
+    //       });
+    //   }
+    // },
     async getAccount() {
       const accounts = await this.getWeb3.eth.getAccounts();
       console.log("accounts", accounts);
@@ -1192,7 +1202,7 @@ export default {
     },
 
     createGame(gameId, playerA=""){
-      this.games[gameId] = {
+      this.games[Number(gameId)] = {
         gameId,
         playerA: playerA.toLowerCase(),
         playerB: "",
@@ -1226,11 +1236,11 @@ export default {
     },
 
     getGame(gameId) {
-      return this.games[gameId]
+      return this.games[Number(gameId)]
     },
 
     getGameCurrentRound(gameId) {
-      return this.games[gameId].length - 1;
+      return this.games[Number(gameId)].length - 1;
     },
 
     convertTimestampToTime(timestamp) {
@@ -1259,16 +1269,16 @@ async emptyBurnerWallet(retryCount = 0) {
 
   try {
     // Get balance
-    const balance = await this.getWeb3.eth.getBalance(this.burnerAddress);
+    const balance = Number(await this.getWeb3.eth.getBalance(this.burnerAddress));
     console.log("Current balance", balance);
 
     // Estimate gas price and limit
-    const gasPrice = await this.getWeb3.eth.getGasPrice();
-    const gasLimit = await this.getWeb3.eth.estimateGas({
+    const gasPrice = Number(await this.getWeb3.eth.getGasPrice());
+    const gasLimit = Number(await this.getWeb3.eth.estimateGas({
       from: this.burnerAddress,
       to: this.activeAccount,
       value: balance
-    });
+    }));
 
     // Calculate total gas cost
     const totalGasCost = gasPrice * gasLimit;
@@ -1327,33 +1337,33 @@ async emptyBurnerWallet(retryCount = 0) {
     
     //Whenever a new game is registered
     async handleRegisterEvent(event, userAddress) {
-  console.log("PlayerRegistered event:", event.returnValues);
-  const { gameId, playerAddress } = event.returnValues;
+  console.log("PlayerRegistered event:", event);
+  const { gameId, playerAddress } = event;
   
   //check if gameId is in games
-  if (!this.getGame(gameId, 0)) 
-    this.createGame(gameId, playerAddress);
+  if (!this.getGame(Number(gameId), 0)) 
+    this.createGame(Number(gameId), playerAddress);
 
   //set playerA
   //this.getGame(gameId).playerA = playerAddress.toLowerCase()
   
   //set players state to waiting if hasn't already
-  this.getGame(gameId).states[0][playerAddress.toLowerCase()] = GameStates.Waiting;  
+  this.getGame(Number(gameId)).states[0][playerAddress.toLowerCase()] = GameStates.Waiting;  
   
-  let timestamp = localStorage.getItem(`blockTimestamp_${event.blockNumber}`);
+  let timestamp = localStorage.getItem(`blockTimestamp_${Number(event.blockNumber)}`);
   if (!timestamp) {
     let block = null;
     while (!block) { 
-      block = await this.getWeb3Read2.eth.getBlock(event.blockNumber);
+      block = await this.getWeb3Read2.eth.getBlock(Number(event.blockNumber));
       console.log("setting time: block", block)
     }
     timestamp = block.timestamp.toString();
     // Cache the timestamp in localStorage for future use
-    localStorage.setItem(`blockTimestamp_${event.blockNumber}`, timestamp);
+    localStorage.setItem(`blockTimestamp_${Number(event.blockNumber)}`, timestamp);
   }
   
   console.log("setting time:", timestamp)
-  this.getGame(gameId).time = parseInt(timestamp, 10);
+  this.getGame(Number(gameId)).time = parseInt(timestamp, 10);
   
   //set currentGameId if user is in game
 },
@@ -1361,65 +1371,65 @@ async emptyBurnerWallet(retryCount = 0) {
     //Whenever has created a match and is waiting for another player to join
     //We set the bet value and the state to waiting
     async handleWaitingEvent(event) {
-      console.log("PlayerWaiting event:", event.returnValues);
-      const { gameId, bet, playerAddress, first } = event.returnValues;
+      console.log("PlayerWaiting event:", event);
+      const { gameId, bet, playerAddress, first } = event;
 
       //check if gameId is in games
-      if (!this.getGame(gameId, 0))
-        this.createGame(gameId);
+      if (!this.getGame(Number(gameId, 0)))
+        this.createGame(Number(gameId));
       
       // //set players state to waiting
-      // const playerA = this.getGame(gameId).playerA.toLowerCase()
-      // const playerB = this.getGame(gameId).playerB.toLowerCase()
+      // const playerA = this.getGame(Number(gameId).playerA.toLowerCase()
+      // const playerB = this.getGame(Number(gameId).playerB.toLowerCase()
 
       //set player state to waiting if only one player is available
-      const matchedAlready = this.getGame(gameId).states[0][playerAddress.toLowerCase()] == GameStates.Matched;
+      const matchedAlready = this.getGame(Number(gameId)).states[0][playerAddress.toLowerCase()] == GameStates.Matched;
       if(!matchedAlready){
-        this.getGame(gameId).states[0][playerAddress.toLowerCase()] = GameStates.Waiting;
+        this.getGame(Number(gameId)).states[0][playerAddress.toLowerCase()] = GameStates.Waiting;
         if(first){
-          this.getGame(gameId).playerA = playerAddress.toLowerCase()
+          this.getGame(Number(gameId)).playerA = playerAddress.toLowerCase()
         } else {
-          this.getGame(gameId).playerB = playerAddress.toLowerCase()
+          this.getGame(Number(gameId)).playerB = playerAddress.toLowerCase()
         }
       }
 
       let block = null;
-      let timestamp = localStorage.getItem(`blockTimestamp_${event.blockNumber}`);
+      let timestamp = localStorage.getItem(`blockTimestamp_${Number(event.blockNumber)}`);
       if (!timestamp) {
-        while (!block) { block = await this.getWeb3Read2.eth.getBlock(event.blockNumber);}
+        while (!block) { block = await this.getWeb3Read2.eth.getBlock(Number(event.blockNumber));}
         timestamp = block.timestamp.toString();
         // Cache the timestamp in localStorage for future use
-        localStorage.setItem(`blockTimestamp_${event.blockNumber}`, timestamp);
+        localStorage.setItem(`blockTimestamp_${Number(event.blockNumber)}`, timestamp);
       }
       console.log("setting time:", timestamp)
-      this.getGame(gameId).time = timestamp;
+      this.getGame(Number(gameId)).time = timestamp;
 
       //set bet amount
-      this.getGame(gameId).bet = bet * 10 ** -18;
+      this.getGame(Number(gameId)).bet = Number(bet) * 10 ** -18;
     },
 
 
     async handlePlayersMatchedEvent(event, isSubscription = false) {
-      console.log("PlayersMatched event:", event.returnValues);
-      const { gameId, playerA, playerB } = event.returnValues;
+      console.log("PlayersMatched event:", event);
+      const { gameId, playerA, playerB } = event;
 
       //check if gameId is in games
-      if (!this.getGame(gameId))
-        this.createGame(gameId, playerA);
+      if (!this.getGame(Number(gameId)))
+        this.createGame(Number(gameId), playerA);
       
       //set player values
-      this.getGame(gameId).playerA = playerA.toLowerCase()
-      this.getGame(gameId).playerB = playerB.toLowerCase()
+      this.getGame(Number(gameId)).playerA = playerA.toLowerCase()
+      this.getGame(Number(gameId)).playerB = playerB.toLowerCase()
 
       //set player states
-      this.getGame(gameId).states[0][playerA.toLowerCase()] = GameStates.Matched;
-      this.getGame(gameId).states[0][playerB.toLowerCase()] = GameStates.Matched;
+      this.getGame(Number(gameId)).states[0][playerA.toLowerCase()] = GameStates.Matched;
+      this.getGame(Number(gameId)).states[0][playerB.toLowerCase()] = GameStates.Matched;
 
       //set time of matched
       let block = null;
-      while (!block) { block = await this.getWeb3Read2.eth.getBlock(event.blockNumber);}
+      while (!block) { block = await this.getWeb3Read2.eth.getBlock(Number(event.blockNumber));}
       const timestamp = block.timestamp;
-      this.getGame(gameId).timeOfMatched = timestamp;
+      this.getGame(Number(gameId)).timeOfMatched = Number(timestamp);
       console.log("setting time of matched", timestamp)
 
       //Check if player is in game
@@ -1429,29 +1439,29 @@ async emptyBurnerWallet(retryCount = 0) {
       if(isSubscription && (playerA.toLowerCase() == this.activeAccount.toLowerCase() || playerB.toLowerCase() == this.activeAccount.toLowerCase())){
         store.dispatch("sendNotification", {
           title: "You match has begun",
-          body: `You have begun a match with ${playerA.toLowerCase() == this.activeAccount.toLowerCase() ? playerB : playerA} for ${this.getGame(gameId).bet} ETH`,
+          body: `You have begun a match with ${playerA.toLowerCase() == this.activeAccount.toLowerCase() ? playerB : playerA} for ${this.getGame(Number(gameId)).bet} ETH`,
         });
       }
     },
 
     handleMoveSentEvent(event, isSubscription = false) {
-      console.log("MoveSent event:", event.returnValues);
-      const { gameId, round, playerAddress } = event.returnValues;
+      console.log("MoveSent event:", event);
+      const { gameId, round, playerAddress } = event;
 
       //check if gameId is in games
-      if (!this.getGame(gameId))
-        this.createGame(gameId, playerAddress);
+      if (!this.getGame(Number(gameId)))
+        this.createGame(Number(gameId), playerAddress);
 
       //Check if round is in moves
-      if (!this.getGame(gameId).moves[round])
-        this.getGame(gameId).moves[round] = {};
+      if (!this.getGame(Number(gameId)).moves[Number(round)])
+        this.getGame(Number(gameId)).moves[Number(round)] = {};
       
       //Check if round is in states
-      if (!this.getGame(gameId).states[round])
-        this.getGame(gameId).states[round] = {};
+      if (!this.getGame(Number(gameId)).states[Number(round)])
+        this.getGame(Number(gameId)).states[Number(round)] = {};
 
       //set player state
-      this.getGame(gameId).states[round][playerAddress.toLowerCase()] = GameStates.Sent;
+      this.getGame(Number(gameId)).states[Number(round)][playerAddress.toLowerCase()] = GameStates.Sent;
 
       //check if user is in game and is a subscription and is an opponents move and you have not sent your move yet
       if(this.isInGame && isSubscription && playerAddress.toLowerCase() != this.activeAccount.toLowerCase() && !this.isMoveSent){
@@ -1467,70 +1477,70 @@ async emptyBurnerWallet(retryCount = 0) {
     },
 
     handleRevealedEvent(event) {
-      console.log("MoveRevealed event:", event.returnValues);
-      const { gameId, round, playerAddress, move } = event.returnValues;
+      console.log("MoveRevealed event:", event);
+      const { gameId, round, playerAddress, move } = event;
       
       //check if gameId is in games
-      if (!this.getGame(gameId))
-        this.createGame(gameId, playerAddress);
+      if (!this.getGame(Number(gameId)))
+        this.createGame(Number(gameId), playerAddress);
       
       //Check if round is in moves
-      if (!this.getGame(gameId).moves[round])
-        this.getGame(gameId).moves[round] = {};
+      if (!this.getGame(Number(gameId)).moves[Number(round)])
+        this.getGame(Number(gameId)).moves[Number(round)] = {};
 
-      //Check if round is in states
-      if (!this.getGame(gameId).states[round])
-        this.getGame(gameId).states[round] = {};
+      //Check if Number(round) is in states
+      if (!this.getGame(Number(gameId)).states[Number(round)])
+        this.getGame(Number(gameId)).states[Number(round)] = {};
 
       //set player move
-      this.games[gameId].moves[round][playerAddress.toLowerCase()] = move;
+      this.games[Number(gameId)].moves[Number(round)][playerAddress.toLowerCase()] = Number(move);
 
       //set player state
-      this.games[gameId].states[round][playerAddress.toLowerCase()] = GameStates.Revealed;
+      this.games[Number(gameId)].states[Number(round)][playerAddress.toLowerCase()] = GameStates.Revealed;
     },
 
     //Handle new round event
     async handleNewRoundEvent(event) {
-      console.log("NewRound event:", event.returnValues);
-      const { gameId, round, pointsA, pointsB } = event.returnValues;
+      console.log("NewRound event:", event);
+      const { gameId, round, pointsA, pointsB } = event;
 
       //check if gameId is in games
-      if (!this.games[gameId])
-        this.createGame(gameId);
+      if (!this.games[Number(gameId)])
+        this.createGame(Number(gameId));
 
       //Check if round is in states
-      if (!this.games[gameId].states[round])
-        this.games[gameId].states[round] = {};
+      if (!this.games[Number(gameId)].states[Number(round)])
+        this.games[Number(gameId)].states[Number(round)] = {};
 
       //Check if round is in moves
-      if (!this.games[gameId].moves[round])
-        this.games[gameId].moves[round] = {};
+      if (!this.games[Number(gameId)].moves[Number(round)])
+        this.games[Number(gameId)].moves[Number(round)] = {};
 
       //set round
-      this.games[gameId].round = round;
+      this.games[Number(gameId)].round = Number(round);
 
       //set points
-      this.games[gameId].points[this.games[gameId].playerA.toLowerCase()] = pointsA;
-      this.games[gameId].points[this.games[gameId].playerB.toLowerCase()] = pointsB;
+      this.games[Number(gameId)].points[this.games[Number(gameId)].playerA.toLowerCase()] = Number(pointsA);
+      this.games[Number(gameId)].points[this.games[Number(gameId)].playerB.toLowerCase()] = Number(pointsB);
 
       console.log("setting new points for gameId", gameId, pointsA, pointsB);
 
       //set time of matched
       let block = null;
-      let timestamp = localStorage.getItem(`blockTimestamp_${event.blockNumber}`);
+      let timestamp = localStorage.getItem(`blockTimestamp_${Number(event.blockNumber)}`);
       if (!timestamp) {
-        while (!block) { block = await this.getWeb3Read2.eth.getBlock(event.blockNumber);}
+        while (!block) { block = await this.getWeb3Read2.eth.getBlock(Number(event.blockNumber));}
         timestamp = block.timestamp.toString();
         // Cache the timestamp in localStorage for future use
-        localStorage.setItem(`blockTimestamp_${event.blockNumber}`, timestamp);
+        localStorage.setItem(`blockTimestamp_${Number(event.blockNumber)}`, timestamp);
       }
-      this.getGame(gameId).timeOfMatched = timestamp;
+      this.getGame(Number(gameId)).timeOfMatched = Number(timestamp);
       console.log("setting time of matched", timestamp)
 
       //reset game state to matched if not revealed or sent
-      // this.games[gameId].states[round][this.games[gameId].playerA.toLowerCase()] = GameStates.Matched;
+      // this.games[Number(gameId)].states[Number(round)][this.games[Number(gameId)].playerA.toLowerCase()] = GameStates.Matched;
       
-      // this.games[gameId].states[round][this.games[gameId].playerB.toLowerCase()] = GameStates.Matched;
+      // this.games[Number(gameId)].states[Number(round)][this.games[Number(gameId)].playerB.toLowerCase()] = GameStates.Matched;
       
       
     },
@@ -1724,39 +1734,38 @@ async emptyBurnerWallet(retryCount = 0) {
       },
     
     handleOutcomeEvent(event, isSubscription = false) {
-      console.log("GameOutcome event:", event.returnValues);
-      const { gameId, outcome } = event.returnValues;
+      console.log("GameOutcome event:", event);
+      const { gameId, outcome } = event;
 
       //if subscription then set modal and make sure isSubscription is a boolean
-      if (isSubscription === true && typeof isSubscription === "boolean" && (this.games[gameId]?.playerA?.toLowerCase() == this.activeAccount?.toLowerCase() || this.games[gameId]?.playerB?.toLowerCase() == this.activeAccount.toLowerCase())) { 
+      if (isSubscription === true && typeof isSubscription === "boolean" && (this.games[Number(gameId)]?.playerA?.toLowerCase() == this.activeAccount?.toLowerCase() || this.games[Number(gameId)]?.playerB?.toLowerCase() == this.activeAccount.toLowerCase())) { 
         console.log("setting modal");
         //get winner and loser points from yourCurrentPoints and opponentCurrentPoints
         this.winnerPoints = this.yourCurrentPoints > this.opponentCurrentPoints ? this.yourCurrentPoints : this.opponentCurrentPoints;
         this.loserPoints = this.yourCurrentPoints < this.opponentCurrentPoints ? this.yourCurrentPoints : this.opponentCurrentPoints;
-        const isPlayerA = this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase()
+        const isPlayerA = this.games[Number(gameId)].playerA.toLowerCase() == this.activeAccount.toLowerCase()
         this.showModal = true;
-        this.leaverModal = outcome == Outcomes.PlayerALeft ? this.games[gameId].playerA : outcome == Outcomes.PlayerBLeft ? this.games[gameId].playerB : null
+        this.leaverModal = outcome == Outcomes.PlayerALeft ? this.games[Number(gameId)].playerA : outcome == Outcomes.PlayerBLeft ? this.games[Number(gameId)].playerB : null
         this.winModal = isPlayerA ? 
           outcome == Outcomes.PlayerA :
           outcome == Outcomes.PlayerB
-        this.timeoutModal = outcome == Outcomes.PlayerATimeout ? this.games[gameId].playerA : outcome == Outcomes.PlayerBTimeout ? this.games[gameId].playerB : outcome == Outcomes.BothTimeout ? "both" : null
-        //this.winModal = outcome == Outcomes.PlayerA ? this.games[gameId].playerA : outcome == Outcomes.PlayerB ? this.games[gameId].playerB : null
+        this.timeoutModal = outcome == Outcomes.PlayerATimeout ? this.games[Number(gameId)].playerA : outcome == Outcomes.PlayerBTimeout ? this.games[Number(gameId)].playerB : outcome == Outcomes.BothTimeout ? "both" : null
+        //this.winModal = outcome == Outcomes.PlayerA ? this.games[Number(gameId)].playerA : outcome == Outcomes.PlayerB ? this.games[Number(gameId)].playerB : null
         console.log("Modal Stats", this.winnerPoints, this.loserPoints, this.winModal, this.leaverModal);
         console.log("Modal Stats, Outcomes.PlayerALeft and Outcomes.PlayerBLeft", Outcomes.PlayerALeft, Outcomes.PlayerBLeft);
         console.log("Modal States outcome", outcome);
         //empty burner wallet
-        this.emptyBurnerWallet()
 
         //send notification. notify play if he lost, won or draw. And if it was a timeout or someone left and notify who left or timed out
-        const opponentTruncated = this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() ? this.truncateAddress(this.games[gameId].playerB) : this.truncateAddress(this.games[gameId].playerA)
-        const youWon = this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() ? outcome == Outcomes.PlayerA : outcome == Outcomes.PlayerB
-        const opponentWon = this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() ? outcome == Outcomes.PlayerB : outcome == Outcomes.PlayerA
-        const youLeft = this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() ? outcome == Outcomes.PlayerALeft : outcome == Outcomes.PlayerBLeft
-        const opponentLeft = this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() ? outcome == Outcomes.PlayerBLeft : outcome == Outcomes.PlayerALeft
-        const youTimedOut = this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() ? outcome == Outcomes.PlayerATimeout : outcome == Outcomes.PlayerBTimeout
-        const opponentTimedOut = this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() ? outcome == Outcomes.PlayerBTimeout : outcome == Outcomes.PlayerATimeout
+        const opponentTruncated = this.games[Number(gameId)].playerA.toLowerCase() == this.activeAccount.toLowerCase() ? this.truncateAddress(this.games[Number(gameId)].playerB) : this.truncateAddress(this.games[Number(gameId)].playerA)
+        const youWon = this.games[Number(gameId)].playerA.toLowerCase() == this.activeAccount.toLowerCase() ? outcome == Outcomes.PlayerA : outcome == Outcomes.PlayerB
+        const opponentWon = this.games[Number(gameId)].playerA.toLowerCase() == this.activeAccount.toLowerCase() ? outcome == Outcomes.PlayerB : outcome == Outcomes.PlayerA
+        const youLeft = this.games[Number(gameId)].playerA.toLowerCase() == this.activeAccount.toLowerCase() ? outcome == Outcomes.PlayerALeft : outcome == Outcomes.PlayerBLeft
+        const opponentLeft = this.games[Number(gameId)].playerA.toLowerCase() == this.activeAccount.toLowerCase() ? outcome == Outcomes.PlayerBLeft : outcome == Outcomes.PlayerALeft
+        const youTimedOut = this.games[Number(gameId)].playerA.toLowerCase() == this.activeAccount.toLowerCase() ? outcome == Outcomes.PlayerATimeout : outcome == Outcomes.PlayerBTimeout
+        const opponentTimedOut = this.games[Number(gameId)].playerA.toLowerCase() == this.activeAccount.toLowerCase() ? outcome == Outcomes.PlayerBTimeout : outcome == Outcomes.PlayerATimeout
         const bothTimedOut = outcome == Outcomes.BothTimeout
-        const betAmountString = this.games[gameId].bet.toString() + " ETH"
+        const betAmountString = this.games[Number(gameId)].bet.toString() + " ETH"
         const notificationBody = youWon ? `You won ${betAmountString} from ${opponentTruncated}` : opponentWon ? `You lost ${betAmountString} to ${opponentTruncated}` : youLeft ? `You left the game with ${opponentTruncated} and lost ${betAmountString}` : opponentLeft ? `${opponentTruncated} left the game and you won ${betAmountString}` : youTimedOut ? `You timed out against ${opponentTruncated} and lost ${betAmountString}` : opponentTimedOut ? `${opponentTruncated} timed out and you won ${betAmountString}` : bothTimedOut ? `You both timed out and nobody won ${betAmountString}` : null
         //notification title simply tells you if you won or lost
         const notificationTitle = youWon ? "You won!" : opponentWon ? "You lost!" : youLeft ? "You left the game" : opponentLeft ? `${opponentTruncated} left the game` : youTimedOut ? "You timed out" : opponentTimedOut ? `${opponentTruncated} timed out` : bothTimedOut ? "You both timed out" : null
@@ -1765,36 +1774,39 @@ async emptyBurnerWallet(retryCount = 0) {
           title: notificationTitle,
           body: notificationBody,
         });
+
+        this.emptyBurnerWallet()
+
       }
 
       //check if gameId is in games
-      if (!this.games[gameId])
-        this.createGame(gameId);
+      if (!this.games[Number(gameId)])
+        this.createGame(Number(gameId));
 
       //set outcome
-      this.games[gameId].outcome = outcome;
+      this.games[Number(gameId)].outcome = outcome;
 
       //check if user is in game, if so reset game "0"
-      if (this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() || this.games[gameId].playerB.toLowerCase() == this.activeAccount.toLowerCase()) {
+      if (this.games[Number(gameId)].playerA.toLowerCase() == this.activeAccount.toLowerCase() || this.games[Number(gameId)].playerB.toLowerCase() == this.activeAccount.toLowerCase()) {
         this.createGame("0");
       }
 
       //set player data
-      this.setPlayerData(gameId)
+      this.setPlayerData(Number(gameId))
       
     },
 
     setPlayerData(gameId){
-      if(this.gameIdsFinished[gameId.toLowerCase()]) return
+      if(this.gameIdsFinished[gameId.toString().toLowerCase()]) return
       //add player profile points, earnings and fees generated
-      const playerA = this.games[gameId].playerA.toLowerCase()
-      const playerB = this.games[gameId].playerB.toLowerCase()
-      const playerAEarnings = this.getBasePlayerWinnings(this.games[gameId], playerA)
-      const playerBEarnings = this.getBasePlayerWinnings(this.games[gameId], playerB)
-      const playerAFees = this.getPlayerProtocolFees(this.games[gameId], playerA)
-      const playerBFees = this.getPlayerProtocolFees(this.games[gameId], playerB)
-      const playerAPoints = calculatePoints(this.games[gameId].bet, playerAEarnings)
-      const playerBPoints = calculatePoints(this.games[gameId].bet, playerBEarnings)
+      const playerA = this.games[Number(gameId)].playerA.toLowerCase()
+      const playerB = this.games[Number(gameId)].playerB.toLowerCase()
+      const playerAEarnings = this.getBasePlayerWinnings(this.games[Number(gameId)], playerA)
+      const playerBEarnings = this.getBasePlayerWinnings(this.games[Number(gameId)], playerB)
+      const playerAFees = this.getPlayerProtocolFees(this.games[Number(gameId)], playerA)
+      const playerBFees = this.getPlayerProtocolFees(this.games[Number(gameId)], playerB)
+      const playerAPoints = calculatePoints(this.games[Number(gameId)].bet, playerAEarnings)
+      const playerBPoints = calculatePoints(this.games[Number(gameId)].bet, playerBEarnings)
 
       store.commit('addProfileEarnings', { address: playerA, earnings: playerAEarnings })
       store.commit('addProfileEarnings', { address: playerB, earnings: playerBEarnings })
@@ -1806,22 +1818,22 @@ async emptyBurnerWallet(retryCount = 0) {
       store.commit('addGamesPlayed', { address: playerA })
       store.commit('addGamesPlayed', { address: playerB })
 
-      this.gameIdsFinished[gameId.toLowerCase()] = true
+      this.gameIdsFinished[gameId.toString().toLowerCase()] = true
     },
 
     //If the game id that was cancelled was yours then reset the current game id and remove the game
     handlePlayerCancelledEvent(event, isSubscription = false) {
-      console.log("PlayerCancelled event:", event.returnValues);
-      const { gameId, playerAddress } = event.returnValues;
+      console.log("PlayerCancelled event:", event);
+      const { gameId, playerAddress } = event;
 
       //check if gameId is in games
-      if (!this.games[gameId])
-        this.createGame(gameId, playerAddress);
+      if (!this.games[Number(gameId)])
+        this.createGame(Number(gameId), playerAddress);
 
       //set game outcome
-      this.games[gameId].outcome = Outcomes.Cancelled;
+      this.games[Number(gameId)].outcome = Outcomes.Cancelled;
 
-      if (this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() || this.games[gameId].playerB.toLowerCase() == this.activeAccount.toLowerCase()) {
+      if (this.games[Number(gameId)].playerA.toLowerCase() == this.activeAccount.toLowerCase() || this.games[Number(gameId)].playerB.toLowerCase() == this.activeAccount.toLowerCase()) {
         this.createGame("0");
       }
 
@@ -1833,21 +1845,21 @@ async emptyBurnerWallet(retryCount = 0) {
     },
 
     handlePlayerLeftEvent(event, isSubscription = false) {
-      console.log("Handling Player Left event:", event.returnValues);
-      const { gameId, playerAddress } = event.returnValues;
+      console.log("Handling Player Left event:", event);
+      const { gameId, playerAddress } = event;
 
       //check if gameId is in games
-      if (!this.games[gameId])
-        this.createGame(gameId, playerAddress);
+      if (!this.games[Number(gameId)])
+        this.createGame(Number(gameId), playerAddress);
 
       //set game outcome
 
-      // if (this.games[gameId].playerA.toLowerCase() == this.activeAccount.toLowerCase() || this.games[gameId].playerB.toLowerCase() == this.activeAccount.toLowerCase()) {
+      // if (this.games[Number(gameId)].playerA.toLowerCase() == this.activeAccount.toLowerCase() || this.games[Number(gameId)].playerB.toLowerCase() == this.activeAccount.toLowerCase()) {
       //   this.createGame("0");
       // }
 
       //Set the leaver variable
-      this.getGame(gameId).leaver = playerAddress.toLowerCase()
+      this.getGame(Number(gameId)).leaver = playerAddress.toLowerCase()
 
       //if subscription then set modal and make sure isSubscription is a boolean
       if (isSubscription === true && typeof isSubscription === "boolean" && playerAddress.toLowerCase() == this.activeAccount.toLowerCase()) {
@@ -1891,35 +1903,95 @@ async emptyBurnerWallet(retryCount = 0) {
 
     // Create a new set for keeping track of handled event ids
     const handledEventIds = new Set();
+    const handleEvent = (event) => {
+      const eventId = `${event.transactionHash}-${eventName}-${event.logIndex}`;
+      console.log(`New NEW ${eventName} event detected:`, event);
+      if (handledEventIds.has(eventId)) {
+          return;
+      }
+
+      if(eventName == "GameOutcome" || eventName == "PlayerCancelled" || eventName == "PlayerLeft" || eventName == "PlayersMatched" || eventName == "MoveCommitted"){
+          eventHandlers[eventName].call(this, event.args, true);
+      }
+      if (eventName === "NewRound") {
+          setTimeout(() => {
+              eventHandlers[eventName].call(this, event.args, userAddress);
+          }, 1000); // Add a 1-second delay before handling the NewRound event
+      } else {
+          eventHandlers[eventName].call(this, event.args, userAddress);
+      }
+
+      handledEventIds.add(eventId);
+      this.$store.dispatch("addEvent", {eventName, event})
+    }
 
     for (const eventName of eventNames) {
-        contract.events[eventName]()
-        .on('data', (event) => {
-            const eventId = `${event.transactionHash}-${eventName}-${event.logIndex}`;
+    client.watchContractEvent({
+      address: CONTRACT_ADDRESS,
+      abi: CONTRACT_ABI,
+      eventName: eventName,
+      onLogs: logs => {
+        logs.forEach((log)=>{
+          const processedLog ={
+            ...log,
+            ...log.args,
+          }
+          console.log("New event detected:", processedLog);
+          const eventId = `${processedLog.transactionHash}-${eventName}-${processedLog.logIndex}`;
+      console.log(`New NEW ${eventName} event detected:`, processedLog);
+      if (handledEventIds.has(eventId)) {
+          return;
+      }
 
-            if (handledEventIds.has(eventId)) {
-                return;
-            }
+      if(eventName == "GameOutcome" || eventName == "PlayerCancelled" || eventName == "PlayerLeft" || eventName == "PlayersMatched" || eventName == "MoveCommitted"){
+          eventHandlers[eventName].call(this, processedLog, true);
+      }
+      if (eventName === "NewRound") {
+          setTimeout(() => {
+              eventHandlers[eventName].call(this, processedLog, userAddress);
+          }, 1000); // Add a 1-second delay before handling the NewRound event
+      } else {
+          eventHandlers[eventName].call(this, processedLog, userAddress);
+      }
 
-            console.log(`New ${eventName} event detected:`, event);
-            if(eventName == "GameOutcome" || eventName == "PlayerCancelled" || eventName == "PlayerLeft" || eventName == "PlayersMatched" || eventName == "MoveCommitted"){
-                eventHandlers[eventName].call(this, event, true);
-            }
-            if (eventName === "NewRound") {
-                setTimeout(() => {
-                    eventHandlers[eventName].call(this, event, userAddress);
-                }, 1000); // Add a 1-second delay before handling the NewRound event
-            } else {
-                eventHandlers[eventName].call(this, event, userAddress);
-            }
-
-            handledEventIds.add(eventId);
-            this.$store.dispatch("addEvent", {eventName, event})
+      handledEventIds.add(eventId);
+      this.$store.dispatch("addEvent", {eventName, event})
         })
-        .on('error', (error) => {
-            console.error(`Error on event ${eventName}:`, error);
-        });
-    }
+      }
+    })
+  }
+
+    
+
+    // for (const eventName of eventNames) {
+      
+    //     contract.events[eventName]()
+    //     .on('data', (event) => {
+    //         const eventId = `${event.transactionHash}-${eventName}-${event.logIndex}`;
+
+    //         if (handledEventIds.has(eventId)) {
+    //             return;
+    //         }
+
+    //         console.log(`New ${eventName} event detected:`, event);
+    //         if(eventName == "GameOutcome" || eventName == "PlayerCancelled" || eventName == "PlayerLeft" || eventName == "PlayersMatched" || eventName == "MoveCommitted"){
+    //             eventHandlers[eventName].call(this, event, true);
+    //         }
+    //         if (eventName === "NewRound") {
+    //             setTimeout(() => {
+    //                 eventHandlers[eventName].call(this, event, userAddress);
+    //             }, 1000); // Add a 1-second delay before handling the NewRound event
+    //         } else {
+    //             eventHandlers[eventName].call(this, event, userAddress);
+    //         }
+
+    //         handledEventIds.add(eventId);
+    //         this.$store.dispatch("addEvent", {eventName, event})
+    //     })
+    //     .on('error', (error) => {
+    //         console.error(`Error on event ${eventName}:`, error);
+    //     });
+    // }
 }
 ,
 
@@ -2134,12 +2206,12 @@ async emptyBurnerWallet(retryCount = 0) {
           throw new Error("User does not have enough funds");
         }
 
-        const gasPrice = await this.getWeb3.eth.getGasPrice();
-        const gasLimit = await this.contractInstance.methods.register().estimateGas({
+        const gasPrice = Number(await this.getWeb3.eth.getGasPrice());
+        const gasLimit = Number(await this.contractInstance.methods.register().estimateGas({
             from: accounts[0],
             to: this.contractInstance.options.address,
             value: this.getWeb3.utils.toWei(this.selectedBet.toString(), "ether")
-        })*5;
+        }))*5;
 
         //check if user has enough funds
         const totalGasCost = gasPrice * gasLimit;
@@ -2151,13 +2223,26 @@ async emptyBurnerWallet(retryCount = 0) {
 
         //check if burner
         if(this.isBurner){
+          this.burnerNonce = await client.getTransactionCount({
+            address: this.burnerAddress,
+          })
           const totalValue = this.getWeb3.utils.toWei((this.burnerTopUpAmount + parseFloat(this.selectedBet)).toString(), "ether");
           console.log("totalValue:", totalValue);
-          const result = await this.burnerContractInstance.methods
+          console.log("this.provider", this.provider);
+          const result = await this.contractInstance.methods
           .registerWithBurner(this.burnerAddress, betInWei)
           .send({ from: accounts[0], value: totalValue, gasPrice, gasLimit });
           this.burnerNonce = await this.getWeb3Read.eth.getTransactionCount(this.burnerAddress, 'pending');
-
+          // const walletClient =createWalletClient({
+          //   chain: arbitrumNova,
+          //   transport: custom(this.provider),
+          // })
+          // await this.walletClient.writeContract({
+          //   address: CONTRACT_ADDRESS,
+          //   abi: CONTRACT_ABI,
+          //   functionName: "registerWithBurner",
+          //   args: [this.burnerAddress, betInWei],
+          // })
         }else{
           const result = await this.contractInstance.methods
           .register()
@@ -2212,12 +2297,12 @@ async emptyBurnerWallet(retryCount = 0) {
         const passwordHash = this.getPasswordHash();
 
         const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = await this.getWeb3.eth.getGasPrice();
-        const gasLimit = await this.contractInstance.methods.createPasswordMatch(passwordHash).estimateGas({
+        const gasPrice = Number(await this.getWeb3.eth.getGasPrice());
+        const gasLimit = Number(await this.contractInstance.methods.createPasswordMatch(passwordHash).estimateGas({
             from: accounts[0],
             to: this.contractInstance.options.address,
             value: betInWei
-        })*5;
+        }))*5;
 
         console.log("gasLimit:", gasLimit)
 
@@ -2312,17 +2397,17 @@ async emptyBurnerWallet(retryCount = 0) {
           return;
         }
 
-        const gasPrice = await this.getWeb3.eth.getGasPrice();
-        const gasLimit = this.isBurner ? await this.burnerContractInstance.methods.joinPasswordMatchWithBurner(this.burnerAddress, betInWei, password)
+        const gasPrice = Number(await this.getWeb3.eth.getGasPrice());
+        const gasLimit = Number(this.isBurner ? Number(await this.burnerContractInstance.methods.joinPasswordMatchWithBurner(this.burnerAddress, betInWei, password)
           .estimateGas({
             from: accounts[0],
             to: this.contractInstance.options.address,
             value: totalValue
-        }) : await this.contractInstance.methods.joinPasswordMatch(password).estimateGas({
+        })) : Number(await this.contractInstance.methods.joinPasswordMatch(password).estimateGas({
             from: accounts[0],
             to: this.contractInstance.options.address,
             value: betInWei
-        });
+        })));
 
         //check if user has enough funds
         const totalGasCost = gasPrice * gasLimit;
@@ -2373,7 +2458,7 @@ async emptyBurnerWallet(retryCount = 0) {
     const maxRetries = 3; // You can adjust this number as needed
 
     if (retryCount >= maxRetries) {
-      console.log("Max retries reached. Aborting revealMove.");
+      console.log("Max retries reached. Aborting sendMove.");
       return;
     }
       const prevState = this.gameState;
@@ -2405,6 +2490,9 @@ async emptyBurnerWallet(retryCount = 0) {
 
         if(this.isBurner){
           this.burnerNonce = await this.getWeb3Read.eth.getTransactionCount(this.burnerAddress, 'pending');
+          this.burnerNonce = await client.getTransactionCount({
+            address: this.burnerAddress,
+          })
           const result = await this.burnerContractInstance.methods
           .commit(parseInt(this.currentGameId), encryptedMove)
           .send({ from: this.burnerAddress, gasPrice, gasLimit, nonce: this.burnerNonce++ });
@@ -2453,13 +2541,13 @@ async emptyBurnerWallet(retryCount = 0) {
         // this.games[this.currentGameId ?? "0"].states[this.getActiveAccount] = GameStates.Cancelling;
         //console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
         const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = await this.getWeb3.eth.getGasPrice();
-        const gasLimit = await this.contractInstance.methods
+        const gasPrice = Number(await this.getWeb3.eth.getGasPrice());
+        const gasLimit = Number(await this.contractInstance.methods
             .cancel(parseInt(this.currentGameId))
             .estimateGas({
               from: accounts[0],
               to: this.contractInstance.options.address,
-            });
+            }));
 
         //check if user has enough funds
         const totalGasCost = gasPrice * gasLimit;
@@ -2511,8 +2599,8 @@ async emptyBurnerWallet(retryCount = 0) {
         // this.games[this.currentGameId ?? "0"].states[this.getActiveAccount] = GameStates.Cancelling;
         //console.log("Current gameState:", this.games[this.currentGameId].states[this.getActiveAccount]);
         const accounts = await this.getWeb3.eth.getAccounts();
-        const gasPrice = await this.getWeb3.eth.getGasPrice();
-        const gasLimit = (this.isBurner ? await this.burnerContractInstance.methods
+        const gasPrice = Number(await this.getWeb3.eth.getGasPrice());
+        const gasLimit = Number((this.isBurner ? await this.burnerContractInstance.methods
             .leave(parseInt(this.currentGameId))
             .estimateGas({
               from: accounts[0],
@@ -2522,10 +2610,13 @@ async emptyBurnerWallet(retryCount = 0) {
             .estimateGas({
               from: accounts[0],
               to: this.contractInstance.options.address,
-            })) *10;
+            }))) *10;
 
         if(this.isBurner){
           this.burnerNonce = await this.getWeb3Read.eth.getTransactionCount(this.burnerAddress, 'pending');
+          this.burnerNonce = await client.getTransactionCount({
+            address: this.burnerAddress,
+          })
           const result = await this.burnerContractInstance.methods
           .leave(parseInt(this.currentGameId))
           .send({ from: this.burnerAddress, gasPrice, gasLimit, nonce: this.burnerNonce++ });
@@ -2579,6 +2670,9 @@ async emptyBurnerWallet(retryCount = 0) {
 
     if(this.isBurner){
       this.burnerNonce = await this.getWeb3Read.eth.getTransactionCount(this.burnerAddress, 'pending');
+      this.burnerNonce = await client.getTransactionCount({
+            address: this.burnerAddress,
+          })
       const result = await this.burnerContractInstance.methods
       .reveal(parseInt(this.currentGameId), clearMove)
       .send({ from: this.burnerAddress, gasPrice, gasLimit, nonce: this.burnerNonce++ });
@@ -2924,58 +3018,75 @@ async emptyBurnerWallet(retryCount = 0) {
       // Iterate over the playerRegisteredEvents
       // Call handlePlayerRegisteredEvent for each event
       for (const event of this.playerRegisteredEvents) {
+        if(event){
         this.handleRegisterEvent(event, userAddress);
         this.addToHandledEvents(event, "PlayerRegistered");
+        }
       }
 
       // Iterate over the playerWaitingEvents
       // Call handlePlayerWaitingEvent for each event
       for (const event of this.playerWaitingEvents) {
-        this.handleWaitingEvent(event)
-        this.addToHandledEvents(event, "PlayerWaiting");
+        if(event){
+          this.handleWaitingEvent(event)
+          this.addToHandledEvents(event, "PlayerWaiting");
+        }
+        
 
       }
 
       // Iterate over the playerCancelledEvents
       // Call handlePlayerCancelledEvent for each event
       for (const event of this.playerCancelledEvents) {
-        this.handlePlayerCancelledEvent(event)
-        this.addToHandledEvents(event, "PlayerCancelled");
+        if(event){
+          this.handlePlayerCancelledEvent(event)
+          this.addToHandledEvents(event, "PlayerCancelled");
+        }
       }
 
       // Iterate over the playersMatchedEvents
       // Call handlePlayersMatchedEvent for each event
       for (const event of this.playersMatchedEvents) {
+        if(event){
         this.handlePlayersMatchedEvent(event)
         this.addToHandledEvents(event, "PlayersMatched");
+        }
       }
 
       // Iterate over the moveCommittedEvents
       // Call handleMoveSentEvent for each event
       for (const event of this.moveCommittedEvents) {
+        if(event){
         this.handleMoveSentEvent(event)
         this.addToHandledEvents(event, "MoveCommitted");
+        }
       }
 
       // Iterate over the moveRevealedEvents
       // Call handleMoveRevealedEvent for each event
       for (const event of this.moveRevealedEvents) {
+        if(event){
         this.handleRevealedEvent(event)
         this.addToHandledEvents(event, "MoveRevealed");
+        }
       }
 
       // Iterate over the newRoundEvents
       // Call handleNewRoundEvent for each event
       for (const event of this.newRoundEvents) {
+        if(event){
         this.handleNewRoundEvent(event)
         this.addToHandledEvents(event, "NewRound");
+        }
       }
 
       // Iterate over the gameOutcomeEvents
       // Call handleGameOutcomeEvent for each event
       for (const event of this.gameOutcomeEvents) {
+        if(event){
         this.handleOutcomeEvent(event)
         this.addToHandledEvents(event, "GameOutcome");
+        }
       }
 
       

@@ -38,7 +38,6 @@
 </style>
 
 <script>
-import { Outcomes } from '@/types'
 export default {
     props: {
         address: {

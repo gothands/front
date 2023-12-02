@@ -125,7 +125,7 @@ line-height: normal;
 </style>
 
 <script>
-import { calculatePoints } from '@/utils';
+import { calculatePoints } from '../utils';
 const APPLICATION_FEE = 0.05;
 
 

@@ -97,11 +97,11 @@
   import { computed, reactive, watch, defineProps } from 'vue'
   import { Bridge, BridgeChain, BridgeToken } from 'orbiter-sdk'
   import { ElNotification } from 'element-plus'
-  import store from '@/store'
+  import store from '../store'
   </script>
   
   <script setup lang="ts">
-import { CURRENT_CHAIN_ID, RPC_URLS } from '@/types'
+import { CURRENT_CHAIN_ID, RPC_URLS } from '../types'
 import Web3 from 'web3'
 
   const state = reactive({
@@ -299,57 +299,57 @@ import Web3 from 'web3'
   };
 
   const onConfirmTransfer = async () => {
-    try {
-      state.transferring = true
-      if(network == "Testnet"){
-        state.complete = true;
-        state.transferring = false;
+    // try {
+    //   state.transferring = true
+    //   if(network == "Testnet"){
+    //     state.complete = true;
+    //     state.transferring = false;
 
-        //await delay by 1 seconds
-        await new Promise(r => setTimeout(r, 1000));
+    //     //await delay by 1 seconds
+    //     await new Promise(r => setTimeout(r, 1000));
         
-        //call callback
-        props.callback()
-        return;
-      }
-      const result = await bridge.transfer(
-        new Web3Provider(ethereum).getSigner(),
-        currentToken.value,
-        currentFromChain.value,
-        currentToChain.value,
-        state.amount
-      )
+    //     //call callback
+    //     props.callback()
+    //     return;
+    //   }
+    //   const result = await bridge.transfer(
+    //     new Web3Provider(ethereum).getSigner(),
+    //     currentToken.value,
+    //     currentFromChain.value,
+    //     currentToChain.value,
+    //     state.amount
+    //   )
   
-      // state.transferList.unshift({
-      //   token: currentToken.value,
-      //   fromChain: currentFromChain.value,
-      //   toChain: currentToChain.value,
-      //   amount: state.amount,
-      //   result,
-      // })
+    //   // state.transferList.unshift({
+    //   //   token: currentToken.value,
+    //   //   fromChain: currentFromChain.value,
+    //   //   toChain: currentToChain.value,
+    //   //   amount: state.amount,
+    //   //   result,
+    //   // })
 
-      state.sentToBridge = true;
+    //   state.sentToBridge = true;
 
-      await waitForDestination(store.state.activeAccount, currentToChain.value?.networkId as string);
+    //   await waitForDestination(store.state.activeAccount, currentToChain.value?.networkId as string);
 
-      await updateBalances();
+    //   await updateBalances();
 
-      state.complete = true;
-      state.transferring = false;
+    //   state.complete = true;
+    //   state.transferring = false;
 
-      await store.state.onboard.setChain({chainId: CURRENT_CHAIN_ID})
+    //   await store.state.onboard.setChain({chainId: CURRENT_CHAIN_ID})
 
-      //await delay by 1 seconds
-      await new Promise(r => setTimeout(r, 1000));
+    //   //await delay by 1 seconds
+    //   await new Promise(r => setTimeout(r, 1000));
       
-      //call callback
-      props.callback()
+    //   //call callback
+    //   props.callback()
       
-    } catch (err) {
-      state.complete = false;
-      state.transferring = false;
-      alert(err.message)
-    }
+    // } catch (err) {
+    //   state.complete = false;
+    //   state.transferring = false;
+    //   alert(err.message)
+    // }
   }
   
   // watchs

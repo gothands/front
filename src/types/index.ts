@@ -46,15 +46,15 @@ export const RPC_URLS = {
   [CHAIN_ID_LOCALHOST]: "http://localhost:3050/",
   [CHAIN_ID_LOCALHOST_HARDHAT]: "http://localhost:8545",
   [CHAIN_ID_ARBITRUM_GOERLI]: "https://arb-goerli.g.alchemy.com/v2/4nMlurweValICpl10ChbP5LIk39MSwf1",
-  [CHAIN_ID_ARBITRUM_NOVA]: "https://nova.arbitrum.io/rpc",
+  [CHAIN_ID_ARBITRUM_NOVA]: "https://empty-proportionate-sunset.nova-mainnet.quiknode.pro/b34c277e5b6c584250278d2aad9b63452bb2188f/",
 
 };
 
-export const CURRENT_CHAIN_ID = CHAIN_ID_ARBITRUM_GOERLI;
+export const CURRENT_CHAIN_ID = CHAIN_ID_ARBITRUM_NOVA;
 
-export const READ_PROVIDER_URL = "https://arb-goerli.g.alchemy.com/v2/4nMlurweValICpl10ChbP5LIk39MSwf1"
+export const READ_PROVIDER_URL = "https://empty-proportionate-sunset.nova-mainnet.quiknode.pro/b34c277e5b6c584250278d2aad9b63452bb2188f/"
 
-export const DEFAULT_FETCH_BLOCK = 34700240;
+export const DEFAULT_FETCH_BLOCK = 31694068;
 export const APPLICATION_FEE = 0.05;
 
 export const MAX_MOVE_TIME = (60*2) + 15; // 2 minutes 15 seconds

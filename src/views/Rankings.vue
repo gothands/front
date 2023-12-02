@@ -37,7 +37,7 @@
   </style>
   
   <script>
-  import RankingList from '@/components/RankingList.vue'
+  import RankingList from '../components/RankingList.vue'
   
   export default {
     components: {
