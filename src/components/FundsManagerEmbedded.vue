@@ -56,10 +56,8 @@
   </template>
   
   <script lang="ts">
-  import { Web3Provider } from '@ethersproject/providers'
   import { ethers } from 'ethers'
   import { computed, reactive, watch, defineProps } from 'vue'
-  import { ElNotification } from 'element-plus'
   import store from '../store'
   </script>
   

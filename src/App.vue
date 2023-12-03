@@ -85,7 +85,6 @@ import ModalEnableNotifications from "./components/ModalEnableNotifications.vue"
 // Plugins
 
 // Adapters
-import { MetamaskAdapter } from "@web3auth/metamask-adapter";
 import { mapState } from 'vuex';
 import store from './store';
 
