@@ -44,12 +44,6 @@
     "@rollup/plugin-inject": "^4.0.4",
     "@typescript-eslint/eslint-plugin": "^5.46.1",
     "@typescript-eslint/parser": "^5.46.1",
-    "@vue/cli-plugin-babel": "~5.0.8",
-    "@vue/cli-plugin-eslint": "~5.0.8",
-    "@vue/cli-plugin-router": "~5.0.0",
-    "@vue/cli-plugin-typescript": "~5.0.8",
-    "@vue/cli-plugin-vuex": "~5.0.0",
-    "@vue/cli-service": "~5.0.8",
     "@vue/eslint-config-typescript": "^11.0.2",
     "eslint": "^8.34.0",
     "eslint-config-prettier": "^8.6.0",
@@ -73,7 +67,13 @@
     "vite": "^5.0.0",
     "vite-plugin-node-polyfills": "^0.17.0",
     "vite-plugin-require-transform": "^1.0.21",
-    "vue-tsc": "^1.8.22"
+    "vue-tsc": "^1.8.22",
+    "@vue/cli-plugin-babel": "~5.0.8",
+    "@vue/cli-plugin-eslint": "~5.0.8",
+    "@vue/cli-plugin-router": "~5.0.0",
+    "@vue/cli-plugin-typescript": "~5.0.8",
+    "@vue/cli-plugin-vuex": "~5.0.0",
+    "@vue/cli-service": "~5.0.8"
   },
   "browserslist": {
     "production": [
