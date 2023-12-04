@@ -165,7 +165,7 @@ export default {
 
     const web3auth = new Web3Auth({
       clientId,
-      web3AuthNetwork: "mainnet",
+      web3AuthNetwork: "testnet",
       chainConfig: {
         chainNamespace: CHAIN_NAMESPACES.EIP155,
         chainId: CURRENT_CHAIN_ID,
